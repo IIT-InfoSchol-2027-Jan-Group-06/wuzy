@@ -1,11 +1,5 @@
-import { View } from 'react-native';
-
-import { NavBar } from '@/components/nav-bar';
+import { Redirect } from 'expo-router';
 
 export default function HomeScreen() {
-  return (
-    <View className="flex-1 bg-[#000811]">
-      <NavBar active="home" />
-    </View>
-  );
+  return <Redirect href="/explore" />;
 }

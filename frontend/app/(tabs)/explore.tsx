@@ -2,9 +2,24 @@ import { Image, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { NavBar } from '@/components/nav-bar';
-import { EventCard } from '@/components/postcard/event-card';
+import {
+  AfterHoursRooftopCard,
+  BassDropFestivalCard,
+  FocusLiveSessionsCard,
+  Formula1GPCard,
+  MarathonMeetupCard,
+  MumbaiBeatsCard,
+  SambaStreetParadeCard,
+  SilvaSessionsCard,
+  StarWarsNightCard,
+  SunsetRooftopPartyCard,
+  TaylorSwiftLiveCard,
+  UndergroundSessionsCard,
+  UrbanNightsFestivalCard,
+  YeezusTourCard,
+} from '@/components/postcard/event-cards';
 import { PostCard } from '@/components/postcard/post-card';
-import { events, posts } from '@/constants/feed-data';
+import { posts } from '@/constants/feed-data';
 import { wuzyColors, wuzyFonts } from '@/constants/wuzy-theme';
 
 const notification = require('@/assets/images/notification.png');
@@ -50,16 +65,20 @@ export default function ExploreScreen() {
               showsHorizontalScrollIndicator={false}
               className="mt-[23px]"
               contentContainerStyle={{ paddingLeft: 6, gap: 12 }}>
-              <EventCard event={events[0]} />
-              <EventCard event={events[1]} />
-              <EventCard event={events[2]} />
-              <EventCard event={events[3]} />
-              <EventCard event={events[4]} />
-              <EventCard event={events[5]} />
-              <EventCard event={events[6]} />
-              <EventCard event={events[7]} />
-              <EventCard event={events[8]} />
-              <EventCard event={events[9]} />
+              <TaylorSwiftLiveCard />
+              <Formula1GPCard />
+              <YeezusTourCard />
+              <StarWarsNightCard />
+              <FocusLiveSessionsCard />
+              <BassDropFestivalCard />
+              <SunsetRooftopPartyCard />
+              <UndergroundSessionsCard />
+              <SambaStreetParadeCard />
+              <AfterHoursRooftopCard />
+              <UrbanNightsFestivalCard />
+              <MarathonMeetupCard />
+              <SilvaSessionsCard />
+              <MumbaiBeatsCard />
             </ScrollView>
           </View>
 

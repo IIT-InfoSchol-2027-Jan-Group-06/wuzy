@@ -107,4 +107,28 @@ export const events: Event[] = [
     avatar: require('@/assets/images/eventav2.png'),
     title: 'After Hours Rooftop',
   },
+  {
+    id: '11',
+    image: require('@/assets/images/post1.png'),
+    avatar: require('@/assets/images/avatar1.png'),
+    title: 'Urban Nights Festival',
+  },
+  {
+    id: '12',
+    image: require('@/assets/images/post2.png'),
+    avatar: require('@/assets/images/avatar2.png'),
+    title: 'Marathon Meetup',
+  },
+  {
+    id: '13',
+    image: require('@/assets/images/post3.png'),
+    avatar: require('@/assets/images/avatar3.png'),
+    title: 'Silva Sessions',
+  },
+  {
+    id: '14',
+    image: require('@/assets/images/post4.png'),
+    avatar: require('@/assets/images/avatar4.png'),
+    title: 'Mumbai Beats',
+  },
 ];

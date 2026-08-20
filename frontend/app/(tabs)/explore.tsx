@@ -1,7 +1,7 @@
 import { Image, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { NavBar } from '@/components/nav-bar';
+import { NavBar } from '@/components/NavBar';
 import {
   AfterHoursRooftopCard,
   BassDropFestivalCard,

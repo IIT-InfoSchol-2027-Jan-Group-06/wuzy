@@ -1,7 +1,7 @@
 import { ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { NavBar } from '@/components/nav-bar';
+import { NavBar } from '@/components/NavBar';
 import { PostCard } from '@/components/postcard';
 import { posts } from '@/constants/feed-data';
 import { wuzyFonts } from '@/constants/wuzy-theme';

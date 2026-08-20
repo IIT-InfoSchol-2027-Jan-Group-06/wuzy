@@ -2,7 +2,7 @@ import { Image, StyleProp, View, ViewStyle } from 'react-native';
 
 import { Event } from '@/constants/feed-data';
 import { wuzyColors } from '@/constants/wuzy-theme';
-import { Avatar, CardShell, EventTitle } from './shared';
+import { Avatar, CardShell, EventTitle } from './Shared';
 
 type EventCardProps = {
   event: Event;

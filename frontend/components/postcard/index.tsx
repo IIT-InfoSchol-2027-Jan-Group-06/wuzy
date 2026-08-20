@@ -1,3 +1,3 @@
-export * from './shared';
-export * from './post-card';
-export * from './event-card';
+export * from './Shared';
+export * from './PostCard';
+export * from './EventCard';

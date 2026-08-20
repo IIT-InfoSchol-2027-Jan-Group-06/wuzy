@@ -6,6 +6,8 @@ export interface Post {
   avatar: ImageSourcePropType;
   name: string;
   location: string;
+  likeCount?: number;
+  commentCount?: number;
 }
 
 export interface Event {
@@ -22,6 +24,8 @@ export const posts: Post[] = [
     avatar: require('@/assets/images/avatar1.png'),
     name: 'Lana rae',
     location: 'new york',
+    likeCount: 128,
+    commentCount: 14,
   },
   {
     id: '2',
@@ -29,6 +33,8 @@ export const posts: Post[] = [
     avatar: require('@/assets/images/avatar2.png'),
     name: 'New york run club',
     location: 'new jersey',
+    likeCount: 342,
+    commentCount: 27,
   },
   {
     id: '3',
@@ -36,6 +42,8 @@ export const posts: Post[] = [
     avatar: require('@/assets/images/avatar3.png'),
     name: 'Yash silva',
     location: 'sri lanka',
+    likeCount: 89,
+    commentCount: 6,
   },
   {
     id: '4',
@@ -43,6 +51,8 @@ export const posts: Post[] = [
     avatar: require('@/assets/images/avatar4.png'),
     name: 'Raya sing',
     location: 'mumbai',
+    likeCount: 511,
+    commentCount: 40,
   },
 ];
 

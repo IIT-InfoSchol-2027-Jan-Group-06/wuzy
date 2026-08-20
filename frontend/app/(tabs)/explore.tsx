@@ -9,6 +9,7 @@ import {
   Formula1GPCard,
   MarathonMeetupCard,
   MumbaiBeatsCard,
+  PostCard,
   SambaStreetParadeCard,
   SilvaSessionsCard,
   StarWarsNightCard,
@@ -17,8 +18,7 @@ import {
   UndergroundSessionsCard,
   UrbanNightsFestivalCard,
   YeezusTourCard,
-} from '@/components/postcard/event-cards';
-import { PostCard } from '@/components/postcard/post-card';
+} from '@/components/postcard';
 import { posts } from '@/constants/feed-data';
 import { wuzyColors, wuzyFonts } from '@/constants/wuzy-theme';
 

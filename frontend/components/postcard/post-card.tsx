@@ -1,3 +1,5 @@
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Image, StyleProp, Text, useWindowDimensions, View, ViewStyle } from 'react-native';
 
 import { Post } from '@/constants/feed-data';
@@ -44,8 +46,12 @@ export function PostCard({
       {/* Full-bleed cover image filling the entire card */}
       <Image source={post.image} className="absolute inset-0 h-full w-full" resizeMode="cover" />
 
-      {/* Bottom overlay so text stays readable over any photo */}
-      <View className="absolute inset-x-0 bottom-0 h-[110px] bg-gradient-to-t from-black/80 to-transparent" />
+      {/* Top gradient so the white author text and avatar stay visible on bright photos */}
+      <LinearGradient
+        colors={['rgba(0,0,0,0.9)', 'rgba(0,0,0,0.4)', 'transparent']}
+        locations={[0, 0.6, 1]}
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 120 }}
+      />
 
       {/* Author row: avatar + name + location, pinned top-left */}
       <View className="absolute left-[21px] top-[19px] flex-row items-center">

@@ -36,7 +36,7 @@ export default function ExploreScreen() {
           </View>
 
           <View className="mt-[25px] items-center">
-            <PostCard {...posts[0]} />
+            <PostCard post={posts[0]} />
           </View>
 
           <View className="mt-[25px]">
@@ -50,16 +50,23 @@ export default function ExploreScreen() {
               showsHorizontalScrollIndicator={false}
               className="mt-[23px]"
               contentContainerStyle={{ paddingLeft: 6, gap: 12 }}>
-              {events.map((event) => (
-                <EventCard key={event.id} {...event} />
-              ))}
+              <EventCard event={events[0]} />
+              <EventCard event={events[1]} />
+              <EventCard event={events[2]} />
+              <EventCard event={events[3]} />
+              <EventCard event={events[4]} />
+              <EventCard event={events[5]} />
+              <EventCard event={events[6]} />
+              <EventCard event={events[7]} />
+              <EventCard event={events[8]} />
+              <EventCard event={events[9]} />
             </ScrollView>
           </View>
 
           <View className="mt-[42px] items-center gap-[29px]">
-            {posts.slice(1).map((post) => (
-              <PostCard key={post.id} {...post} />
-            ))}
+            <PostCard post={posts[1]} />
+            <PostCard post={posts[2]} />
+            <PostCard post={posts[3]} />
           </View>
 
           <View className="mt-[41px] items-center">

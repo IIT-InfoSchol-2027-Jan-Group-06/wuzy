@@ -1,4 +1,4 @@
-import { Image, StyleProp, Text, View, ViewStyle } from 'react-native';
+import { Image, StyleProp, Text, useWindowDimensions, View, ViewStyle } from 'react-native';
 
 import { Post } from '@/constants/feed-data';
 import { wuzyFonts } from '@/constants/wuzy-theme';
@@ -16,20 +16,31 @@ type PostCardProps = {
 /**
  * A single, self-contained post card.
  *
- * Combines the cover image, author info (avatar + name + location) and the
- * action row (likes / comments / share) into one component using NativeWind
- * utility classes.
+ * Combines the cover image and author info (avatar + name + location) into one
+ * component using NativeWind utility classes. The card fills the screen width
+ * with a 10px gap on both sides, keeping the height proportional to its width.
  */
 export function PostCard({
   post,
-  width = 300,
-  height = 295,
+  width,
+  height,
   onPress,
   disabled = false,
   style,
 }: PostCardProps) {
+  // Card width adapts to the screen size with 10px of margin on each side.
+  const { width: screenWidth } = useWindowDimensions();
+  const cardWidth = width ?? screenWidth - 40;
+  // Height scales with width to keep the card's proportions (335x418 base).
+  const cardHeight = height ?? Math.round(cardWidth * (418 / 335));
+
   return (
-    <CardShell width={width} height={height} onPress={onPress} disabled={disabled} style={style}>
+    <CardShell
+      width={cardWidth}
+      height={cardHeight}
+      onPress={onPress}
+      disabled={disabled}
+      style={style}>
       {/* Full-bleed cover image filling the entire card */}
       <Image source={post.image} className="absolute inset-0 h-full w-full" resizeMode="cover" />
 

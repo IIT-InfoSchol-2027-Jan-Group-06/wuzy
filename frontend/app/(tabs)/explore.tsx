@@ -1,20 +1,84 @@
-import { Text, View } from 'react-native';
+import { Image, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { NavBar } from '@/components/nav-bar';
+import { EventCard } from '@/components/postcard/event-card';
+import { PostCard } from '@/components/postcard/post-card';
+import { events, posts } from '@/constants/feed-data';
+import { wuzyColors, wuzyFonts } from '@/constants/wuzy-theme';
+
+const notification = require('@/assets/images/notification.png');
+const plus = require('@/assets/images/plus.png');
 
 export default function ExploreScreen() {
   return (
-    <View className="flex-1 bg-slate-100">
-      <View className="absolute -right-16 -top-20 h-64 w-64 rounded-full bg-fuchsia-300/70" />
-      <View className="absolute -left-20 top-52 h-56 w-56 rounded-full bg-amber-300/70" />
-      <View className="absolute -right-10 bottom-24 h-48 w-48 rounded-full bg-teal-300/70" />
-      <SafeAreaView className="flex-1">
-        <View className="flex-1 px-6 pt-6">
-          <Text className="text-3xl font-bold text-slate-900">Explore</Text>
+    <View className="flex-1 bg-wuzy-bg">
+      <SafeAreaView edges={['top']} className="flex-1">
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{ paddingBottom: 140 }}
+          showsVerticalScrollIndicator={false}>
+          <View className="px-[32px] pt-[49px]">
+            <View className="flex-row items-center justify-between">
+              <Text
+                className="text-[32px] leading-[32px] text-wuzy-yellow"
+                style={{ fontFamily: wuzyFonts.display }}>
+                Wuzy
+              </Text>
+              <Image source={notification} className="h-[35px] w-[35px]" />
+            </View>
+
+            <Text
+              className="mt-[16px] text-[16px] text-wuzy-yellow"
+              style={{ fontFamily: wuzyFonts.semibold }}>
+              Recent
+            </Text>
+          </View>
+
+          <View className="mt-[25px] items-center">
+            <PostCard {...posts[0]} />
+          </View>
+
+          <View className="mt-[25px]">
+            <Text
+              className="ml-[30px] text-[16px] text-wuzy-yellow"
+              style={{ fontFamily: wuzyFonts.semibold }}>
+              Recommendations
+            </Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              className="mt-[23px]"
+              contentContainerStyle={{ paddingLeft: 6, gap: 12 }}>
+              {events.map((event) => (
+                <EventCard key={event.id} {...event} />
+              ))}
+            </ScrollView>
+          </View>
+
+          <View className="mt-[42px] items-center gap-[29px]">
+            {posts.slice(1).map((post) => (
+              <PostCard key={post.id} {...post} />
+            ))}
+          </View>
+
+          <View className="mt-[41px] items-center">
+            <Text
+              className="text-[16px] text-wuzy-yellow"
+              style={{ fontFamily: wuzyFonts.semibold }}>
+              caught up with life
+            </Text>
+          </View>
+        </ScrollView>
+
+        <View
+          className="absolute bottom-[103px] right-[16px] h-[45px] w-[45px] items-center justify-center rounded-full"
+          style={{ backgroundColor: wuzyColors.yellowDim }}>
+          <Image source={plus} className="h-[30px] w-[30px]" />
         </View>
+
+        <NavBar active="events" />
       </SafeAreaView>
-      <NavBar active="events" />
     </View>
   );
 }

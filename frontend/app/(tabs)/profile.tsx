@@ -28,10 +28,14 @@ export default function ProfileScreen() {
 
   const GlassButton = ({ label }: { label: string }) => (
     <Pressable className="rounded-full overflow-hidden" style={{ width: btnWidth, height: btnHeight }}>
-      <BlurView intensity={80} style={StyleSheet.absoluteFill} />
-      <View style={[StyleSheet.absoluteFill, { borderRadius: btnHeight / 2, backgroundColor: 'rgba(255, 231, 131, 0.1)' }]} />
-      <View className="absolute inset-0 rounded-full border" style={{ borderWidth: 1, borderColor: 'rgba(255, 231, 131, 0.2)' }} />
-      <View className="flex-1 items-center justify-center">
+      <BlurView
+        intensity={80}
+        tint="dark"
+        experimentalBlurMethod="dimezisBlurView"
+        style={StyleSheet.absoluteFill} />
+      <View style={[StyleSheet.absoluteFill, { borderRadius: btnHeight / 2, backgroundColor: 'rgba(244, 196, 0, 0.1)' }]} />
+      <View className="absolute inset-0 rounded-full border border-white/20" />
+      <View className="flex-1 items-center justify-center shadow-lg shadow-black/40">
         <Text style={{ fontFamily: wuzyFonts.semibold, fontSize, color: '#FFFFFF' }}>{label}</Text>
       </View>
     </Pressable>
@@ -55,6 +59,8 @@ export default function ProfileScreen() {
               <LinearGradient
                 colors={['transparent', '#0A0F17', '#0A0F17']}
                 locations={[0, 0.6, 1]}
+                start={{ x: 1, y: 0 }}
+                end={{ x: 0, y: 1 }}
                 style={StyleSheet.absoluteFill} />
 
               {/* Top Right Action - Link Button */}

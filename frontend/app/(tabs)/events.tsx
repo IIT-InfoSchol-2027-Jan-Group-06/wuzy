@@ -27,7 +27,7 @@ const plus = require('@/assets/images/plus.png');
 export default function ExploreScreen() {
   return (
     <View className="flex-1 bg-wuzy-bg">
-      <SafeAreaView edges={['top']} className="flex-1">
+      <SafeAreaView edges={['top', 'bottom']} className="flex-1" style={{ backgroundColor: '#0A0F17' }}>
         <ScrollView
           className="flex-1"
           contentContainerStyle={{ paddingBottom: 140 }}
@@ -96,11 +96,7 @@ export default function ExploreScreen() {
           </View>
         </ScrollView>
 
-        <View
-          className="absolute bottom-[103px] right-[16px] h-[45px] w-[45px] items-center justify-center rounded-full"
-          style={{ backgroundColor: wuzyColors.yellowDim }}>
-          <Image source={plus} className="h-[30px] w-[30px]" />
-        </View>
+      
       </SafeAreaView>
     </View>
   );

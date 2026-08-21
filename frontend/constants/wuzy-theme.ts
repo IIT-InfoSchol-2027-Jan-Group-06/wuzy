@@ -1,5 +1,5 @@
 export const wuzyColors = {
-  bg: '#000811',
+  bg: '#0A0F17',
   yellow: '#FFE783',
   yellowSoft: '#FFF5CA',
   yellowDim: 'rgba(255, 231, 131, 0.2)',

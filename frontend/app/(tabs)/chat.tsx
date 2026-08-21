@@ -4,8 +4,8 @@ import { wuzyFonts } from '@/constants/wuzy-theme';
 
 export default function ChatScreen() {
   return (
-    <View className="flex-1 bg-[#000811]">
-      <SafeAreaView edges={['top']} className="flex-1">
+    <View className="flex-1 bg-wuzy-bg">
+      <SafeAreaView edges={['top', 'bottom']} className="flex-1" style={{ backgroundColor: '#0A0F17' }}>
         <View className="px-[32px] pt-[49px]">
           <Text
             className="text-[32px] leading-[32px] text-wuzy-yellow"

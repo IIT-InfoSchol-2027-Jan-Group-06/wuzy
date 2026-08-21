@@ -55,7 +55,7 @@ export default function ProfileScreen({ user }: ProfileScreenProps) {
 
   return (
     <View className="flex-1" style={{ backgroundColor: '#0A0F17' }}>
-      <SafeAreaView edges={['top']} className="flex-1">
+      <SafeAreaView edges={['top', 'bottom']} className="flex-1" style={{ backgroundColor: '#0A0F17' }}>
         <ScrollView
           className="flex-1"
           contentContainerStyle={{ paddingBottom: 140 }}

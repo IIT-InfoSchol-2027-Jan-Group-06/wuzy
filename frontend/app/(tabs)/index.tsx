@@ -7,8 +7,8 @@ import { wuzyFonts } from '@/constants/wuzy-theme';
 
 export default function HomeScreen() {
   return (
-    <View className="flex-1 bg-[#000811]">
-      <SafeAreaView edges={['top']} className="flex-1">
+    <View className="flex-1 bg-wuzy-bg">
+      <SafeAreaView edges={['top', 'bottom']} className="flex-1" style={{ backgroundColor: '#0A0F17' }}>
         {/* Fixed "Wuzy" header that stays in place while the feed scrolls */}
         <View className="px-[32px] pt-[49px]">
           <Text

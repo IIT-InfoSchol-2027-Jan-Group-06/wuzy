@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 
-export type NavBarItem = 'home' | 'chat' | 'medals' | 'events' | 'profile';
+export type NavBarItem = 'home' | 'events' | 'awards' | 'chat' | 'profile';
 
 type NavBarProps = {
   active?: NavBarItem;
@@ -11,9 +11,9 @@ type NavBarProps = {
 
 const NAV_ITEMS: { key: NavBarItem; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
   { key: 'home', label: 'Home', icon: 'home' },
-  { key: 'chat', label: 'Chats', icon: 'chatbubble-ellipses' },
-  { key: 'medals', label: 'Medals', icon: 'medal' },
   { key: 'events', label: 'Events', icon: 'sparkles' },
+  { key: 'awards', label: 'Awards', icon: 'medal' },
+  { key: 'chat', label: 'Chat', icon: 'chatbubble-ellipses' },
   { key: 'profile', label: 'Profile', icon: 'person-circle' },
 ];
 

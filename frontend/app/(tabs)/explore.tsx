@@ -1,7 +1,6 @@
 import { Image, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { NavBar } from '@/components/NavBar';
 import {
   AfterHoursRooftopCard,
   BassDropFestivalCard,
@@ -102,8 +101,6 @@ export default function ExploreScreen() {
           style={{ backgroundColor: wuzyColors.yellowDim }}>
           <Image source={plus} className="h-[30px] w-[30px]" />
         </View>
-
-        <NavBar active="events" />
       </SafeAreaView>
     </View>
   );

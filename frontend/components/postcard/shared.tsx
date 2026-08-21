@@ -39,6 +39,28 @@ export function Avatar({
   );
 }
 
+/** Profile picture that can be used standalone or in headers */
+export function ProfilePicture({
+  source,
+  size = 80,
+  onPress,
+  style,
+}: {
+  source: ImageSourcePropType;
+  size?: number;
+  onPress?: () => void;
+  style?: StyleProp<ViewStyle>;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      className="rounded-full"
+      style={[{ width: size, height: size }, style]}>
+      <Image source={source} className="h-full w-full rounded-full" resizeMode="cover" />
+    </Pressable>
+  );
+}
+
 /** Rounded container that handles press feedback and clipping. */
 export function CardShell({
   width = 300,
@@ -102,5 +124,28 @@ export function EventTitle({
       style={[{ fontFamily: wuzyFonts.bold, fontSize: size, color }, style]}>
       {title}
     </Text>
+  );
+}
+
+/** Hobbies/interests display component */
+export function Hobbies({
+  hobbies,
+  size = 20,
+  style,
+}: {
+  hobbies: string[];
+  size?: number;
+  style?: StyleProp<ViewStyle>;
+}) {
+  return (
+    <View className="flex flex-wrap gap-[6px]" style={style}>
+      {hobbies.map((hobby, index) => (
+        <View
+          key={index}
+          className="flex items-center rounded-full px-[8px] py-[4px] bg-[rgba(255,255,255,0.2)] text-[10px] text-white">
+          <Text className="mr-[4px]">{hobby[0].toUpperCase() + hobby.slice(1)}</Text>
+        </View>
+      ))}
+    </View>
   );
 }

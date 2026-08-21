@@ -4,27 +4,39 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 
-import { wuzyColors, wuzyFonts } from '@/constants/wuzy-theme';
+import { wuzyFonts } from '@/constants/wuzy-theme';
+import type { UserProfile } from '@/constants/profile-data';
 
-const TAGS = ['Music', 'Reading', 'Movie', 'Tech', 'Reading', 'Movie', 'Tech'];
-const TIMELINE_IMAGES = [
-  require('@/assets/images/post1.png'),
-  require('@/assets/images/post2.png'),
-  require('@/assets/images/post3.png'),
-  require('@/assets/images/post4.png'),
-  require('@/assets/images/event1.png'),
-  require('@/assets/images/event2.png'),
-  require('@/assets/images/event3.png'),
-  require('@/assets/images/event4.png'),
-  require('@/assets/images/event5.png'),
-];
+type ProfileScreenProps = {
+  user?: UserProfile | null;
+};
 
-export default function ProfileScreen() {
+export default function ProfileScreen({ user }: ProfileScreenProps) {
   const { width: screenWidth } = useWindowDimensions();
   const gridItemSize = (screenWidth - 4) / 3;
-  const btnWidth = Math.round(screenWidth * 0.40);
+  const btnWidth = Math.round(screenWidth * 0.32);
   const btnHeight = Math.round(screenWidth * 0.092);
-  const fontSize = Math.round(screenWidth * 0.028);
+  const fontSize = Math.round(screenWidth * 0.022);
+
+  // Use provided user or fallback to mock
+  const u = user ?? {
+    name: 'Ludwig Bennet',
+    bio: 'Software engineer building high-performance systems with Go and OpenGL.',
+    backgroundImage: require('@/assets/images/event1.png'),
+    tags: ['Music', 'Reading', 'Movie', 'Tech', 'Reading', 'Movie', 'Tech'],
+    awardsCount: 4,
+    photos: [
+      require('@/assets/images/post1.png'),
+      require('@/assets/images/post2.png'),
+      require('@/assets/images/post3.png'),
+      require('@/assets/images/post4.png'),
+      require('@/assets/images/event1.png'),
+      require('@/assets/images/event2.png'),
+      require('@/assets/images/event3.png'),
+      require('@/assets/images/event4.png'),
+      require('@/assets/images/event5.png'),
+    ],
+  } as UserProfile;
 
   const GlassButton = ({ label }: { label: string }) => (
     <Pressable className="rounded-full overflow-hidden" style={{ width: btnWidth, height: btnHeight }}>
@@ -50,12 +62,12 @@ export default function ProfileScreen() {
           showsVerticalScrollIndicator={false}>
 
           {/* 1. Hero Header Section */}
-          <View style={{ height: 700, position: 'relative' }}>
+          <View style={{ height: 600, position: 'relative' }}>
             <ImageBackground
-              source={require('@/assets/images/event1.png')}
+              source={u.backgroundImage}
               style={{ flex: 1, width: '100%' }}
               imageStyle={{ resizeMode: 'cover' }}>
-              {/* Gradient overlay */}
+              {/* Gradient overlay - angle -45deg */}
               <LinearGradient
                 colors={['transparent', '#0A0F17', '#0A0F17']}
                 locations={[0, 0.6, 1]}
@@ -75,30 +87,30 @@ export default function ProfileScreen() {
               <View className="absolute bottom-[30px] left-[24px] right-[24px]">
                 {/* Title + Awards Badge */}
                 <View className="flex-row items-start justify-between mb-[8px]">
-<View>
+                  <View>
                     <Text
                       style={{
                         fontFamily: wuzyFonts.display,
-                        fontSize: Math.round(screenWidth * 0.12),
-                        lineHeight: Math.round(screenWidth * 0.09),
+                        fontSize: Math.round(screenWidth * 0.1),
+                        lineHeight: Math.round(screenWidth * 0.11),
                         color: '#FDF3C0',
                       }}>
-                      Ludwig
+                      {u.name.split(' ')[0] || u.name}
                     </Text>
                     <Text
                       style={{
                         fontFamily: wuzyFonts.display,
-                        fontSize: Math.round(screenWidth * 0.11),
+                        fontSize: Math.round(screenWidth * 0.1),
                         lineHeight: Math.round(screenWidth * 0.11),
                         color: '#FDF3C0',
                       }}>
-                      Bennet
+                      {u.name.split(' ').slice(1).join(' ') || ''}
                     </Text>
                   </View>
                   {/* Awards Badge */}
                   <View className="items-center">
                     <View className="flex-row items-center gap-[4px]">
-                      {[1, 2, 3, 4].map((i) => (
+                      {Array.from({ length: u.awardsCount || 4 }, (_, i) => (
                         <Ionicons key={i} name="medal" size={Math.round(screenWidth * 0.035)} color="#FDF3C0" />
                       ))}
                     </View>
@@ -110,26 +122,26 @@ export default function ProfileScreen() {
                 <Text
                   style={{
                     fontFamily: wuzyFonts.body,
-                    fontSize: Math.round(screenWidth * 0.025),
-                    lineHeight: Math.round(screenWidth * 0.03),
+                    fontSize: Math.round(screenWidth * 0.022),
+                    lineHeight: Math.round(screenWidth * 0.05),
                     color: '#FFFFFF',
                   }}>
-                  Software engineer building high-performance systems with Go and OpenGL.
+                  {u.bio}
                 </Text>
               </View>
             </ImageBackground>
           </View>
 
           {/* 2. Tags Section */}
-          <View className="px-[10px] mt-[10px]">
+          <View className="px-[10px] mt-[4px]">
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={{ gap: 8, paddingBottom: 4 }}>
-              {TAGS.map((tag) => (
+              {u.tags.map((tag) => (
                 <Pressable
                   key={tag}
-                  className="items-center justify-center px-[26px] py-[8px] rounded-full"
+                  className="items-center justify-center px-[16px] py-[8px] rounded-full"
                   style={{
                     backgroundColor: '#171E28',
                     borderWidth: 1,
@@ -173,7 +185,7 @@ export default function ProfileScreen() {
                 gap: 2,
                 marginHorizontal: -2,
               }}>
-              {TIMELINE_IMAGES.map((img, index) => (
+              {u.photos.map((img, index) => (
                 <Image
                   key={index}
                   source={img}

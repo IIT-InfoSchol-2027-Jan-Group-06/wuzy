@@ -1,11 +1,14 @@
 import { ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 
 import { PostCard } from '@/components/postcard';
+import { GlassNavButton } from '@/components/GlassNavButton';
 import { posts } from '@/constants/feed-data';
 import { wuzyFonts } from '@/constants/wuzy-theme';
 
 export default function HomeScreen() {
+  const router = useRouter();
   return (
     <View className="flex-1 bg-wuzy-bg">
       <SafeAreaView edges={['top', 'bottom']} className="flex-1" style={{ backgroundColor: '#0A0F17' }}>
@@ -39,6 +42,11 @@ export default function HomeScreen() {
           </View>
         </ScrollView>
       </SafeAreaView>
+      <GlassNavButton
+        icon="add"
+        onPress={() => router.push('/test-button')}
+        className="absolute bottom-20 right-6 z-50"
+      />
     </View>
   );
 }

@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { wuzyFonts } from '@/constants/wuzy-theme';
 import type { UserProfile } from '@/constants/profile-data';
+import { TagSection } from '@/components/TagSection';
 
 type ProfileScreenProps = {
   user?: UserProfile | null;
@@ -133,32 +134,7 @@ export default function ProfileScreen({ user }: ProfileScreenProps) {
           </View>
 
           {/* 2. Tags Section */}
-          <View className="px-[10px] mt-[4px]">
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ gap: 8, paddingBottom: 4 }}>
-              {u.tags.map((tag) => (
-                <Pressable
-                  key={tag}
-                  className="items-center justify-center px-[16px] py-[8px] rounded-full"
-                  style={{
-                    backgroundColor: '#171E28',
-                    borderWidth: 1,
-                    borderColor: '#2B3545',
-                  }}>
-                  <Text
-                    style={{
-                      fontFamily: wuzyFonts.semibold,
-                      fontSize: Math.round(screenWidth * 0.022),
-                      color: '#FFFFFF',
-                    }}>
-                    {tag}
-                  </Text>
-                </Pressable>
-              ))}
-            </ScrollView>
-          </View>
+          <TagSection tags={u.tags} />
 
           {/* 3. Action Buttons - Glassmorphism */}
           <View className="flex-row items-center justify-center px-[24px] my-[20px]" style={{ gap: 12 }}>

@@ -288,3 +288,83 @@ const categories: CategoryFilterOption[] = [
 - **Full-width alignment**: Use `marginHorizontal: -16` to offset parent padding
 - **Content gap**: Add `mt-6` (24pt) between filter and filtered content
 - **Never** hardcode pill widths - they auto-size to text content
+
+---
+
+## TagSection Component
+
+### When to Use
+Use **`TagSection`** for any horizontal scrollable tag/pill list (user interests, skills, categories, filters). Do not create custom horizontal tag lists with ScrollView.
+
+### Import
+```tsx
+import { TagSection } from '@/components/TagSection';
+```
+
+### Props
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `tags` | `string[]` | Yes | Array of tag labels to display |
+| `onTagPress` | `(tag: string) => void` | No | Press handler for tag interaction |
+| `containerStyle` | `ViewStyle` | No | Custom styling for outer container |
+| `contentContainerStyle` | `ViewStyle` | No | Custom styling for ScrollView content |
+| `tagStyle` | `ViewStyle` | No | Custom styling for individual tag pill |
+| `textStyle` | `TextStyle` | No | Custom styling for tag text |
+| `renderTag` | `(tag: string, index: number) => ReactNode` | No | Custom render function for tag content |
+
+### Visual Specs (Fixed - Do Not Override)
+- **Container**: `paddingHorizontal: 10`, `marginTop: 4`
+- **ScrollView**: Horizontal, hidden scrollbar, `gap: 8`, `paddingBottom: 4`
+- **Pill**: `rounded-full`, `px-[16px] py-[8px]`
+- **Background**: `bg-[#171E28]` (surface)
+- **Border**: `border-[#2B3545]` (surfaceBorder), width 1
+- **Text**: `font-semibold`, responsive size `screenWidth * 0.022`, `text-white`
+- **Font Family**: `Poppins_600SemiBold` (matches `tag` token)
+
+### Usage Examples
+
+**Simple Tags:**
+```tsx
+<TagSection tags={['Music', 'Reading', 'Movie', 'Tech']} />
+```
+
+**With Press Handler:**
+```tsx
+<TagSection
+  tags={user.tags}
+  onTagPress={(tag) => console.log('Selected:', tag)}
+/>
+```
+
+**Custom Styling:**
+```tsx
+<TagSection
+  tags={tags}
+  containerStyle={{ marginTop: 24, marginHorizontal: 24 }}
+  contentContainerStyle={{ paddingHorizontal: 16 }}
+  tagStyle={{ backgroundColor: '#2A2B20', borderColor: '#FFE285' }}
+  textStyle={{ color: '#FFE285' }}
+/>
+```
+
+**Custom Render (e.g., with icons):**
+```tsx
+<TagSection
+  tags={tags}
+  renderTag={(tag) => (
+    <View className="flex-row items-center gap-2">
+      <Icon name={tag} size={14} color="#FFE285" />
+      <Text style={{ fontFamily: wuzyFonts.semibold, color: '#FFFFFF' }}>
+        {tag}
+      </Text>
+    </View>
+  )}
+/>
+```
+
+### Placement Guidelines
+- **Below hero/profile header**: `marginTop: 4` (4pt from content above)
+- **Horizontal padding**: Default `paddingHorizontal: 10` (override via `containerStyle`)
+- **Tag gap**: `8pt` between pills (override via `contentContainerStyle`)
+- **Responsive text**: Font size auto-scales with `screenWidth * 0.022`
+- **Never** hardcode pill widths - they auto-size to text content via `px-[16px]`

@@ -33,6 +33,8 @@ const categories = [
   { id: 'movie', label: 'Movie' },
   { id: 'tech', label: 'Tech' },
   { id: 'food', label: 'Food' },
+   { id: 'food', label: 'Food' },
+    { id: 'food', label: 'Food' },
 ];
 
 export default function ExploreScreen() {
@@ -66,7 +68,7 @@ export default function ExploreScreen() {
             options={categories}
             selectedId={selectedCategory}
             onSelect={setSelectedCategory}
-            containerStyle={{ marginTop: 16, marginHorizontal: -16 }}
+            containerStyle={{ marginTop: 16, marginHorizontal: -1 }}
           />
 
           <View className="mt-[25px] items-center">

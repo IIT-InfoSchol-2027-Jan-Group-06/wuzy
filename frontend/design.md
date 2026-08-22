@@ -152,3 +152,67 @@ const userData: UserProfile = await fetchUserProfile(userId);
 ```
 
 Falls back to mock data if no `user` prop provided.
+
+---
+
+## GlassNavButton Component
+
+### When to Use
+Use **`GlassNavButton`** for any circular glassmorphism action button across the app. Do not create custom circular buttons with similar styling.
+
+### Import
+```tsx
+import { GlassNavButton } from '@/components/GlassNavButton';
+```
+
+### Props
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `icon` | `ReactNode \| keyof Ionicons.glyphMap` | Yes | Icon name (e.g., `"add"`, `"arrow-back"`) or custom ReactNode |
+| `onPress` | `() => void` | Yes | Press handler (e.g., `router.push('/path')` or `router.back()`) |
+| `className` | `string` | No | Tailwind classes for positioning (e.g., `"absolute bottom-20 right-6 z-50"`) |
+
+### Visual Specs (Fixed - Do Not Override)
+- **Size**: Responsive `50/375 * screenWidth` (matches Navbar item size)
+- **Icon Size**: `48%` of button diameter
+- **Blur**: `intensity={40}`, `tint="dark"`
+- **Base Layer**: `rgba(84, 82, 56, 0.35)` (dark olive)
+- **Yellow Tint**: `rgba(244, 196, 0, 0.1)` (matches Navbar `#F4C400/10`)
+- **Gradients**: Diagonal white→transparent→dark + top highlight
+- **Borders**: Outer `white/30`, top `white/50`, bottom `black/30`
+- **Press Feedback**: `active:scale-95`
+
+### Usage Examples
+
+**Home FAB (bottom-right, above navbar):**
+```tsx
+<GlassNavButton
+  icon="add"
+  onPress={() => router.push('/create')}
+  className="absolute bottom-20 right-6 z-50"
+/>
+```
+
+**Back Button (top-left):**
+```tsx
+<GlassNavButton
+  icon="arrow-back"
+  onPress={() => router.back()}
+  className="absolute top-6 left-6 z-50"
+/>
+```
+
+**Custom Icon:**
+```tsx
+<GlassNavButton
+  icon={<CustomSvgIcon />}
+  onPress={handleAction}
+  className="absolute bottom-20 right-6 z-50"
+/>
+```
+
+### Placement Guidelines
+- **FAB positions**: `bottom-20 right-6` (clears navbar by ~20pt)
+- **Back buttons**: `top-6 left-6` (safe area handled by screen)
+- **Z-index**: Use `z-50` to sit above scroll content
+- **Never** hardcode pixel sizes - component handles responsive scaling

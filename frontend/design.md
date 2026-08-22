@@ -216,3 +216,75 @@ import { GlassNavButton } from '@/components/GlassNavButton';
 - **Back buttons**: `top-6 left-6` (safe area handled by screen)
 - **Z-index**: Use `z-50` to sit above scroll content
 - **Never** hardcode pixel sizes - component handles responsive scaling
+
+---
+
+## CategoryFilter Component
+
+### When to Use
+Use **`CategoryFilter`** for any horizontal pill-based category selector with built-in filtering. Do not create custom filter chips or horizontal scrollable category lists.
+
+### Import
+```tsx
+import { CategoryFilter } from '@/components/CategoryFilter';
+import type { CategoryFilterOption } from '@/components/CategoryFilter';
+```
+
+### Props
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `options` | `CategoryFilterOption[]` | Yes | Array of `{ id, label }` for filter pills |
+| `selectedId` | `string \| number` | Yes | Currently active category ID |
+| `onSelect` | `(id: string \| number) => void` | Yes | Selection change handler |
+| `containerStyle` | `ViewStyle` | No | Custom styling for scroll container |
+| `data` | `T[]` | No | Data array to filter (optional) |
+| `categoryKey` | `keyof T` | No | Property name to filter by (e.g., `"category"`) |
+| `renderItem` | `(item: T, index: number) => ReactNode` | No | Render function for filtered items |
+
+### Visual Specs (Fixed - Do Not Override)
+- **Container**: Horizontal `ScrollView`, hidden scrollbar, `px-4` padding, `gap-2.5`
+- **Pill Padding**: `px-5 py-2` (self-adjusting width)
+- **Shape**: `rounded-full`
+- **Active State**: `bg-[#FFE285]` solid yellow, `text-black`, `border-transparent`
+- **Inactive State**: `bg-[#2A2B20]/60` translucent olive, `border-[#FFE285]/40`, `text-[#FFE285]`
+- **Typography**: `font-semibold text-sm`
+- **Press Feedback**: `active:opacity-75`
+
+### Usage Examples
+
+**Standalone Filter (controlled externally):**
+```tsx
+const categories: CategoryFilterOption[] = [
+  { id: 'all', label: 'All' },
+  { id: 'music', label: 'Music' },
+  { id: 'sports', label: 'Sports' },
+  { id: 'movie', label: 'Movie' },
+];
+
+<CategoryFilter
+  options={categories}
+  selectedId={selectedCategory}
+  onSelect={setSelectedCategory}
+  containerStyle={{ marginTop: 16, marginHorizontal: -16 }}
+/>
+```
+
+**With Built-in Filtering:**
+```tsx
+<CategoryFilter<Event>
+  options={categories}
+  selectedId={selectedCategory}
+  onSelect={setSelectedCategory}
+  data={events}
+  categoryKey="category"
+  renderItem={(event) => (
+    <PostCard key={event.id} post={{...}} />
+  )}
+/>
+```
+
+### Placement Guidelines
+- **Below section headers**: `marginTop: 16` (16pt from previous content)
+- **Full-width alignment**: Use `marginHorizontal: -16` to offset parent padding
+- **Content gap**: Add `mt-6` (24pt) between filter and filtered content
+- **Never** hardcode pill widths - they auto-size to text content

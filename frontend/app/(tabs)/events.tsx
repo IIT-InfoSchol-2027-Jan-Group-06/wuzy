@@ -1,4 +1,5 @@
 import { Image, ScrollView, Text, View } from 'react-native';
+import { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
@@ -18,13 +19,25 @@ import {
   UrbanNightsFestivalCard,
   YeezusTourCard,
 } from '@/components/postcard';
+import { CategoryFilter } from '@/components/CategoryFilter';
 import { posts } from '@/constants/feed-data';
 import { wuzyColors, wuzyFonts } from '@/constants/wuzy-theme';
 
 const notification = require('@/assets/images/notification.png');
 const plus = require('@/assets/images/plus.png');
 
+const categories = [
+  { id: 'all', label: 'All' },
+  { id: 'music', label: 'Music' },
+  { id: 'reading', label: 'Reading' },
+  { id: 'movie', label: 'Movie' },
+  { id: 'tech', label: 'Tech' },
+  { id: 'food', label: 'Food' },
+];
+
 export default function ExploreScreen() {
+  const [selectedCategory, setSelectedCategory] = useState<string | number>('all');
+
   return (
     <View className="flex-1 bg-wuzy-bg">
       <SafeAreaView edges={['top', 'bottom']} className="flex-1" style={{ backgroundColor: '#0A0F17' }}>
@@ -48,6 +61,13 @@ export default function ExploreScreen() {
               Recent
             </Text>
           </View>
+
+          <CategoryFilter
+            options={categories}
+            selectedId={selectedCategory}
+            onSelect={setSelectedCategory}
+            containerStyle={{ marginTop: 16, marginHorizontal: -16 }}
+          />
 
           <View className="mt-[25px] items-center">
             <PostCard post={posts[0]} />

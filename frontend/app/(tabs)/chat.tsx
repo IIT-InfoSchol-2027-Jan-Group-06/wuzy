@@ -1,5 +1,5 @@
 import React from 'react';
-import { FlatList, Image, Text, View } from 'react-native';
+import { FlatList, Image, Text, View, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SearchIcon } from '@/components/ChatIcons';
 import { CategoryFilter } from '@/components/CategoryFilter';
@@ -31,7 +31,7 @@ export default function ChatScreen() {
           <CategoryFilter<ChatMessage>
             options={categoryOptions}
             selectedId={active}
-            onSelect={setActive}
+            onSelect={(id) => setActive(id as string)}
             containerStyle={{ paddingHorizontal: 0 }}
           />
         </View>

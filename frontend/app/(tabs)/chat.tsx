@@ -1,38 +1,104 @@
-import { ScrollView, Text, View } from 'react-native';
+import React from 'react';
+import { FlatList, Image, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { wuzyFonts } from '@/constants/wuzy-theme';
+import { SearchIcon } from '@/components/ChatIcons';
+import { chatMessages, CATEGORIES, type ChatMessage } from '@/constants/chat-data';
+import { wuzyColors, wuzyFonts } from '@/constants/wuzy-theme';
 
 export default function ChatScreen() {
+  const [active, setActive] = React.useState('All');
+
   return (
-    <View className="flex-1 bg-wuzy-bg">
-      <SafeAreaView edges={['top', 'bottom']} className="flex-1" style={{ backgroundColor: '#0A0F17' }}>
-        <View className="px-[32px] pt-[49px]">
-          <Text
-            className="text-[32px] leading-[32px] text-wuzy-yellow"
-            style={{ fontFamily: wuzyFonts.display }}>
-            Wuzy
-          </Text>
+    <View className="flex-1" style={{ backgroundColor: wuzyColors.bg }}>
+      <SafeAreaView edges={['top', 'bottom']} className="flex-1" style={{ backgroundColor: wuzyColors.bg }}>
+        <Text
+          className="text-center text-2xl pt-2 mt-[14px]"
+          style={{ color: wuzyColors.yellow, fontFamily: wuzyFonts.semibold }}>
+          Messages
+        </Text>
+
+        <View
+          className="flex-row items-center rounded-[20px] px-4 mx-[30px] mt-[19px] h-[41px]"
+          style={{ backgroundColor: wuzyColors.yellowDim }}>
+          <SearchIcon size={18} color={wuzyColors.white} />
         </View>
 
-        <ScrollView
-          className="flex-1"
-          contentContainerStyle={{ paddingBottom: 140 }}
-          showsVerticalScrollIndicator={false}>
-          <View className="px-[32px]">
-            <Text
-              className="mt-[16px] text-[16px] text-wuzy-yellow"
-              style={{ fontFamily: wuzyFonts.semibold }}>
-              Chat
-            </Text>
-          </View>
+        <View className="mt-[25px] flex-row px-[30px]">
+          {CATEGORIES.map((cat) => {
+            const selected = cat === active;
+            return (
+              <TouchableOpacity
+                key={cat}
+                onPress={() => setActive(cat)}
+                className={`mr-[10px] h-[27px] items-center justify-center rounded-[50px] px-3 ${
+                  selected ? 'bg-wuzy-yellow' : 'bg-wuzy-yellowDim'
+                }`}
+              >
+                <Text
+                  className="font-poppins text-[14px]"
+                  style={{
+                    fontFamily: wuzyFonts.semibold,
+                    color: selected ? wuzyColors.bg : wuzyColors.yellow,
+                  }}>
+                  {cat}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
 
-          <View className="mt-[25px] items-center">
-            <Text className="text-white" style={{ fontFamily: wuzyFonts.body }}>
-              Chat screen coming soon
-            </Text>
-          </View>
-        </ScrollView>
+        <FlatList
+          data={chatMessages}
+          keyExtractor={(item) => item.id}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingTop: 22, paddingBottom: 150 }}
+          renderItem={({ item }) => <MessageRow item={item} />}
+        />
+
+        <TouchableOpacity
+          activeOpacity={0.8}
+          className="absolute bottom-[96px] right-[67px] h-[45px] w-[45px] items-center justify-center rounded-full"
+          style={{ backgroundColor: wuzyColors.yellowDim }}>
+          <Image
+            source={require('@/assets/images/plus.png')}
+            className="h-[30px] w-[30px]"
+            resizeMode="contain"
+          />
+        </TouchableOpacity>
       </SafeAreaView>
     </View>
+  );
+}
+
+function MessageRow({ item }: { item: ChatMessage }) {
+  return (
+    <TouchableOpacity className="h-[60px] flex-row items-center px-[30px] py-[10px]">
+      <View className="h-10 w-10 rounded-full items-center justify-center" style={{ borderWidth: 1, borderColor: wuzyColors.yellow }}>
+        <Image source={item.avatar} className="h-10 w-10 rounded-full" />
+      </View>
+      <View className="ml-3 flex-1">
+        <Text
+          className="text-[13px] leading-[19.5px] text-white"
+          style={{ fontFamily: wuzyFonts.semibold }}>
+          {item.name}
+        </Text>
+        <View className="flex-row items-center">
+          <Text
+            numberOfLines={1}
+            className="flex-1 text-[13px] leading-[19.5px] text-white"
+            style={{ fontFamily: wuzyFonts.semibold }}>
+            {item.preview}
+          </Text>
+          <Text
+            className="text-[14px] leading-[21px]"
+            style={{ fontFamily: wuzyFonts.semibold, color: wuzyColors.gray }}>
+            {item.time}
+          </Text>
+        </View>
+      </View>
+      {item.unread && (
+        <View className="ml-2 h-2.5 w-2.5 rounded-full" style={{ backgroundColor: wuzyColors.yellow }} />
+      )}
+    </TouchableOpacity>
   );
 }

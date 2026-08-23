@@ -1,10 +1,11 @@
 import React from 'react';
-import { FlatList, Image, ScrollView, Text, TouchableOpacity, View, useWindowDimensions, StyleSheet } from 'react-native';
+import { FlatList, Image, Text, TouchableOpacity, View, useWindowDimensions, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Svg, Path } from 'react-native-svg';
 import { SearchIcon } from '@/components/ChatIcons';
+import { CategoryFilter } from '@/components/CategoryFilter';
 import { chatMessages, CATEGORIES, type ChatMessage } from '@/constants/chat-data';
 import { wuzyColors, wuzyFonts } from '@/constants/wuzy-theme';
 
@@ -19,6 +20,8 @@ export default function ChatScreen() {
   const navHeight = Math.round(navWidth * (50 / 290));
   const iconSize = Math.round(navHeight * 0.52);
   const buttonSize = Math.round(navHeight * 0.8);
+
+  const categoryOptions = CATEGORIES.map((c) => ({ id: c, label: c }));
 
   return (
     <View className="flex-1" style={{ backgroundColor: wuzyColors.bg }}>
@@ -36,8 +39,8 @@ export default function ChatScreen() {
         </View>
 
         <View className="mt-[25px] px-[30px]">
-          <CategoryFilter
-            options={CATEGORIES.map((c) => ({ id: c, label: c }))}
+          <CategoryFilter<ChatMessage>
+            options={categoryOptions}
             selectedId={active}
             onSelect={setActive}
             containerStyle={{ paddingHorizontal: 0 }}
@@ -70,47 +73,6 @@ export default function ChatScreen() {
           buttonSize={buttonSize}
         />
       </SafeAreaView>
-    </View>
-  );
-}
-
-function CategoryFilter({
-  options,
-  selectedId,
-  onSelect,
-  containerStyle,
-}: {
-  options: { id: string; label: string }[];
-  selectedId: string;
-  onSelect: (id: string) => void;
-  containerStyle?: React.CSSProperties;
-}) {
-  return (
-    <View style={containerStyle}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 0, gap: 10 }}>
-        {options.map((option) => {
-          const isSelected = option.id === selectedId;
-          return (
-            <TouchableOpacity
-              key={option.id}
-              onPress={() => onSelect(option.id)}
-              className={`rounded-[50px] h-[27px] items-center justify-center px-3 active:opacity-75 ${
-                isSelected
-                  ? 'bg-wuzy-yellow border-transparent'
-                  : 'bg-wuzy-yellowDim border border-wuzy-yellow/40'
-              }`}>
-              <Text
-                className={`text-[14px] ${isSelected ? 'text-wuzy-bg' : 'text-wuzy-yellow'}`}
-                style={{ fontFamily: wuzyFonts.semibold }}>
-                {option.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
     </View>
   );
 }

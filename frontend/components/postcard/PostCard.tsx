@@ -4,7 +4,7 @@ import { Image, StyleProp, Text, useWindowDimensions, View, ViewStyle } from 're
 
 import { Post } from '@/constants/feed-data';
 import { wuzyFonts } from '@/constants/wuzy-theme';
-import { Avatar, CardShell } from './Shared';
+import { Avatar, CardShell } from './shared';
 
 type PostCardProps = {
   post: Post;

@@ -5,7 +5,7 @@ import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 
 import { wuzyFonts } from '@/constants/wuzy-theme';
-import type { UserProfile } from '@/constants/profile-data';
+import { mockUserProfile, type UserProfile } from '@/constants/profile-data';
 import { TagSection } from '@/components/TagSection';
 
 type ProfileScreenProps = {
@@ -19,25 +19,7 @@ export default function ProfileScreen({ user }: ProfileScreenProps) {
   const btnHeight = Math.round(screenWidth * 0.092);
   const fontSize = Math.round(screenWidth * 0.022);
 
-  // Use provided user or fallback to mock
-  const u = user ?? {
-    name: 'Ludwig Bennet',
-    bio: 'Software engineer building high-performance systems with Go and OpenGL.',
-    backgroundImage: require('@/assets/images/event1.png'),
-    tags: ['Music', 'Reading', 'Movie', 'Tech', 'Reading', 'Movie', 'Tech'],
-    awardsCount: 4,
-    photos: [
-      require('@/assets/images/post1.png'),
-      require('@/assets/images/post2.png'),
-      require('@/assets/images/post3.png'),
-      require('@/assets/images/post4.png'),
-      require('@/assets/images/event1.png'),
-      require('@/assets/images/event2.png'),
-      require('@/assets/images/event3.png'),
-      require('@/assets/images/event4.png'),
-      require('@/assets/images/event5.png'),
-    ],
-  } as UserProfile;
+  const u = user ?? mockUserProfile;
 
   const GlassButton = ({ label }: { label: string }) => (
     <Pressable className="rounded-full overflow-hidden" style={{ width: btnWidth, height: btnHeight }}>

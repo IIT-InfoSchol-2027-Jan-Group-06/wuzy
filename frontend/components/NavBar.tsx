@@ -35,6 +35,7 @@ export function NavBar({ active = 'home', onItemPress }: NavBarProps) {
           tint="dark"
           experimentalBlurMethod="dimezisBlurView"
           style={StyleSheet.absoluteFill}
+          pointerEvents="none"
         />
         <View className="flex-1 flex-row items-center justify-between px-6">
           {NAV_ITEMS.map((item) => {

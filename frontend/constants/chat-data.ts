@@ -7,6 +7,7 @@ export type ChatMessage = {
   time: string;
   avatar: number;
   unread: boolean;
+  category?: 'community' | 'group';
 };
 
 export const chatMessages: ChatMessage[] = [
@@ -17,6 +18,7 @@ export const chatMessages: ChatMessage[] = [
     time: '.1d',
     avatar: require('@/assets/images/avatar1.png'),
     unread: true,
+    category: 'community',
   },
   {
     id: '2',
@@ -32,7 +34,8 @@ export const chatMessages: ChatMessage[] = [
     preview: 'Come join us',
     time: '.1d',
     avatar: require('@/assets/images/avatar3.png'),
-    unread: true,
+    unread: false,
+    category: 'group',
   },
   {
     id: '4',
@@ -40,7 +43,7 @@ export const chatMessages: ChatMessage[] = [
     preview: 'Be a fun teammate!',
     time: '.1d',
     avatar: require('@/assets/images/avatar4.png'),
-    unread: true,
+    unread: false,
   },
   {
     id: '5',
@@ -49,6 +52,7 @@ export const chatMessages: ChatMessage[] = [
     time: '.1d',
     avatar: require('@/assets/images/avatar5.png'),
     unread: true,
+    category: 'group',
   },
   {
     id: '6',
@@ -56,7 +60,8 @@ export const chatMessages: ChatMessage[] = [
     preview: 'Just do it bro, wht to lose',
     time: '.1d',
     avatar: require('@/assets/images/avatar6.png'),
-    unread: true,
+    unread: false,
+    category: 'community',
   },
   {
     id: '7',
@@ -64,7 +69,7 @@ export const chatMessages: ChatMessage[] = [
     preview: 'Game at 5!',
     time: '.1d',
     avatar: require('@/assets/images/avatar7.png'),
-    unread: true,
+    unread: false,
   },
 ];
 

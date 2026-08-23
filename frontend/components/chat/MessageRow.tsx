@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image, Text, TouchableOpacity, View } from 'react-native';
+import { Image, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import type { ChatMessage } from '@/constants/chat-data';
 import { wuzyColors, wuzyFonts } from '@/constants/wuzy-theme';
 
@@ -10,37 +10,93 @@ type MessageRowProps = {
 };
 
 export function MessageRow({ item, onPress, showUnread = true }: MessageRowProps) {
+  const { width: screenWidth } = useWindowDimensions();
+  const scale = screenWidth / 375;
+
+  const avatarSize = Math.round(40 * scale);
+  const horizontalPadding = Math.round(30 * scale);  // Figma: 30px
+  const verticalPadding = Math.round(10 * scale);
+  const gap = Math.round(12 * scale);
+  const nameSize = Math.round(13 * scale);
+  const previewSize = Math.round(13 * scale);
+  const timeSize = Math.round(14 * scale);
+  const unreadDotSize = Math.round(10 * scale);
+  const borderWidth = Math.max(1, Math.round(1 * scale));
+  const unreadDotRightOffset = Math.round(19 * scale); // Figma: 19px from row right edge
+
   return (
     <TouchableOpacity
-      className="h-[60px] flex-row items-center px-[30px] py-[10px]"
+      style={{
+        height: Math.round(60 * scale),
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: horizontalPadding,
+        paddingVertical: verticalPadding,
+      }}
       onPress={onPress}
       activeOpacity={0.7}
     >
-      <View className="h-10 w-10 rounded-full items-center justify-center" style={{ borderWidth: 1, borderColor: wuzyColors.yellow }}>
-        <Image source={item.avatar} className="h-10 w-10 rounded-full" />
+      <View
+        style={{
+          width: avatarSize,
+          height: avatarSize,
+          borderRadius: avatarSize / 2,
+          borderWidth,
+          borderColor: wuzyColors.yellow,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+        <Image
+          source={item.avatar}
+          style={{ width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 }}
+        />
       </View>
-      <View className="ml-3 flex-1">
+      <View style={{ marginLeft: gap, flex: 1 }}>
         <Text
-          className="text-[13px] leading-[19.5px] text-white"
-          style={{ fontFamily: wuzyFonts.semibold }}>
+          style={{
+            fontSize: nameSize,
+            lineHeight: Math.round(nameSize * 1.5),
+            color: wuzyColors.white,
+            fontFamily: wuzyFonts.semibold,
+          }}>
           {item.name}
         </Text>
-        <View className="flex-row items-center">
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <Text
             numberOfLines={1}
-            className="flex-1 text-[13px] leading-[19.5px] text-white"
-            style={{ fontFamily: wuzyFonts.semibold }}>
+            style={{
+              flex: 1,
+              fontSize: previewSize,
+              lineHeight: Math.round(previewSize * 1.5),
+              color: wuzyColors.white,
+              fontFamily: wuzyFonts.semibold,
+            }}>
             {item.preview}
           </Text>
           <Text
-            className="text-[14px] leading-[21px]"
-            style={{ fontFamily: wuzyFonts.semibold, color: wuzyColors.gray }}>
+            style={{
+              fontSize: timeSize,
+              lineHeight: Math.round(timeSize * 1.5),
+              color: wuzyColors.gray,
+              fontFamily: wuzyFonts.semibold,
+            }}>
             {item.time}
           </Text>
         </View>
       </View>
       {showUnread && item.unread && (
-        <View className="ml-2 h-2.5 w-2.5 rounded-full" style={{ backgroundColor: wuzyColors.yellow }} />
+        <View
+          style={{
+            position: 'absolute',
+            right: Math.round(19 * scale), // Figma: 19px from row right edge
+            top: '50%',
+            marginTop: -unreadDotSize / 2,
+            width: unreadDotSize,
+            height: unreadDotSize,
+            borderRadius: unreadDotSize / 2,
+            backgroundColor: wuzyColors.yellow,
+          }}
+        />
       )}
     </TouchableOpacity>
   );

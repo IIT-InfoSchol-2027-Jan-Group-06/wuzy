@@ -37,9 +37,10 @@ export function CategoryFilter<T>({
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={[
-          { paddingHorizontal: 16, gap: 10 },
+          { paddingHorizontal: 16, gap: 10, paddingRight: 16 },
           containerStyle,
         ]}
+        decelerationRate="fast"
       >
         {options.map((option) => {
           const isSelected = option.id === selectedId;

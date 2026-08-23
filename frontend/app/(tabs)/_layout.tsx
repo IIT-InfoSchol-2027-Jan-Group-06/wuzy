@@ -11,14 +11,14 @@ export default function TabLayout() {
 
   const routes = {
     home: '/home',
-    events: '/events',
+    events: '/explore',
     awards: '/awards',
     chat: '/chat',
     profile: '/profile',
   } as const;
 
   useEffect(() => {
-    if (href?.includes('events')) setActiveTab('events');
+    if (href?.includes('explore')) setActiveTab('events');
     else if (href?.includes('awards')) setActiveTab('awards');
     else if (href?.includes('chat')) setActiveTab('chat');
     else if (href?.includes('profile')) setActiveTab('profile');
@@ -33,7 +33,7 @@ export default function TabLayout() {
     }
   };
 
-  const isOnNotifications = segments.includes('notifications');
+  const isOnNotifications = segments.some((s) => s === 'notifications');
 
   return (
     <Tabs

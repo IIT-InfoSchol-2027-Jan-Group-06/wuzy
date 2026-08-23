@@ -1,8 +1,9 @@
 import React from 'react';
-import { FlatList, Image, Text, View, StyleSheet } from 'react-native';
+import { FlatList, Image, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SearchIcon } from '@/components/ChatIcons';
 import { CategoryFilter } from '@/components/CategoryFilter';
+import { MessageRow } from '@/components/chat/MessageRow';
 import { chatMessages, CATEGORIES, type ChatMessage } from '@/constants/chat-data';
 import { wuzyColors, wuzyFonts } from '@/constants/wuzy-theme';
 
@@ -43,7 +44,7 @@ export default function ChatScreen() {
           renderItem={({ item }) => <MessageRow item={item} />}
         />
 
-        <TouchableOpacity
+<TouchableOpacity
           activeOpacity={0.8}
           className="absolute bottom-[70px] right-[67px] h-[45px] w-[45px] items-center justify-center rounded-full"
           style={{ backgroundColor: wuzyColors.yellowDim }}>
@@ -55,38 +56,5 @@ export default function ChatScreen() {
         </TouchableOpacity>
       </SafeAreaView>
     </View>
-  );
-}
-
-function MessageRow({ item }: { item: ChatMessage }) {
-  return (
-    <TouchableOpacity className="h-[60px] flex-row items-center px-[30px] py-[10px]">
-      <View className="h-10 w-10 rounded-full items-center justify-center" style={{ borderWidth: 1, borderColor: wuzyColors.yellow }}>
-        <Image source={item.avatar} className="h-10 w-10 rounded-full" />
-      </View>
-      <View className="ml-3 flex-1">
-        <Text
-          className="text-[13px] leading-[19.5px] text-white"
-          style={{ fontFamily: wuzyFonts.semibold }}>
-          {item.name}
-        </Text>
-        <View className="flex-row items-center">
-          <Text
-            numberOfLines={1}
-            className="flex-1 text-[13px] leading-[19.5px] text-white"
-            style={{ fontFamily: wuzyFonts.semibold }}>
-            {item.preview}
-          </Text>
-          <Text
-            className="text-[14px] leading-[21px]"
-            style={{ fontFamily: wuzyFonts.semibold, color: wuzyColors.gray }}>
-            {item.time}
-          </Text>
-        </View>
-      </View>
-      {item.unread && (
-        <View className="ml-2 h-2.5 w-2.5 rounded-full" style={{ backgroundColor: wuzyColors.yellow }} />
-      )}
-    </TouchableOpacity>
   );
 }

@@ -1,6 +1,6 @@
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Image } from 'expo-image';
 
 import { PostCard } from '@/components/postcard';
@@ -10,6 +10,17 @@ import { wuzyFonts } from '@/constants/wuzy-theme';
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { href } = useLocalSearchParams();
+  const isOnNotifications = href?.includes('notifications');
+
+  const handleNotificationPress = () => {
+    if (isOnNotifications) {
+      router.back();
+    } else {
+      router.push('/home/notifications');
+    }
+  };
+
   return (
     <View className="flex-1 bg-wuzy-bg">
       <SafeAreaView edges={['top', 'bottom']} className="flex-1" style={{ backgroundColor: '#0A0F17' }}>
@@ -22,7 +33,7 @@ export default function HomeScreen() {
           </Text>
           <Pressable
             className="h-[40px] w-[40px] items-center justify-center rounded-full active:opacity-75"
-            onPress={() => router.push('/notifications')}>
+            onPress={handleNotificationPress}>
             <Image
               source={require('@/assets/icons/bell.svg')}
               style={{ width: 17.5, height: 20 }}

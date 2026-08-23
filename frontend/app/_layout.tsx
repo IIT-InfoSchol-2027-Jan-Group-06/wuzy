@@ -44,7 +44,6 @@ export default function RootLayout() {
       <View style={{ flex: 1, backgroundColor: '#0A0F17' }}>
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="notifications" options={{ headerShown: false }} />
         </Stack>
         <StatusBar style="auto" />
       </View>

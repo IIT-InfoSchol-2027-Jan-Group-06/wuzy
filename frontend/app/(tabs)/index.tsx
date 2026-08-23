@@ -1,6 +1,7 @@
-import { ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { Image } from 'expo-image';
 
 import { PostCard } from '@/components/postcard';
 import { GlassNavButton } from '@/components/GlassNavButton';
@@ -13,12 +14,21 @@ export default function HomeScreen() {
     <View className="flex-1 bg-wuzy-bg">
       <SafeAreaView edges={['top', 'bottom']} className="flex-1" style={{ backgroundColor: '#0A0F17' }}>
         {/* Fixed "Wuzy" header that stays in place while the feed scrolls */}
-        <View className="px-[32px] pt-[49px]">
+        <View className="flex-row items-center justify-between px-[32px] pt-[49px]">
           <Text
             className="text-[32px] leading-[32px] text-wuzy-yellow"
             style={{ fontFamily: wuzyFonts.display }}>
             Wuzy
           </Text>
+          <Pressable
+            className="h-[40px] w-[40px] items-center justify-center rounded-full active:opacity-75"
+            onPress={() => router.push('/notifications')}>
+            <Image
+              source={require('@/assets/icons/bell.svg')}
+              style={{ width: 17.5, height: 20 }}
+              contentFit="contain"
+            />
+          </Pressable>
         </View>
 
         <ScrollView

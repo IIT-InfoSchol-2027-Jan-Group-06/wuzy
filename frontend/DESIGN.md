@@ -378,8 +378,29 @@ import { TagSection } from '@/components/TagSection';
 Route `/notifications` (outside tabs, pushed over the tab bar) renders `components/NotificationFeed.tsx`. Entry point: bell button in the home header.
 
 ### Header
-- Back button: `GlassNavButton` with `icon="arrow-back"`, inline at the left of the header row, `size={(42 / 375) * screenWidth}` (slightly smaller than the default FAB size)
-- Title: "Notifications", `BebasNeue_400Regular`, ratio `0.061`, color `primary` (`#FFE783`), centered against the back button with an equal-width spacer
+`<ScreenHeader title="Notifications" />` (shared component, below).
+
+---
+
+## ScreenHeader Component
+
+### When to Use
+Use **`ScreenHeader`** at the top of any pushed (non-tab) screen: back button on the left, centered title. Do not rebuild back+title headers per screen.
+
+### Import
+```tsx
+import { ScreenHeader } from '@/components/ScreenHeader';
+```
+
+### Props
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `title` | `string` | Yes | Screen title |
+
+### Visual Specs (Fixed - Do Not Override)
+- Back button: `GlassNavButton` with `icon="arrow-back"`, `size={(42 / 375) * screenWidth}`, calls `router.back()`
+- Title: `BebasNeue_400Regular`, ratio `0.061`, color `primary` (`#FFE783`), centered against the back button with an equal-width spacer
+- Padding: `px-[32px] pt-[49px]` (matches tab screens; place inside a top-edge `SafeAreaView`)
 
 ### Filters
 `CategoryFilter` with All / Events / Requests, `containerStyle={{ marginTop: 16, marginHorizontal: 16 }}`. The 16px margin plus the component's internal 16px padding puts the first pill on the screen's 32px left edge, aligned with the back button, section headers, and avatars.
@@ -389,14 +410,34 @@ Route `/notifications` (outside tabs, pushed over the tab bar) renders `componen
 |---------|------|
 | Section header ("New", "Past") | `Poppins_600SemiBold`, ratio `0.041`, `#FFE783`, `12px` bottom margin |
 | Section gap | `24px` |
-| Avatar | `48px` circle |
-| Row gap (avatar to text) | `13px` |
 | Gap between rows | `10px` |
-| Label ("New friend") | `Poppins_500Medium`, `15px`, `#999999` |
-| Name | `Poppins_500Medium`, `15px`, `#FFFFFF`, inline after label |
-| Timestamp | `Poppins_500Medium`, `12px`, `#858585`, under the label |
 
-Dummy data lives in `constants/notification-data.ts` (`Notification` interface).
+Rows are rendered with the shared `UserRow` component (below). Dummy data lives in `constants/notification-data.ts` (`Notification` interface).
+
+---
+
+## UserRow Component
+
+### When to Use
+Use **`UserRow`** for any compact user list row: avatar + name + optional gray label and timestamp. Notification rows use it now; chat list rows should reuse it. Do not rebuild lookalike rows.
+
+### Import
+```tsx
+import { UserRow } from '@/components/UserRow';
+```
+
+### Props
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `avatar` | `ImageSourcePropType` | Yes | User photo, rendered as a `48px` circle |
+| `name` | `string` | Yes | White, `Poppins_500Medium`, `15px` |
+| `label` | `string` | No | Gray (`#999999`) prefix before the name, same font/size |
+| `timestamp` | `string` | No | `Poppins_500Medium`, `12px`, `#858585`, under the label line |
+
+### Visual Specs (Fixed - Do Not Override)
+- Avatar: `48px` circle, `resizeMode="cover"`
+- Gap avatar to text: `13px`
+- No press handling; wrap in a `Pressable` at the call site when a screen needs it
 
 ### Home header bell
 - `40x40` round `Pressable`, `active:opacity-75`, right side of the `Wuzy` header row

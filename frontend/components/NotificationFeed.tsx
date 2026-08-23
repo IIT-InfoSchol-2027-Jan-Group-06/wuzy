@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { Image, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import { ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
 
 import { CategoryFilter } from '@/components/CategoryFilter';
-import { GlassNavButton } from '@/components/GlassNavButton';
+import { ScreenHeader } from '@/components/ScreenHeader';
+import { UserRow } from '@/components/UserRow';
 import { notifications, type Notification } from '@/constants/notification-data';
 import { wuzyFonts } from '@/constants/wuzy-theme';
 
@@ -20,10 +20,8 @@ const groups: { key: Notification['group']; title: string }[] = [
 ];
 
 export function NotificationFeed() {
-  const router = useRouter();
   const { width: screenWidth } = useWindowDimensions();
   const [selectedCategory, setSelectedCategory] = useState<string | number>('all');
-  const backButtonSize = Math.round((42 / 375) * screenWidth);
 
   const visible =
     selectedCategory === 'all'
@@ -37,18 +35,7 @@ export function NotificationFeed() {
           className="flex-1"
           contentContainerStyle={{ paddingBottom: 140 }}
           showsVerticalScrollIndicator={false}>
-          <View className="px-[32px] pt-[49px]">
-            <View className="flex-row items-center">
-              <GlassNavButton icon="arrow-back" size={backButtonSize} onPress={() => router.back()} />
-              <Text
-                className="flex-1 text-center text-wuzy-yellow"
-                style={{ fontFamily: wuzyFonts.display, fontSize: Math.round(screenWidth * 0.061) }}>
-                Notifications
-              </Text>
-              {/* spacer keeps the title centered against the back button */}
-              <View style={{ width: backButtonSize }} />
-            </View>
-          </View>
+          <ScreenHeader title="Notifications" />
 
           <CategoryFilter
             options={categories}
@@ -70,22 +57,13 @@ export function NotificationFeed() {
                   </Text>
                   <View className="gap-[10px]">
                     {items.map((n) => (
-                      <View key={n.id} className="flex-row items-center gap-[13px]">
-                        <Image
-                          source={n.avatar}
-                          style={{ width: 48, height: 48, borderRadius: 24 }}
-                          resizeMode="cover"
-                        />
-                        <View>
-                          <Text style={{ fontFamily: wuzyFonts.medium, fontSize: 15, color: '#999999' }}>
-                            {n.label}{'  '}
-                            <Text style={{ color: '#FFFFFF' }}>{n.name}</Text>
-                          </Text>
-                          <Text style={{ fontFamily: wuzyFonts.medium, fontSize: 12, color: '#858585' }}>
-                            {n.timestamp}
-                          </Text>
-                        </View>
-                      </View>
+                      <UserRow
+                        key={n.id}
+                        avatar={n.avatar}
+                        name={n.name}
+                        label={n.label}
+                        timestamp={n.timestamp}
+                      />
                     ))}
                   </View>
                 </View>

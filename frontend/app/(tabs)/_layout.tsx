@@ -1,16 +1,16 @@
-import { Tabs } from 'expo-router';
+import { Tabs, useRouter, useLocalSearchParams, useSegments } from 'expo-router';
 import { NavBar } from '@/components/NavBar';
-import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useState, useEffect } from 'react';
 import type { NavBarItem } from '@/components/NavBar';
 
 export default function TabLayout() {
   const router = useRouter();
   const { href } = useLocalSearchParams();
+  const segments = useSegments();
   const [activeTab, setActiveTab] = useState<'home' | 'events' | 'awards' | 'chat' | 'profile'>('home');
 
   const routes = {
-    home: '/',
+    home: '/home',
     events: '/events',
     awards: '/awards',
     chat: '/chat',
@@ -27,20 +27,20 @@ export default function TabLayout() {
 
   const handlePress = (item: NavBarItem) => {
     const key = item as keyof typeof routes;
-    if (key in routes) {
+    if (key in routes && key !== activeTab) {
       setActiveTab(key as 'home' | 'events' | 'awards' | 'chat' | 'profile');
       router.push(routes[key]);
     }
   };
 
+  const isOnNotifications = segments.includes('notifications');
+
   return (
     <Tabs
       screenOptions={{ headerShown: false }}
-      tabBar={() => (
-        <NavBar active={activeTab} onItemPress={handlePress} />
-      )}
+      tabBar={() => isOnNotifications ? null : <NavBar active={activeTab} onItemPress={handlePress} />}
     >
-      <Tabs.Screen name="index" />
+      <Tabs.Screen name="home" />
       <Tabs.Screen name="events" />
       <Tabs.Screen name="awards" />
       <Tabs.Screen name="chat" />

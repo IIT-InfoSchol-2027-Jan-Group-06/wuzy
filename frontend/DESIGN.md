@@ -171,6 +171,7 @@ import { GlassNavButton } from '@/components/GlassNavButton';
 | `icon` | `ReactNode \| keyof Ionicons.glyphMap` | Yes | Icon name (e.g., `"add"`, `"arrow-back"`) or custom ReactNode |
 | `onPress` | `() => void` | Yes | Press handler (e.g., `router.push('/path')` or `router.back()`) |
 | `className` | `string` | No | Tailwind classes for positioning (e.g., `"absolute bottom-20 right-6 z-50"`) |
+| `size` | `number` | No | Diameter override in px. Omit for the default responsive size; when overriding, derive from screen width (e.g. `(42 / 375) * screenWidth`), never a hardcoded constant |
 
 ### Visual Specs (Fixed - Do Not Override)
 - **Size**: Responsive `50/375 * screenWidth` (matches Navbar item size)
@@ -368,3 +369,77 @@ import { TagSection } from '@/components/TagSection';
 - **Tag gap**: `8pt` between pills (override via `contentContainerStyle`)
 - **Responsive text**: Font size auto-scales with `screenWidth * 0.022`
 - **Never** hardcode pill widths - they auto-size to text content via `px-[16px]`
+
+---
+
+## Notification Screen
+
+### Structure
+The screen lives at `app/notifications.tsx` (outside tabs, pushed over the tab bar). Entry point: bell button in the home header.
+
+### Header
+`<ScreenHeader title="Notifications" />` (shared component, below).
+
+---
+
+## ScreenHeader Component
+
+### When to Use
+Use **`ScreenHeader`** at the top of any pushed (non-tab) screen: back button on the left, centered title. Do not rebuild back+title headers per screen.
+
+### Import
+```tsx
+import { ScreenHeader } from '@/components/ScreenHeader';
+```
+
+### Props
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `title` | `string` | Yes | Screen title |
+
+### Visual Specs (Fixed - Do Not Override)
+- Back button: `GlassNavButton` with `icon="arrow-back"`, `size={(42 / 375) * screenWidth}`, calls `router.back()`
+- Title: `BebasNeue_400Regular`, ratio `0.061`, color `primary` (`#FFE783`), centered against the back button with an equal-width spacer
+- Padding: `px-[32px] pt-[49px]` (matches tab screens; place inside a top-edge `SafeAreaView`)
+
+### Filters
+`CategoryFilter` with All / Events / Requests, `containerStyle={{ marginTop: 16, marginHorizontal: 16 }}`. The 16px margin plus the component's internal 16px padding puts the first pill on the screen's 32px left edge, aligned with the back button, section headers, and avatars.
+
+### Sections and rows
+| Element | Spec |
+|---------|------|
+| Section header ("New", "Past") | `Poppins_600SemiBold`, ratio `0.041`, `#FFE783`, `12px` bottom margin |
+| Section gap | `24px` |
+| Gap between rows | `10px` |
+
+Rows are rendered with the shared `UserRow` component (below). Dummy data lives in `constants/notification-data.ts` (`Notification` interface).
+
+---
+
+## UserRow Component
+
+### When to Use
+Use **`UserRow`** for any compact user list row: avatar + name + optional gray label and timestamp. Notification rows use it now; chat list rows should reuse it. Do not rebuild lookalike rows.
+
+### Import
+```tsx
+import { UserRow } from '@/components/UserRow';
+```
+
+### Props
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `avatar` | `ImageSourcePropType` | Yes | User photo, rendered as a `48px` circle |
+| `name` | `string` | Yes | White, `Poppins_500Medium`, `15px` |
+| `label` | `string` | No | Gray (`#999999`) prefix before the name, same font/size |
+| `timestamp` | `string` | No | `Poppins_500Medium`, `12px`, `#858585`, under the label line |
+
+### Visual Specs (Fixed - Do Not Override)
+- Avatar: `48px` circle, `resizeMode="cover"`
+- Gap avatar to text: `13px`
+- No press handling; wrap in a `Pressable` at the call site when a screen needs it
+
+### Home header bell
+- `40x40` round `Pressable`, `active:opacity-75`, right side of the `Wuzy` header row
+- Icon: `assets/icons/bell.svg` (outline bell extracted from Figma, no fill), rendered at `17.5x20` via `expo-image` with `contentFit="contain"`
+- Icon SVGs extracted from Figma live in `assets/icons/`

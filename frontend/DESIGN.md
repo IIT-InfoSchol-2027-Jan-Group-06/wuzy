@@ -171,6 +171,7 @@ import { GlassNavButton } from '@/components/GlassNavButton';
 | `icon` | `ReactNode \| keyof Ionicons.glyphMap` | Yes | Icon name (e.g., `"add"`, `"arrow-back"`) or custom ReactNode |
 | `onPress` | `() => void` | Yes | Press handler (e.g., `router.push('/path')` or `router.back()`) |
 | `className` | `string` | No | Tailwind classes for positioning (e.g., `"absolute bottom-20 right-6 z-50"`) |
+| `size` | `number` | No | Diameter override in px. Omit for the default responsive size; when overriding, derive from screen width (e.g. `(42 / 375) * screenWidth`), never a hardcoded constant |
 
 ### Visual Specs (Fixed - Do Not Override)
 - **Size**: Responsive `50/375 * screenWidth` (matches Navbar item size)
@@ -368,3 +369,36 @@ import { TagSection } from '@/components/TagSection';
 - **Tag gap**: `8pt` between pills (override via `contentContainerStyle`)
 - **Responsive text**: Font size auto-scales with `screenWidth * 0.022`
 - **Never** hardcode pill widths - they auto-size to text content via `px-[16px]`
+
+---
+
+## Notification Screen (`NotificationFeed`)
+
+### Structure
+Route `/notifications` (outside tabs, pushed over the tab bar) renders `components/NotificationFeed.tsx`. Entry point: bell button in the home header.
+
+### Header
+- Back button: `GlassNavButton` with `icon="arrow-back"`, inline at the left of the header row, `size={(42 / 375) * screenWidth}` (slightly smaller than the default FAB size)
+- Title: "Notifications", `BebasNeue_400Regular`, ratio `0.061`, color `primary` (`#FFE783`), centered against the back button with an equal-width spacer
+
+### Filters
+`CategoryFilter` with All / Events / Requests, `containerStyle={{ marginTop: 16, marginHorizontal: 16 }}`. The 16px margin plus the component's internal 16px padding puts the first pill on the screen's 32px left edge, aligned with the back button, section headers, and avatars.
+
+### Sections and rows
+| Element | Spec |
+|---------|------|
+| Section header ("New", "Past") | `Poppins_600SemiBold`, ratio `0.041`, `#FFE783`, `12px` bottom margin |
+| Section gap | `24px` |
+| Avatar | `48px` circle |
+| Row gap (avatar to text) | `13px` |
+| Gap between rows | `10px` |
+| Label ("New friend") | `Poppins_500Medium`, `15px`, `#999999` |
+| Name | `Poppins_500Medium`, `15px`, `#FFFFFF`, inline after label |
+| Timestamp | `Poppins_500Medium`, `12px`, `#858585`, under the label |
+
+Dummy data lives in `constants/notification-data.ts` (`Notification` interface).
+
+### Home header bell
+- `40x40` round `Pressable`, `active:opacity-75`, right side of the `Wuzy` header row
+- Icon: `assets/icons/bell.svg` (outline bell extracted from Figma, no fill), rendered at `17.5x20` via `expo-image` with `contentFit="contain"`
+- Icon SVGs extracted from Figma live in `assets/icons/`

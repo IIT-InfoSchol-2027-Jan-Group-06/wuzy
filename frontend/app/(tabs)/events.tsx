@@ -1,4 +1,4 @@
-import { Image, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -6,8 +6,6 @@ import { CategoryFilter } from '@/components/CategoryFilter';
 import { events, type Event } from '@/constants/feed-data';
 import { wuzyFonts } from '@/constants/wuzy-theme';
 import { PostCard } from '@/components/postcard';
-
-const notification = require('@/assets/images/notification.png');
 
 const categories = [
   { id: 'all', label: 'All' },
@@ -29,14 +27,11 @@ export default function ExploreScreen() {
           contentContainerStyle={{ paddingBottom: 140 }}
           showsVerticalScrollIndicator={false}>
           <View className="px-[32px] pt-[49px]">
-            <View className="flex-row items-center justify-between">
-              <Text
-                className="text-[32px] leading-[32px] text-wuzy-yellow"
-                style={{ fontFamily: wuzyFonts.display }}>
-                Wuzy
-              </Text>
-              <Image source={notification} className="h-[35px] w-[35px]" />
-            </View>
+            <Text
+              className="text-[32px] leading-[32px] text-wuzy-yellow"
+              style={{ fontFamily: wuzyFonts.display }}>
+              Wuzy
+            </Text>
 
             <Text
               className="mt-[16px] text-[16px] text-wuzy-yellow"

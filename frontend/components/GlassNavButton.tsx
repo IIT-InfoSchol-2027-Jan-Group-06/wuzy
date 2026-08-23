@@ -8,15 +8,17 @@ export interface GlassNavButtonProps {
   icon: ReactNode | keyof typeof Ionicons.glyphMap;
   onPress: () => void;
   className?: string;
+  size?: number;
 }
 
 export function GlassNavButton({
   icon,
   onPress,
   className = '',
+  size,
 }: GlassNavButtonProps) {
   const { width: screenWidth } = useWindowDimensions();
-  const baseSize = Math.round((50 / 375) * screenWidth);
+  const baseSize = size ?? Math.round((50 / 375) * screenWidth);
   const resolvedIconSize = Math.round(baseSize * 0.48);
 
   const isStringIcon = typeof icon === 'string';

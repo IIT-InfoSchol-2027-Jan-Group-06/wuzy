@@ -51,5 +51,9 @@ Write the least code that solves the actual problem. In order:
 
 ## Git
 
-- Commit messages: short and simple, one plain line.
-- NEVER add `Co-authored-by` or any AI/tool trailers to commits.
+- Commit messages: short, meaningful, and single-line.
+- 1 feature, 1 commit. Commit immediately once a feature is complete.
+- Working on a new feature while on `main`? Always branch off `main` first before starting work.
+- Fix a bug in the previous commit? Always `git commit --amend --no-edit` instead of creating a fixup commit.
+- Use `git rebase` instead of merge when syncing branches.
+- NEVER add `Co-authored-by` or any AI and tool trailers to commits.

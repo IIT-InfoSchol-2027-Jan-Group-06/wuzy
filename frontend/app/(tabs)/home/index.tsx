@@ -34,15 +34,6 @@ export default function HomeScreen() {
           <View className="flex-row items-center gap-[14px]">
             <Pressable
               className="h-[40px] w-[40px] items-center justify-center rounded-full active:opacity-75"
-              onPress={() => router.push('/home/ticket-vault')}>
-              <Image
-                source={require('@/assets/icons/ticket.svg')}
-                style={{ width: 21, height: 14.7 }}
-                contentFit="contain"
-              />
-            </Pressable>
-            <Pressable
-              className="h-[40px] w-[40px] items-center justify-center rounded-full active:opacity-75"
               onPress={handleNotificationPress}>
               <Image
                 source={require('@/assets/icons/bell.svg')}

@@ -1,5 +1,7 @@
 import { ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { Image } from 'expo-image';
 import { useState, useMemo } from 'react';
 
 import { SearchBar } from '@/components/SearchBar';
@@ -117,6 +119,7 @@ const upcomingEvents: UpcomingEvent[] = [
 ];
 
 export default function ExploreScreen() {
+  const router = useRouter();
   const { width: screenWidth } = useWindowDimensions();
   const [selectedCategory, setSelectedCategory] = useState<string | number>('all');
   const [searchText, setSearchText] = useState('');
@@ -167,7 +170,16 @@ export default function ExploreScreen() {
               >
                 Explore
               </Text>
-              <GlassNavButton icon="options-outline" onPress={() => {}} />
+              <GlassNavButton
+                icon={
+                  <Image
+                    source={require('@/assets/icons/ticket.svg')}
+                    style={{ width: 21, height: 14.7 }}
+                    contentFit="contain"
+                  />
+                }
+                onPress={() => router.push('/home/ticket-vault')}
+              />
             </View>
           </View>
 

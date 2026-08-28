@@ -127,20 +127,6 @@ export default function TicketVaultScreen() {
         style={StyleSheet.absoluteFillObject}
       />
 
-      {/* Subtle Warm Accent Glow in center-top */}
-      <View
-        pointerEvents="none"
-        style={{
-          position: 'absolute',
-          top: screenHeight * 0.04,
-          left: (screenWidth - 280) / 2,
-          width: 280,
-          height: 280,
-          borderRadius: 140,
-          backgroundColor: 'rgba(255, 231, 131, 0.04)',
-        }}
-      />
-
       <SafeAreaView edges={['top', 'bottom']} className="flex-1">
         {/* Top Header: Gold/Yellow Bold Uppercase Header with Back Button on Left */}
         <View className="flex-row items-center px-[24px] pt-[20px] pb-[16px]">

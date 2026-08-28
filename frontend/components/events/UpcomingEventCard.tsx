@@ -61,7 +61,7 @@ export function UpcomingEventCard({
         overflow: 'hidden',
       }}
     >
-      // Background image - absolute fill with cover
+      {/* Background image - absolute fill with cover */}
       <ExpoImage
         source={imageUri}
         style={{
@@ -75,7 +75,7 @@ export function UpcomingEventCard({
         transition={200}
       />
 
-      // Bottom gradient overlay for text readability
+      {/* Bottom gradient overlay for text readability */}
       <LinearGradient
         colors={['transparent', 'rgba(10,15,23,0.6)', 'rgba(10,15,23,0.9)', 'rgba(10,15,23,0.98)']}
         locations={[0, 0.2, 0.6, 1]}
@@ -84,16 +84,16 @@ export function UpcomingEventCard({
         style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '75%' }}
       />
 
-      // Content layer (z-index above gradient)
+      {/* Content layer (z-index above gradient) */}
       <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'space-between', paddingHorizontal: horizontalPadding, paddingVertical: verticalPadding, flexDirection: 'row', alignItems: 'flex-end' }}>
-        // LEFT SECTION: Event metadata
+        {/* LEFT SECTION: Event metadata */}
         <View style={{ flex: 1, justifyContent: 'flex-end', marginRight: contentGap, zIndex: 10 }}>
-          // Title
+          {/* Title */}
           <Text style={{ color: '#FFFFFF', fontSize: titleFontSize, fontWeight: 'bold', lineHeight: titleFontSize * 1.2, marginBottom: titleMarginBottom }}>{title}</Text>
 
-          // Host profile row
+          {/* Host profile row */}
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            // Avatar with yellow border
+            {/* Avatar with yellow border */}
             <ExpoImage
               source={hostAvatar}
               style={{
@@ -106,12 +106,12 @@ export function UpcomingEventCard({
               }}
               contentFit="cover"
             />
-            // Host name
+            {/* Host name */}
             <Text style={{ color: '#FFFFFF', fontSize: hostFontSize, fontWeight: '600' }}>{hostName}</Text>
           </View>
         </View>
 
-        // RIGHT SECTION: Date badge (white square)
+        {/* RIGHT SECTION: Date badge (white square) */}
         <View
           style={{
             backgroundColor: '#FFFFFF',
@@ -129,9 +129,9 @@ export function UpcomingEventCard({
             elevation: 3,
           }}
         >
-          // Day number
+          {/* Day number */}
           <Text style={{ color: '#030B45', fontSize: dateDayFontSize, fontWeight: '900', lineHeight: dateDayFontSize, letterSpacing: -0.5 }}>{dateDay}</Text>
-          // Month label
+          {/* Month label */}
           <Text style={{ color: '#030B45', fontSize: dateMonthFontSize, fontWeight: '900', letterSpacing: 1.5, textTransform: 'uppercase', marginTop: dateMonthMarginTop }}>{dateMonth}</Text>
         </View>
       </View>

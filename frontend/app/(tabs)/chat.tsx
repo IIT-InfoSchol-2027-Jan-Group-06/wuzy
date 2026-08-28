@@ -51,7 +51,8 @@ export default function ChatScreen() {
           value={searchQuery}
           onChangeText={setSearchQuery}
           placeholder="Search messages"
-        />      </View>
+        />
+      </View>
 
       <View style={{ marginTop: Math.round(25 * scale), paddingHorizontal: horizontalPadding }}>
         <CategoryFilter<ChatMessage>

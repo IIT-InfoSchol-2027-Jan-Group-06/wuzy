@@ -41,7 +41,7 @@ export default function TabLayout() {
       tabBar={() => isOnNotifications ? null : <NavBar active={activeTab} onItemPress={handlePress} />}
     >
       <Tabs.Screen name="home" />
-      <Tabs.Screen name="events" />
+      <Tabs.Screen name="explore" />
       <Tabs.Screen name="awards" />
       <Tabs.Screen name="chat" />
       <Tabs.Screen name="profile" />

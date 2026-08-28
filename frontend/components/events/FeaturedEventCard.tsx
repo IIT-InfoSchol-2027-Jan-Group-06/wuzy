@@ -62,15 +62,15 @@ export function FeaturedEventCard({
         overflow: 'hidden',
       }}
     >
-      // Full-bleed background image
+      {/* Full-bleed background image */}
       <ImageBackground
         source={imageUri}
         style={{ width: '100%', height: '100%' }}
         imageStyle={{ resizeMode: 'cover' }}
       >
-        // Absolute-fill layer for gradient + content
+        {/* Absolute-fill layer for gradient + content */}
         <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
-          // Bottom gradient overlay for text readability
+          {/* Bottom gradient overlay for text readability */}
           <LinearGradient
             colors={['transparent', 'rgba(10,15,23,0.7)', 'rgba(10,15,23,0.95)', 'rgba(10,15,23,0.99)']}
             locations={[0, 0.2, 0.6, 1]}
@@ -79,7 +79,7 @@ export function FeaturedEventCard({
             style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '80%' }}
           />
 
-          // Content container with top/bottom sections
+          {/* Content container with top/bottom sections */}
           <View
             style={{
               position: 'absolute',
@@ -92,12 +92,12 @@ export function FeaturedEventCard({
               paddingVertical: verticalPadding,
             }}
           >
-            // TOP BAR: status badge (left) + favorite button (right)
+            {/* TOP BAR: status badge (left) + favorite button (right) */}
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', zIndex: 10 }}>
-              // Status pill badge (e.g. "Selling Fast") - reusable component
+              {/* Status pill badge (e.g. "Selling Fast") - reusable component */}
               <StatusBadge label={tagLabel} />
 
-              // Favorite button - same size as GlassNavButton
+              {/* Favorite button - same size as GlassNavButton */}
               <Pressable
                 onPress={onFavorite}
                 style={{
@@ -115,22 +115,22 @@ export function FeaturedEventCard({
               </Pressable>
             </View>
 
-            // BOTTOM CONTENT: event info + price/visit row
+            {/* BOTTOM CONTENT: event info + price/visit row */}
             <View style={{ flex: 1, justifyContent: 'flex-end', paddingHorizontal: horizontalPadding, paddingBottom: verticalPadding }}>
               <View style={{ zIndex: 10 }}>
-                // Time label (yellow, uppercase)
+                {/* Time label (yellow, uppercase) */}
                 <Text style={{ color: '#FFE285', fontSize: timeFontSize, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: Math.round(screenWidth * 0.005) }}>{time}</Text>
 
-                // Event title (large, bold)
+                {/* Event title (large, bold) */}
                 <Text style={{ color: '#FFFFFF', fontSize: titleFontSize, fontWeight: '800', lineHeight: titleFontSize * 1.15, marginBottom: Math.round(screenWidth * 0.015) }}>{title}</Text>
 
-                // Location row with map pin icon
+                {/* Location row with map pin icon */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: Math.round(screenWidth * 0.03) }}>
                   <Ionicons name="location-outline" size={locationIconSize} color="#D0CFA6" style={{ marginRight: Math.round(screenWidth * 0.008) }} />
                   <Text style={{ color: '#D0CFA6', fontSize: locationFontSize, fontWeight: '500', flex: 1 }}>{location}</Text>
                 </View>
 
-                // Footer: price (left) + visit button (right)
+                {/* Footer: price (left) + visit button (right) */}
                 <View
                   style={{
                     flexDirection: 'row',
@@ -141,13 +141,13 @@ export function FeaturedEventCard({
                     paddingTop: Math.round(screenWidth * 0.02),
                   }}
                 >
-                  // Price block
+                  {/* Price block */}
                   <View>
                     <Text style={{ color: '#888888', fontSize: priceLabelFontSize, fontWeight: '500' }}>Starting from</Text>
                     <Text style={{ color: '#FFE285', fontSize: priceFontSize, fontWeight: 'bold', marginTop: Math.round(screenWidth * 0.003) }}>{price}</Text>
                   </View>
 
-                  // Visit action button (reusable component)
+                  {/* Visit action button (reusable component) */}
                   <VisitButton onPress={onVisit} />
                 </View>
               </View>

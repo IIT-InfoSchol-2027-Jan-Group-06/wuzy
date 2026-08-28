@@ -58,42 +58,41 @@ export default function TicketVaultScreen() {
 
   const desktopFrameStyle = isWebDesktop
     ? {
-        borderRadius: 48,
-        borderWidth: 3,
-        borderColor: '#1F242D',
-        ...(Platform.OS === 'web'
-          ? ({
-              boxShadow: '0 30px 80px rgba(0, 0, 0, 0.95), 0 0 60px rgba(255, 231, 131, 0.04)',
-            } as any)
-          : {
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 20 },
-              shadowOpacity: 0.9,
-              shadowRadius: 30,
-              elevation: 25,
-            }),
-      }
+      borderRadius: 48,
+      borderWidth: 3,
+      borderColor: '#1F242D',
+      ...(Platform.OS === 'web'
+        ? ({
+          boxShadow: '0 30px 80px rgba(0, 0, 0, 0.95), 0 0 60px rgba(255, 231, 131, 0.04)',
+        } as any)
+        : {
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 20 },
+          shadowOpacity: 0.9,
+          shadowRadius: 30,
+          elevation: 25,
+        }),
+    }
     : {};
 
-  // Web renders CSS backdrop-filter (BlurView's web blur is unreliable here);
-  // native uses BlurView. Layer order blurs the image behind it.
+  // Frosted-glass blur over the background image: CSS backdrop-filter on web, BlurView on native.
   const backgroundBlur = Platform.OS === 'web'
     ? (
-        <View
-          style={[
-            StyleSheet.absoluteFillObject,
-            { backdropFilter: 'blur(28px)', WebkitBackdropFilter: 'blur(28px)', pointerEvents: 'none' } as any,
-          ]}
-        />
-      )
+      <View
+        style={[
+          StyleSheet.absoluteFillObject,
+          { backdropFilter: 'blur(22px)', WebkitBackdropFilter: 'blur(22px)', pointerEvents: 'none' } as any,
+        ]}
+      />
+    )
     : (
-        <BlurView
-          intensity={85}
-          tint="dark"
-          experimentalBlurMethod="dimezisBlurView"
-          style={StyleSheet.absoluteFillObject}
-        />
-      );
+      <BlurView
+        intensity={45}
+        tint="dark"
+        experimentalBlurMethod="dimezisBlurView"
+        style={StyleSheet.absoluteFillObject}
+      />
+    );
 
   const screenContent = (
     <View
@@ -115,15 +114,15 @@ export default function TicketVaultScreen() {
         style={StyleSheet.absoluteFillObject}
         contentFit="cover"
         transition={300}
+        blurRadius={20}
       />
 
       {/* Heavily Blurred Full-Screen Layer */}
       {backgroundBlur}
 
-
-      {/* Darkened Semi-Transparent Overlay Layer */}
+      {/* Frosted, slightly brightened translucent overlay over the blurred image */}
       <LinearGradient
-        colors={['rgba(8, 12, 18, 0.72)', 'rgba(5, 8, 14, 0.82)', 'rgba(3, 5, 8, 0.92)']}
+        colors={['rgba(10, 14, 20, 0.38)', 'rgba(8, 12, 18, 0.5)', 'rgba(5, 8, 14, 0.64)']}
         locations={[0, 0.5, 1]}
         style={StyleSheet.absoluteFillObject}
       />

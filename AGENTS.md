@@ -42,6 +42,7 @@ Write the least code that solves the actual problem. In order:
 - UI consistency is a hard requirement: same gaps and spacing tokens, same font faces (Bebas Neue for display/titles, Poppins for everything else), same font-size ratios, same colors. If a value is not in DESIGN.md, match the nearest existing screen instead of inventing one.
 - Font sizes scale with screen width (`screenWidth * ratio`). Never hardcode pixel font sizes for text that DESIGN.md defines by ratio.
 - New reusable UI pattern? Document it in `frontend/DESIGN.md` in the same change.
+- A page must be a page: every screen is a route file in `app/`, never a component in `components/`. The route file owns layout and state; its visual pieces are reusable components in `components/`, and its static data lives in `constants/`. See `app/(tabs)/home/notifications.tsx` for the reference pattern.
 
 ## Comments
 

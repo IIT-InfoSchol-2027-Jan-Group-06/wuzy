@@ -6,6 +6,27 @@ export interface CategoryFilterOption {
   label: string;
 }
 
+export interface CategoryPillProps {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+}
+
+export function CategoryPill({ label, selected, onPress }: CategoryPillProps) {
+  return (
+    <Pressable
+      onPress={onPress}
+      className={`rounded-full px-5 py-2 active:opacity-75 ${
+        selected ? 'bg-[#FFE285] border-transparent' : 'bg-[#2A2B20]/60 border border-[#FFE285]/40'
+      }`}
+    >
+      <Text className={`font-semibold text-sm ${selected ? 'text-black' : 'text-[#FFE285]'}`}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
 export interface CategoryFilterProps<T> {
   options: CategoryFilterOption[];
   selectedId: string | number;
@@ -42,28 +63,14 @@ export function CategoryFilter<T>({
         ]}
         decelerationRate="fast"
       >
-        {options.map((option) => {
-          const isSelected = option.id === selectedId;
-          return (
-            <Pressable
-              key={String(option.id)}
-              onPress={() => onSelect(option.id)}
-              className={`rounded-full px-5 py-2 active:opacity-75 ${
-                isSelected
-                  ? 'bg-[#FFE285] border-transparent'
-                  : 'bg-[#2A2B20]/60 border border-[#FFE285]/40'
-              }`}
-            >
-              <Text
-                className={`font-semibold text-sm ${
-                  isSelected ? 'text-black' : 'text-[#FFE285]'
-                }`}
-              >
-                {option.label}
-              </Text>
-            </Pressable>
-          );
-        })}
+        {options.map((option) => (
+          <CategoryPill
+            key={String(option.id)}
+            label={option.label}
+            selected={option.id === selectedId}
+            onPress={() => onSelect(option.id)}
+          />
+        ))}
       </ScrollView>
 
       {(data && renderItem) || children ? (

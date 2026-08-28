@@ -218,12 +218,17 @@ import { GlassNavButton } from '@/components/GlassNavButton';
 - **Z-index**: Use `z-50` to sit above scroll content
 - **Never** hardcode pixel sizes - component handles responsive scaling
 
+### GlassSurface
+The glass layer stack behind `GlassNavButton` and `PillButton` (filled), exported as **`GlassSurface`** (`{ radius }`): blur 40 dark, olive + yellow tints, diagonal and top-sheen gradients, white/30 outer border with white/50 top and black/30 bottom edges. Render it as the first child of any absolutely-sized rounded container that needs the glass look; never re-implement these layers inline.
+
 ---
 
 ## CategoryFilter Component
 
 ### When to Use
 Use **`CategoryFilter`** for any horizontal pill-based category selector with built-in filtering. Do not create custom filter chips or horizontal scrollable category lists.
+
+The pill itself is exported standalone as **`CategoryPill`** (`{ label, selected, onPress }`) for layouts CategoryFilter does not cover: wrapping grids or multi-select, e.g. the onboarding interests screen. Same visual spec as below.
 
 ### Import
 ```tsx
@@ -468,3 +473,21 @@ import { SearchBar } from '@/components/SearchBar';
 - Icon: `search-outline` `18px`, `#CDC6B2`, `8px` gap to the input
 - Input: `Poppins_400Regular` `14px`, white text, placeholder `#CDC6B2`
 - Clear button (`close-circle-outline`) appears only while there is text
+
+## Onboarding Components
+
+The signup question flow (`app/onboarding/`) shares one template. All sizes are `screenWidth * ratio` on a 360 base.
+
+### OnboardingBackdrop
+Full-screen shell for every onboarding page: photo background (`assets/images/onboarding-bg.jpg`) under a `rgba(0,0,0,0.78)` overlay, `GlassNavButton` back arrow top-left, centered WUZY logo (Bebas, ratio `0.133`), yellow title (Poppins Bold, ratio `0.055`), optional muted subtitle (`#AFA991`, Poppins Regular, ratio `0.039`). Children render centered below with a `0.083` gap.
+
+```tsx
+import { OnboardingBackdrop } from '@/components/onboarding/OnboardingBackdrop';
+<OnboardingBackdrop title="Enter your email?" subtitle="We'll send a code">...</OnboardingBackdrop>
+```
+
+### FormInput
+The outlined onboarding text field: `0.825 x 0.125`, radius `0.028`, border `wuzyColors.yellow`, bg `rgba(179,175,160,0.1)`, centered Poppins Medium text, placeholder `#C0BDB2`. Accepts all TextInput props.
+
+### PillButton
+The `0.66 x 0.125` pill, radius `0.056`, Poppins Bold ratio `0.042`. Variants: `filled` (default, glass surface + white text, used for Next; the same `GlassSurface` treatment as `GlassNavButton`), `outline` (yellow border + yellow text), `solid` (solid yellow + black text, the selected state on the gender screen).

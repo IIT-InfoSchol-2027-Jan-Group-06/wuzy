@@ -2,6 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Pressable, TextInput, View } from 'react-native';
 import { useRef, useState, useEffect } from 'react';
 
+import { wuzyColors, wuzyFonts } from '@/constants/wuzy-theme';
+
 export interface SearchBarProps {
   value: string;
   onChangeText: (text: string) => void;
@@ -37,9 +39,9 @@ export function SearchBar({
   };
 
   return (
-    <View collapsable={false} style={{ backgroundColor: 'rgba(244, 196, 0, 0.1)', borderRadius: 9999, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', width: '100%' }}>
-      <View collapsable={false} style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10 }} pointerEvents="auto">
-        <Ionicons name="search-outline" size={22} color="#FFFFFF" style={{ marginRight: 10 }} />
+    <View collapsable={false} style={{ backgroundColor: wuzyColors.yellowDim, borderRadius: 20, height: 41, width: '100%' }}>
+      <View collapsable={false} style={{ flex: 1, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16 }} pointerEvents="auto">
+        <Ionicons name="search-outline" size={18} color="#CDC6B2" style={{ marginRight: 8 }} />
         <TextInput
           ref={inputRef}
           value={localValue}
@@ -49,8 +51,8 @@ export function SearchBar({
           }}
           onSubmitEditing={handleSubmit}
           placeholder={placeholder}
-          placeholderTextColor="#9A9980"
-          style={{ flex: 1, fontSize: 16, color: '#FDF3C0', paddingVertical: 0, paddingHorizontal: 0 }}
+          placeholderTextColor="#CDC6B2"
+          style={{ flex: 1, fontFamily: wuzyFonts.body, fontSize: 14, color: wuzyColors.white, paddingVertical: 0, paddingHorizontal: 0 }}
           returnKeyType="search"
           autoCorrect={false}
           autoCapitalize="none"

@@ -1,7 +1,8 @@
 import React from 'react';
-import { FlatList, Image, Text, View, TouchableOpacity, useWindowDimensions } from 'react-native';
+import { FlatList, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CategoryFilter } from '@/components/CategoryFilter';
+import { GlassNavButton } from '@/components/GlassNavButton';
 import { SearchBar } from '@/components/SearchBar';
 import { MessageRow } from '@/components/chat/MessageRow';
 import { chatMessages, CATEGORIES, type ChatMessage } from '@/constants/chat-data';
@@ -14,9 +15,6 @@ export default function ChatScreen() {
   const scale = screenWidth / 375;
 
   const horizontalPadding = Math.round(20 * scale);
-  const fabBottomMargin = Math.round(70 * scale);
-  const fabSize = Math.round(45 * scale);
-  const fabRightMargin = Math.round(67 * scale);
 
   const categoryOptions = CATEGORIES.map((c) => ({ id: c, label: c }));
 
@@ -75,25 +73,7 @@ export default function ChatScreen() {
         renderItem={({ item }) => <MessageRow item={item} />}
       />
 
-      <TouchableOpacity
-        activeOpacity={0.8}
-        style={{
-          position: 'absolute',
-          bottom: fabBottomMargin,
-          right: Math.round(67 * scale),
-          width: fabSize,
-          height: fabSize,
-          borderRadius: fabSize / 2,
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: wuzyColors.yellowDim,
-        }}>
-        <Image
-          source={require('@/assets/images/plus.png')}
-          style={{ width: Math.round(30 * scale), height: Math.round(30 * scale) }}
-          resizeMode="contain"
-        />
-      </TouchableOpacity>
+      <GlassNavButton icon="add" onPress={() => {}} className="absolute bottom-20 right-6 z-50" />
     </SafeAreaView>
   );
 }

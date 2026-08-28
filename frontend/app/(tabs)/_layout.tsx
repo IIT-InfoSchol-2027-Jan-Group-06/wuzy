@@ -1,4 +1,4 @@
-import { Tabs, useRouter, useLocalSearchParams, useSegments } from 'expo-router';
+﻿import { Tabs, useRouter, useLocalSearchParams, useSegments } from 'expo-router';
 import { NavBar } from '@/components/NavBar';
 import { useState, useEffect } from 'react';
 import type { NavBarItem } from '@/components/NavBar';
@@ -33,12 +33,12 @@ export default function TabLayout() {
     }
   };
 
-  const isOnNotifications = segments.some((s) => s === 'notifications');
+  const isFullScreen = (segments as string[]).includes('notifications') || (segments as string[]).includes('ticket-vault');
 
   return (
     <Tabs
       screenOptions={{ headerShown: false }}
-      tabBar={() => isOnNotifications ? null : <NavBar active={activeTab} onItemPress={handlePress} />}
+      tabBar={() => isFullScreen ? null : <NavBar active={activeTab} onItemPress={handlePress} />}
     >
       <Tabs.Screen name="home" />
       <Tabs.Screen name="explore" />

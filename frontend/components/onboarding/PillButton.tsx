@@ -6,10 +6,11 @@ import { wuzyColors, wuzyFonts } from '@/constants/wuzy-theme';
 export interface PillButtonProps {
   label: string;
   onPress: () => void;
-  variant?: 'filled' | 'outline' | 'solid';
+  variant?: 'filled' | 'outline' | 'solid' | 'dark';
+  width?: number;
 }
 
-export function PillButton({ label, onPress, variant = 'filled' }: PillButtonProps) {
+export function PillButton({ label, onPress, variant = 'filled', width }: PillButtonProps) {
   const { width: screenWidth } = useWindowDimensions();
   const radius = Math.round(screenWidth * 0.056);
 
@@ -19,7 +20,7 @@ export function PillButton({ label, onPress, variant = 'filled' }: PillButtonPro
       accessibilityRole="button"
       className="active:scale-95"
       style={{
-        width: Math.round(screenWidth * 0.66),
+        width: width ?? Math.round(screenWidth * 0.66),
         height: Math.round(screenWidth * 0.125),
         borderRadius: radius,
         alignItems: 'center',
@@ -28,13 +29,16 @@ export function PillButton({ label, onPress, variant = 'filled' }: PillButtonPro
         borderWidth: variant === 'outline' ? 1 : 0,
         borderColor: wuzyColors.yellow,
       }}>
-      {variant === 'filled' && (
+      {(variant === 'filled' || variant === 'dark') && (
         <>
           <GlassSurface radius={radius} />
           {/* darkens the glass to match the Figma pill contrast */}
           <View
             pointerEvents="none"
-            style={[StyleSheet.absoluteFillObject, { borderRadius: radius, backgroundColor: 'rgba(0, 0, 0, 0.4)' }]}
+            style={[
+              StyleSheet.absoluteFillObject,
+              { borderRadius: radius, backgroundColor: `rgba(0, 0, 0, ${variant === 'dark' ? 0.72 : 0.4})` },
+            ]}
           />
         </>
       )}
@@ -42,7 +46,8 @@ export function PillButton({ label, onPress, variant = 'filled' }: PillButtonPro
         style={{
           fontFamily: wuzyFonts.bold,
           fontSize: Math.round(screenWidth * 0.042),
-          color: variant === 'filled' ? wuzyColors.white : variant === 'solid' ? '#000000' : wuzyColors.yellow,
+          color:
+            variant === 'solid' ? '#000000' : variant === 'outline' ? wuzyColors.yellow : wuzyColors.white,
         }}>
         {label}
       </Text>

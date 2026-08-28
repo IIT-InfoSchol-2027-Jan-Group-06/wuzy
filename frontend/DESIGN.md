@@ -479,7 +479,7 @@ import { SearchBar } from '@/components/SearchBar';
 The signup question flow (`app/onboarding/`) shares one template. All sizes are `screenWidth * ratio` on a 360 base.
 
 ### OnboardingBackdrop
-Full-screen shell for every onboarding page: photo background (`assets/images/onboarding-bg.jpg`) under a `rgba(0,0,0,0.78)` overlay, `GlassNavButton` back arrow top-left, centered WUZY logo (Bebas, ratio `0.133`), yellow title (Poppins Bold, ratio `0.055`), optional muted subtitle (`#AFA991`, Poppins Regular, ratio `0.039`). Children render centered below with a `0.083` gap.
+Full-screen shell for every onboarding and auth page: photo background under a `rgba(0,0,0,0.78)` overlay, `GlassNavButton` back arrow top-left, centered WUZY logo (Bebas, ratio `0.133`), optional yellow title (Poppins Bold, ratio `0.055`), optional muted subtitle (`#AFA991`, Poppins Regular, ratio `0.039`). Children render centered below with a `0.083` gap. Optional props: `background` (defaults to `assets/images/onboarding-bg.jpg`; welcome and login pass their own photos), `showBack` (default true; welcome hides it). The welcome (`app/welcome.tsx`) and login (`app/login.tsx`) screens reuse this shell with custom children.
 
 ```tsx
 import { OnboardingBackdrop } from '@/components/onboarding/OnboardingBackdrop';
@@ -490,4 +490,4 @@ import { OnboardingBackdrop } from '@/components/onboarding/OnboardingBackdrop';
 The outlined onboarding text field: `0.825 x 0.125`, radius `0.028`, border `wuzyColors.yellow`, bg `rgba(179,175,160,0.1)`, centered Poppins Medium text, placeholder `#C0BDB2`. Accepts all TextInput props.
 
 ### PillButton
-The `0.66 x 0.125` pill, radius `0.056`, Poppins Bold ratio `0.042`. Variants: `filled` (default, glass surface + white text, used for Next; the same `GlassSurface` treatment as `GlassNavButton`), `outline` (yellow border + yellow text), `solid` (solid yellow + black text, the selected state on the gender screen).
+The `0.66 x 0.125` pill, radius `0.056`, Poppins Bold ratio `0.042`. Variants: `filled` (default, glass surface + white text, used for Next; the same `GlassSurface` treatment as `GlassNavButton`), `outline` (yellow border + yellow text), `solid` (solid yellow + black text, the selected state on the gender screen), `dark` (the filled glass with a stronger black scrim + white text, the welcome screen's Login).

@@ -3,6 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 
 import { wuzyFonts } from '@/constants/wuzy-theme';
 import { mockUserProfile, type UserProfile } from '@/constants/profile-data';
@@ -13,6 +14,7 @@ type ProfileScreenProps = {
 };
 
 export default function ProfileScreen({ user }: ProfileScreenProps) {
+  const router = useRouter();
   const { width: screenWidth } = useWindowDimensions();
   const gridItemSize = (screenWidth - 4) / 3;
   const btnWidth = Math.round(screenWidth * 0.32);
@@ -58,11 +60,13 @@ export default function ProfileScreen({ user }: ProfileScreenProps) {
                 end={{ x: 0, y: 1 }}
                 style={StyleSheet.absoluteFill} />
 
-              {/* Top Right Action - Link Button */}
+              {/* Top Right Action - Connect Button */}
               <View className="absolute top-[50px] right-[20px]">
-                <Pressable className="items-center justify-center rounded-full"
+                <Pressable
+                  onPress={() => router.push('/connect')}
+                  className="items-center justify-center rounded-full"
                   style={{ width: 44, height: 44, backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' }}>
-                  <Ionicons name="link" size={22} color="#FFFFFF" />
+                  <Ionicons name="people" size={22} color="#FFFFFF" />
                 </Pressable>
               </View>
 

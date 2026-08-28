@@ -443,3 +443,28 @@ import { UserRow } from '@/components/UserRow';
 - `40x40` round `Pressable`, `active:opacity-75`, right side of the `Wuzy` header row
 - Icon: `assets/icons/bell.svg` (outline bell extracted from Figma, no fill), rendered at `17.5x20` via `expo-image` with `contentFit="contain"`
 - Icon SVGs extracted from Figma live in `assets/icons/`
+## SearchBar Component
+
+### When to Use
+Use **`SearchBar`** for any inline search input on a screen. Do not build custom search inputs.
+
+### Import
+```tsx
+import { SearchBar } from '@/components/SearchBar';
+```
+
+### Props
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `value` | `string` | Yes | Controlled search text |
+| `onChangeText` | `(text: string) => void` | Yes | Called on every keystroke |
+| `placeholder` | `string` | No | Defaults to `Search` |
+| `onSearchSubmit` | `() => void` | No | Called on keyboard search action |
+| `onClear` | `() => void` | No | Called when the clear button is pressed |
+| `className` | `string` | No | Extra NativeWind classes on the wrapper |
+
+### Visual Specs (Fixed - Do Not Override)
+- Pill: `41px` tall, `20px` radius, background `wuzyColors.yellowDim` (`rgba(255, 231, 131, 0.2)`)
+- Icon: `search-outline` `18px`, `#CDC6B2`, `8px` gap to the input
+- Input: `Poppins_400Regular` `14px`, white text, placeholder `#CDC6B2`
+- Clear button (`close-circle-outline`) appears only while there is text

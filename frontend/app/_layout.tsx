@@ -2,6 +2,7 @@ import '../global.css';
 
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { BebasNeue_400Regular } from '@expo-google-fonts/bebas-neue';
+import { Montserrat_700Bold } from '@expo-google-fonts/montserrat';
 import {
   Poppins_400Regular,
   Poppins_500Medium,
@@ -26,6 +27,7 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
   const [fontsLoaded] = useFonts({
     BebasNeue_400Regular,
+    Montserrat_700Bold,
     Poppins_400Regular,
     Poppins_500Medium,
     Poppins_600SemiBold,

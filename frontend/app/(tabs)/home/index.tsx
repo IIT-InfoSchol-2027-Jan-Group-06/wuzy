@@ -31,15 +31,17 @@ export default function HomeScreen() {
             style={{ fontFamily: wuzyFonts.display }}>
             Wuzy
           </Text>
-          <Pressable
-            className="h-[40px] w-[40px] items-center justify-center rounded-full active:opacity-75"
-            onPress={handleNotificationPress}>
-            <Image
-              source={require('@/assets/icons/bell.svg')}
-              style={{ width: 17.5, height: 20 }}
-              contentFit="contain"
-            />
-          </Pressable>
+          <View className="flex-row items-center gap-[14px]">
+            <Pressable
+              className="h-[40px] w-[40px] items-center justify-center rounded-full active:opacity-75"
+              onPress={handleNotificationPress}>
+              <Image
+                source={require('@/assets/icons/bell.svg')}
+                style={{ width: 17.5, height: 20 }}
+                contentFit="contain"
+              />
+            </Pressable>
+          </View>
         </View>
 
         <ScrollView

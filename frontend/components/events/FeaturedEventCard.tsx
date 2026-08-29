@@ -52,8 +52,9 @@ export function FeaturedEventCard({
   const visitBtnFontSize = Math.round(screenWidth * 0.032);
 
   return (
-    // Outer container: clips rounded corners and adds right gap for horizontal scroll
-    <View
+    // Outer container: Pressable for full-card tap + clips rounded corners
+    <Pressable
+      onPress={onVisit}
       style={{
         width: cardWidth,
         height: cardHeight,
@@ -61,6 +62,7 @@ export function FeaturedEventCard({
         marginRight: Math.round(screenWidth * 0.03),
         overflow: 'hidden',
       }}
+      activeOpacity={0.9}
     >
       {/* Full-bleed background image */}
       <ImageBackground
@@ -99,7 +101,7 @@ export function FeaturedEventCard({
 
               {/* Favorite button - same size as GlassNavButton */}
               <Pressable
-                onPress={onFavorite}
+                onPress={(e) => { e.stopPropagation(); onFavorite?.(); }}
                 style={{
                   width: favBtnSize,
                   height: favBtnSize,
@@ -148,13 +150,13 @@ export function FeaturedEventCard({
                   </View>
 
                   {/* Visit action button (reusable component) */}
-                  <VisitButton onPress={onVisit} />
+                  <VisitButton onPress={(e) => { e.stopPropagation(); onVisit?.(); }} />
                 </View>
               </View>
             </View>
           </View>
         </View>
       </ImageBackground>
-    </View>
+    </Pressable>
   );
 }

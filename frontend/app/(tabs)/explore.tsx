@@ -130,6 +130,10 @@ export default function ExploreScreen() {
   const sectionTitleFontSize = Math.round(screenWidth * 0.04);
   const footerFontSize = Math.round(screenWidth * 0.025);
 
+  const navigateToEvent = (eventId: string) => {
+    router.push('/event-details');
+  };
+
   // Filter events by category and search text
   const filteredFeaturedEvents = useMemo(() => {
     return featuredEvents.filter((event) => {
@@ -229,7 +233,7 @@ export default function ExploreScreen() {
                   price={event.price}
                   imageUri={event.imageUri}
                   tagLabel={event.tagLabel}
-                  onVisit={() => {}}
+                  onVisit={() => navigateToEvent(event.id)}
                   onFavorite={() => {}}
                 />
               ))}
@@ -257,7 +261,7 @@ export default function ExploreScreen() {
                 dateDay={event.dateDay}
                 dateMonth={event.dateMonth}
                 imageUri={event.imageUri}
-                onPress={() => {}}
+                onPress={() => navigateToEvent(event.id)}
               />
             ))}
           </View>

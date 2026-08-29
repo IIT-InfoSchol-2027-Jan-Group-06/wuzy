@@ -136,6 +136,10 @@ export default function ExploreScreen() {
     router.push('/event-details');
   };
 
+  const navigateToEvent = (eventId: string) => {
+    router.push('/event-details');
+  };
+
   // Filter events by category and search text
   const filteredFeaturedEvents = useMemo(() => {
     return featuredEvents.filter((event) => {

@@ -1,222 +1,21 @@
-# Profile Screen Design System
+﻿# Wuzy Frontend Design System
 
-## Overview
-This document defines the design tokens and specifications for the Profile screen, ensuring consistency across platforms and easy backend integration.
-
-## Color Palette
-
-| Token | Value | Usage |
-|-------|-------|-------|
-| `background` | `#0A0F17` | Main screen background |
-| `surface` | `#171E28` | Tag pills, card backgrounds |
-| `surfaceBorder` | `#2B3545` | Tag pill borders |
-| `primary` | `#FFE783` | Accent color (yellow/gold) |
-| `primarySoft` | `rgba(255, 231, 131, 0.1)` | Glass button fill |
-| `primaryBorder` | `rgba(255, 231, 131, 0.2)` | Glass button borders |
-| `primaryBorderStrong` | `rgba(255, 231, 131, 0.3)` | Strong glass borders |
-| `glassBackground` | `rgba(244, 196, 0, 0.1)` | Glassmorphism base layer |
-| `glassBorder` | `rgba(255, 255, 255, 0.2)` | Navbar-style borders |
-| `textPrimary` | `#FFFFFF` | Primary text |
-| `textSecondary` | `#FDF3C0` | Headlines, name, section titles |
-| `textMuted` | `#888888` | Secondary labels |
-| `shadow` | `rgba(0, 0, 0, 0.4)` | Shadows |
-| `overlayStart` | `transparent` | Gradient start |
-| `overlayEnd` | `#0A0F17` | Gradient end |
-| `linkButtonBg` | `rgba(255, 255, 255, 0.1)` | Link button background |
-| `linkButtonBorder` | `rgba(255, 255, 255, 0.2)` | Link button border |
-| `gradientRefraction` | `rgba(255, 255, 255, 0.3)` | Glass highlight line |
-
-## Typography
-
-All font sizes are **relative to screen width** (DPI-independent) using ratio multipliers.
-
-| Token | Font Family | Size Ratio | Line Height Ratio | Usage |
-|-------|-------------|------------|-------------------|-------|
-| `display` | `BebasNeue_400Regular` | `0.10` | `0.11` | Large display text |
-| `title` | `BebasNeue_400Regular` | `0.10` | `0.11` | Name (stacked) |
-| `body` | `Poppins_400Regular` | `0.035` | `0.05` | Bio text |
-| `tag` | `Poppins_600SemiBold` | `0.032` | - | Tag pills |
-| `button` | `Poppins_600SemiBold` | `0.028` | - | Action buttons |
-| `sectionTitle` | `Poppins_700Bold` | `0.045` | - | "Timeline" |
-| `awardsLabel` | `Poppins_400Regular` | `0.025` | - | "awards" label |
-| `linkIcon` | - | `22px` fixed | - | Link icon |
-| `awardIcon` | - | `0.035` ratio | - | Medal icons |
-
-**Calculation**: `fontSize = Math.round(screenWidth * ratio)`
-
-Example on 390px screen:
-- Name: `390 * 0.10 = 39px`
-- Bio: `390 * 0.035 = 14px`
-- Tags: `390 * 0.032 = 12px`
-
-## Spacing System
-
-| Token | Value | Usage |
-|-------|-------|-------|
-| `heroHeight` | `400px` | Hero section height |
-| `heroPaddingHorizontal` | `24px` | Hero content horizontal padding |
-| `heroPaddingBottom` | `30px` | Hero content bottom padding |
-| `heroTopActionTop` | `50px` | Link button top position |
-| `heroTopActionRight` | `20px` | Link button right position |
-| `sectionGap` | `24px` | Gap between major sections |
-| `tagsMarginTop` | `24px` | Tags section top margin |
-| `tagsPaddingHorizontal` | `24px` | Tags horizontal padding |
-| `tagPaddingHorizontal` | `16px` | Tag pill horizontal padding |
-| `tagPaddingVertical` | `8px` | Tag pill vertical padding |
-| `tagGap` | `8px` | Gap between tags |
-| `buttonsMarginVertical` | `20px` | Action buttons vertical margin |
-| `buttonsPaddingHorizontal` | `24px` | Action buttons horizontal padding |
-| `buttonGap` | `12px` | Gap between action buttons |
-| `timelinePaddingHorizontal` | `24px` | Timeline horizontal padding |
-| `timelineTitleMarginBottom` | `16px` | Timeline title bottom margin |
-| `gridGap` | `2px` | Grid item gap |
-| `gridMarginHorizontal` | `-2px` | Grid negative margin for edge-to-edge |
-| `scrollPaddingBottom` | `140px` | ScrollView bottom padding (navbar clearance) |
-
-## Dimensions
-
-| Token | Value | Description |
-|-------|-------|-------------|
-| `buttonWidthRatio` | `0.32` | Button width as % of screen width |
-| `buttonHeightRatio` | `0.092` | Button height as % of screen width |
-| `linkButtonSize` | `44px` | Link button diameter |
-| `gridColumns` | `3` | Photo grid columns |
-| `gridGap` | `2px` | Grid item gap |
-
-## Blur / Glassmorphism
-
-| Token | Value |
-|-------|-------|
-| `intensity` | `80` |
-| `tint` | `dark` |
-| `method` | `dimezisBlurView` |
-
-Matches the Navbar blur configuration exactly.
-
-## Gradient Overlay (Hero)
-
-| Token | Value |
-|-------|-------|
-| `angle` | `-45deg` |
-| `locations` | `[0, 0.6, 1]` |
-| `start` | `{ x: 1, y: 0 }` |
-| `end` | `{ x: 0, y: 1 }` |
-| `colors` | `['transparent', '#0A0F17', '#0A0F17']` |
-
-## Shadow
-
-| Token | Value |
-|-------|-------|
-| `button` | `lg` (large) |
-| `buttonOpacity` | `0.4` |
-
-## Border Radius
-
-| Token | Value |
-|-------|-------|
-| `full` | `9999` (fully rounded) |
-| `button` | `full` |
-| `tag` | `20px` |
-| `hero` | `0` |
-
-## Data Structure (Backend Integration)
-
-```typescript
-interface UserProfile {
-  id: string;
-  name: string;           // "Ludwig Bennet" → split for stacked display
-  username: string;       // "@ludwigbennet"
-  bio: string;            // User bio text
-  avatar: ImageSource;    // Profile photo
-  backgroundImage: ImageSource; // Hero background
-  tags: string[];         // ["Music", "Reading", "Movie", "Tech"]
-  awardsCount: number;    // Number of medals to show
-  photos: ImageSource[];  // 9 images for 3x3 grid
-  location?: string;
-  website?: string;
-  followersCount?: number;
-  followingCount?: number;
-}
-```
-
-## Usage
-
-```tsx
-import { ProfileScreen } from '@/app/(tabs)/profile';
-import type { UserProfile } from '@/constants/profile-data';
-
-// From API
-const userData: UserProfile = await fetchUserProfile(userId);
-
-<ProfileScreen user={userData} />
-```
-
-Falls back to mock data if no `user` prop provided.
+This file defines the source of truth for UI design in Wuzy. Follow these tokens and components strictly across all screens.
 
 ---
 
-## GlassNavButton Component
+## Colors
 
-### When to Use
-Use **`GlassNavButton`** for any circular glassmorphism action button across the app. Do not create custom circular buttons with similar styling.
-
-### Import
-```tsx
-import { GlassNavButton } from '@/components/GlassNavButton';
-```
-
-### Props
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `icon` | `ReactNode \| keyof Ionicons.glyphMap` | Yes | Icon name (e.g., `"add"`, `"arrow-back"`) or custom ReactNode |
-| `onPress` | `() => void` | Yes | Press handler (e.g., `router.push('/path')` or `router.back()`) |
-| `className` | `string` | No | Tailwind classes for positioning (e.g., `"absolute bottom-20 right-6 z-50"`) |
-| `size` | `number` | No | Diameter override in px. Omit for the default responsive size; when overriding, derive from screen width (e.g. `(42 / 375) * screenWidth`), never a hardcoded constant |
-
-### Visual Specs (Fixed - Do Not Override)
-- **Size**: Responsive `50/375 * screenWidth` (matches Navbar item size)
-- **Icon Size**: `48%` of button diameter
-- **Blur**: `intensity={40}`, `tint="dark"`
-- **Base Layer**: `rgba(84, 82, 56, 0.35)` (dark olive)
-- **Yellow Tint**: `rgba(244, 196, 0, 0.1)` (matches Navbar `#F4C400/10`)
-- **Gradients**: Diagonal white→transparent→dark + top highlight
-- **Borders**: Outer `white/30`, top `white/50`, bottom `black/30`
-- **Press Feedback**: `active:scale-95`
-
-### Usage Examples
-
-**Home FAB (bottom-right, above navbar):**
-```tsx
-<GlassNavButton
-  icon="add"
-  onPress={() => router.push('/create')}
-  className="absolute bottom-20 right-6 z-50"
-/>
-```
-
-**Back Button (top-left):**
-```tsx
-<GlassNavButton
-  icon="arrow-back"
-  onPress={() => router.back()}
-  className="absolute top-6 left-6 z-50"
-/>
-```
-
-**Custom Icon:**
-```tsx
-<GlassNavButton
-  icon={<CustomSvgIcon />}
-  onPress={handleAction}
-  className="absolute bottom-20 right-6 z-50"
-/>
-```
-
-### Placement Guidelines
-- **FAB positions**: `bottom-20 right-6` (clears navbar by ~20pt)
-- **Back buttons**: `top-6 left-6` (safe area handled by screen)
-- **Z-index**: Use `z-50` to sit above scroll content
-- **Never** hardcode pixel sizes - component handles responsive scaling
+| Token | Hex / Value | Usage |
+|-------|-------------|-------|
+| `bg` | `#0A0F17` | Screen background (dark charcoal) |
+| `surface` | `#171E28` | Elevated surfaces, cards, rows |
+| `surface-glass` | `rgba(23, 30, 40, 0.65)` | Frosted glass containers |
+| `border-glass` | `rgba(255, 255, 255, 0.15)` | Glass borders |
+| `yellow` | `#FFE783` | Primary display accents, active tabs, header titles |
+| `white` | `#FFFFFF` | Primary text, bright icons |
+| `gray` | `#8A96A6` | Secondary text, inactive tab icons, subtext |
+| `badge-online` | `#22C55E` | Online presence indicators |
 
 ### GlassSurface
 The glass layer stack behind `GlassNavButton` and `PillButton` (filled), exported as **`GlassSurface`** (`{ radius }`): blur 40 dark, olive + yellow tints, diagonal and top-sheen gradients, white/30 outer border with white/50 top and black/30 bottom edges. Render it as the first child of any absolutely-sized rounded container that needs the glass look; never re-implement these layers inline.
@@ -266,118 +65,55 @@ const categories: CategoryFilterOption[] = [
   { id: 'sports', label: 'Sports' },
   { id: 'movie', label: 'Movie' },
 ];
+## Typography
 
-<CategoryFilter
-  options={categories}
-  selectedId={selectedCategory}
-  onSelect={setSelectedCategory}
-  containerStyle={{ marginTop: 16, marginHorizontal: -16 }}
-/>
-```
+### Fonts
+- **Display**: `BebasNeue_400Regular` (`wuzyFonts.display`)
+- **Body / Headings**: `Poppins` (`wuzyFonts.regular`, `wuzyFonts.medium`, `wuzyFonts.semibold`, `wuzyFonts.bold`)
 
-**With Built-in Filtering:**
-```tsx
-<CategoryFilter<Event>
-  options={categories}
-  selectedId={selectedCategory}
-  onSelect={setSelectedCategory}
-  data={events}
-  categoryKey="category"
-  renderItem={(event) => (
-    <PostCard key={event.id} post={{...}} />
-  )}
-/>
-```
+### Font Size Ratios
+Font sizes scale with screen width (`screenWidth * ratio`):
 
-### Placement Guidelines
-- **Below section headers**: `marginTop: 16` (16pt from previous content)
-- **Full-width alignment**: Use `marginHorizontal: -16` to offset parent padding
-- **Content gap**: Add `mt-6` (24pt) between filter and filtered content
-- **Never** hardcode pill widths - they auto-size to text content
+| Ratio | Multiplier | Usage |
+|-------|------------|-------|
+| Title / Header | `0.061` | Screen titles in `ScreenHeader` |
+| Ticket Title | `0.076` | Main event title on `TicketCard` |
+| Ticket Subtext | `0.033` | Event date and venue on `TicketCard` |
+| Body Regular | `0.037` | Main text content |
+| Small / Badge | `0.030` | Timestamps, status labels |
 
 ---
 
-## TagSection Component
+## Components
 
-### When to Use
-Use **`TagSection`** for any horizontal scrollable tag/pill list (user interests, skills, categories, filters). Do not create custom horizontal tag lists with ScrollView.
+### ScreenHeader
+- Fixed header on pushed sub-screens
+- Left: `GlassNavButton`
+- Center: Yellow uppercase title with Bebas Neue (`fontFamily: wuzyFonts.display`)
+- Right: Spacer of equal size to maintain symmetry
 
-### Import
-```tsx
-import { TagSection } from '@/components/TagSection';
-```
+### GlassNavButton
+- Circular frosted glass button with subtle gold sheen and dark blur
+- Renders arrow-back or custom icons
 
-### Props
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `tags` | `string[]` | Yes | Array of tag labels to display |
-| `onTagPress` | `(tag: string) => void` | No | Press handler for tag interaction |
-| `containerStyle` | `ViewStyle` | No | Custom styling for outer container |
-| `contentContainerStyle` | `ViewStyle` | No | Custom styling for ScrollView content |
-| `tagStyle` | `ViewStyle` | No | Custom styling for individual tag pill |
-| `textStyle` | `TextStyle` | No | Custom styling for tag text |
-| `renderTag` | `(tag: string, index: number) => ReactNode` | No | Custom render function for tag content |
+### TicketCard
+- **When to Use**: Event tickets with authentic notch silhouette, dashed divider, dark photo backdrop, and centered QR code
+- **Import**: `import { TicketCard } from '@/components/TicketCard';`
+- **Shape**: Rounded rectangle (`24px` border radius) with circular side notches (`26px` diameter) dividing top and bottom sections
+- **Divider**: Dashed horizontal line connecting the side notches
+- **Background**: Full-bleed event image with dark frosted overlay (`rgba(10, 15, 23, 0.74)`)
+- **Top Section**: Event title (`Poppins_700Bold`, uppercase, white), date & venue (`Poppins_500Medium`, uppercase, white/85)
+- **Bottom Section**: Centered pure white QR code overlay (`QrCode` with `color="#FFFFFF"`, `card={false}`)
 
-### Visual Specs (Fixed - Do Not Override)
-- **Container**: `paddingHorizontal: 10`, `marginTop: 4`
-- **ScrollView**: Horizontal, hidden scrollbar, `gap: 8`, `paddingBottom: 4`
-- **Pill**: `rounded-full`, `px-[16px] py-[8px]`
-- **Background**: `bg-[#171E28]` (surface)
-- **Border**: `border-[#2B3545]` (surfaceBorder), width 1
-- **Text**: `font-semibold`, responsive size `screenWidth * 0.022`, `text-white`
-- **Font Family**: `Poppins_600SemiBold` (matches `tag` token)
-
-### Usage Examples
-
-**Simple Tags:**
-```tsx
-<TagSection tags={['Music', 'Reading', 'Movie', 'Tech']} />
-```
-
-**With Press Handler:**
-```tsx
-<TagSection
-  tags={user.tags}
-  onTagPress={(tag) => console.log('Selected:', tag)}
-/>
-```
-
-**Custom Styling:**
-```tsx
-<TagSection
-  tags={tags}
-  containerStyle={{ marginTop: 24, marginHorizontal: 24 }}
-  contentContainerStyle={{ paddingHorizontal: 16 }}
-  tagStyle={{ backgroundColor: '#2A2B20', borderColor: '#FFE285' }}
-  textStyle={{ color: '#FFE285' }}
-/>
-```
-
-**Custom Render (e.g., with icons):**
-```tsx
-<TagSection
-  tags={tags}
-  renderTag={(tag) => (
-    <View className="flex-row items-center gap-2">
-      <Icon name={tag} size={14} color="#FFE285" />
-      <Text style={{ fontFamily: wuzyFonts.semibold, color: '#FFFFFF' }}>
-        {tag}
-      </Text>
-    </View>
-  )}
-/>
-```
-
-### Placement Guidelines
-- **Below hero/profile header**: `marginTop: 4` (4pt from content above)
-- **Horizontal padding**: Default `paddingHorizontal: 10` (override via `containerStyle`)
-- **Tag gap**: `8pt` between pills (override via `contentContainerStyle`)
-- **Responsive text**: Font size auto-scales with `screenWidth * 0.022`
-- **Never** hardcode pill widths - they auto-size to text content via `px-[16px]`
+### QrCode
+- **When to Use**: Scannable QR code for tickets, check-ins, or share links
+- **Import**: `import { QrCode } from '@/components/QrCode';`
+- **Props**: `value: string`, `size?: number`, `color?: string`, `card?: boolean`
+- **Modes**: Default card mode with white rounded container, or overlay mode (`card={false}`) for bare white modules over dark images
 
 ---
 
-## Notification Screen
+## Ticket Vault Screen
 
 ### Structure
 The screen lives at `app/notifications.tsx` (outside tabs, pushed over the tab bar). Entry point: bell button in the home header.
@@ -491,3 +227,6 @@ The outlined onboarding text field: `0.825 x 0.125`, radius `0.028`, border `wuz
 
 ### PillButton
 The `0.66 x 0.125` pill, radius `0.056`, Poppins Bold ratio `0.042`. Variants: `filled` (default, glass surface + white text, used for Next; the same `GlassSurface` treatment as `GlassNavButton`), `outline` (yellow border + yellow text), `solid` (solid yellow + black text, the selected state on the gender screen), `dark` (the filled glass with a stronger black scrim + white text, the welcome screen's Login).
+- Route: `app/(tabs)/home/ticket-vault.tsx`
+- Header: `ScreenHeader` with title `TICKETS`
+- Carousel: Horizontal `FlatList` with `snapToInterval={cardWidth + cardGap}`, `decelerationRate="fast"`, and active card centered (`(screenWidth - cardWidth) / 2` padding)

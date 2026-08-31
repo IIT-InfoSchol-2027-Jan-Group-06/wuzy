@@ -1,9 +1,11 @@
-import { ImageBackground, Pressable, Text, View, useWindowDimensions } from 'react-native';
+import { ImageBackground, Pressable, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import type { ImageSourcePropType } from 'react-native';
 import { VisitButton } from './VisitButton';
 import { StatusBadge } from './StatusBadge';
+import { useResponsive } from '@/hooks/useResponsive';
+import { wuzyColors, wuzyFonts } from '@/constants/wuzy-theme';
 
 export interface FeaturedEventCardProps {
   title: string;
@@ -28,28 +30,27 @@ export function FeaturedEventCard({
   onFavorite,
   isFavorite = false,
 }: FeaturedEventCardProps) {
-  const { width: screenWidth } = useWindowDimensions();
+  const { screenWidth, fontSize, spacing } = useResponsive();
 
   // Card dimensions (responsive ratios)
   const cardWidth = Math.round(screenWidth * 0.75);
   const cardHeight = Math.round(screenWidth * 1.05);
-  const borderRadius = Math.round(screenWidth * 0.06);
-  const horizontalPadding = Math.round(screenWidth * 0.035);
-  const verticalPadding = Math.round(screenWidth * 0.04);
+  const borderRadius = spacing('md');
+  const horizontalPadding = spacing('sm');
+  const verticalPadding = spacing('md');
 
   // Top bar sizing
-  const favBtnSize = Math.round((50 / 375) * screenWidth); // matches GlassNavButton
+  const favBtnSize = spacing('lg'); // matches GlassNavButton
   const favIconSize = Math.round(favBtnSize * 0.48);
 
   // Bottom content sizing
-  const timeFontSize = Math.round(screenWidth * 0.022);
-  const titleFontSize = Math.round(screenWidth * 0.058);
-  const locationIconSize = Math.round(screenWidth * 0.032);
-  const locationFontSize = Math.round(screenWidth * 0.026);
+  const timeFontSize = fontSize('tiny');
+  const titleFontSize = fontSize('title') * 0.76; // ~0.076 ratio for ticket title
+  const locationIconSize = fontSize('tag');
+  const locationFontSize = fontSize('caption');
 
-  const priceLabelFontSize = Math.round(screenWidth * 0.02);
-  const priceFontSize = Math.round(screenWidth * 0.048);
-  const visitBtnFontSize = Math.round(screenWidth * 0.032);
+  const priceLabelFontSize = fontSize('tiny');
+  const priceFontSize = fontSize('title') * 0.48; // ~0.048 ratio
 
   return (
     // Outer container: clips rounded corners and adds right gap for horizontal scroll
@@ -58,7 +59,6 @@ export function FeaturedEventCard({
         width: cardWidth,
         height: cardHeight,
         borderRadius,
-        marginRight: Math.round(screenWidth * 0.03),
         overflow: 'hidden',
       }}
     >
@@ -111,7 +111,7 @@ export function FeaturedEventCard({
                   justifyContent: 'center',
                 }}
               >
-                <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={favIconSize} color="#FFFFFF" />
+                <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={favIconSize} color={wuzyColors.white} />
               </Pressable>
             </View>
 
@@ -119,15 +119,15 @@ export function FeaturedEventCard({
             <View style={{ flex: 1, justifyContent: 'flex-end', paddingHorizontal: horizontalPadding, paddingBottom: verticalPadding }}>
               <View style={{ zIndex: 10 }}>
                 {/* Time label (yellow, uppercase) */}
-                <Text style={{ color: '#FFE285', fontSize: timeFontSize, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: Math.round(screenWidth * 0.005) }}>{time}</Text>
+                <Text style={{ color: wuzyColors.yellow, fontSize: timeFontSize, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: spacing('xs') / 2, fontFamily: wuzyFonts.semibold }}>{time}</Text>
 
                 {/* Event title (large, bold) */}
-                <Text style={{ color: '#FFFFFF', fontSize: titleFontSize, fontWeight: '800', lineHeight: titleFontSize * 1.15, marginBottom: Math.round(screenWidth * 0.015) }}>{title}</Text>
+                <Text style={{ color: wuzyColors.white, fontSize: titleFontSize, fontWeight: '800', lineHeight: titleFontSize * 1.15, marginBottom: spacing('xs'), fontFamily: wuzyFonts.bold }}>{title}</Text>
 
                 {/* Location row with map pin icon */}
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: Math.round(screenWidth * 0.03) }}>
-                  <Ionicons name="location-outline" size={locationIconSize} color="#D0CFA6" style={{ marginRight: Math.round(screenWidth * 0.008) }} />
-                  <Text style={{ color: '#D0CFA6', fontSize: locationFontSize, fontWeight: '500', flex: 1 }}>{location}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing('sm') }}>
+                  <Ionicons name="location-outline" size={locationIconSize} color={wuzyColors.bronze} style={{ marginRight: spacing('xs') / 3 }} />
+                  <Text style={{ color: wuzyColors.bronze, fontSize: locationFontSize, fontWeight: '500', flex: 1, fontFamily: wuzyFonts.medium }}>{location}</Text>
                 </View>
 
                 {/* Footer: price (left) + visit button (right) */}
@@ -138,13 +138,13 @@ export function FeaturedEventCard({
                     alignItems: 'flex-end',
                     borderTopWidth: 1,
                     borderTopColor: 'rgba(255,255,255,0.1)',
-                    paddingTop: Math.round(screenWidth * 0.02),
+                    paddingTop: spacing('sm'),
                   }}
                 >
                   {/* Price block */}
                   <View>
-                    <Text style={{ color: '#888888', fontSize: priceLabelFontSize, fontWeight: '500' }}>Starting from</Text>
-                    <Text style={{ color: '#FFE285', fontSize: priceFontSize, fontWeight: 'bold', marginTop: Math.round(screenWidth * 0.003) }}>{price}</Text>
+                    <Text style={{ color: wuzyColors.gray, fontSize: priceLabelFontSize, fontWeight: '500', fontFamily: wuzyFonts.medium }}>Starting from</Text>
+                    <Text style={{ color: wuzyColors.yellow, fontSize: priceFontSize, fontWeight: 'bold', marginTop: spacing('xs') / 4, fontFamily: wuzyFonts.bold }}>{price}</Text>
                   </View>
 
                   {/* Visit action button (reusable component) */}

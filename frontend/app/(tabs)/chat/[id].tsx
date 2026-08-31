@@ -38,7 +38,7 @@ export default function ChatViewScreen() {
       {/* enabled gate forces the padding back to 0 on hide, which Android's
           KeyboardAvoidingView fails to do by itself under edge-to-edge */}
       <KeyboardAvoidingView behavior="padding" enabled={keyboardShown} style={{ flex: 1 }}>
-        <View style={{ marginTop: Math.round(18 * scale) }}>
+        <View style={{ marginTop: Math.round(18 * scale), paddingBottom: Math.round(8 * scale), backgroundColor: wuzyColors.bg }}>
           <ChatHeader
             name={chat.name}
             avatar={chat.avatar}
@@ -67,7 +67,7 @@ export default function ChatViewScreen() {
           renderItem={({ item }) => <ChatBubble text={item.text} outgoing={item.out} />}
         />
 
-        <View style={{ paddingBottom: Math.round(12 * scale) }}>
+        <View style={{ paddingTop: Math.round(8 * scale), paddingBottom: Math.round(12 * scale), backgroundColor: wuzyColors.bg }}>
           <MessageBar />
         </View>
       </KeyboardAvoidingView>

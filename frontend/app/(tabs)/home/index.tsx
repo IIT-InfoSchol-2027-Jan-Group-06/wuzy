@@ -25,7 +25,7 @@ export default function HomeScreen() {
     <View className="flex-1 bg-wuzy-bg">
       <SafeAreaView edges={['top', 'bottom']} className="flex-1" style={{ backgroundColor: '#0A0F17' }}>
         {/* Fixed "Wuzy" header that stays in place while the feed scrolls */}
-        <View className="flex-row items-center justify-between px-[32px] pt-[49px]">
+        <View className="flex-row items-center justify-between px-[32px] pt-[32px]">
           <Text
             className="text-[32px] leading-[32px] text-wuzy-yellow"
             style={{ fontFamily: wuzyFonts.display }}>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { FlatList, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { CategoryFilter } from '@/components/CategoryFilter';
 import { GlassNavButton } from '@/components/GlassNavButton';
 import { SearchBar } from '@/components/SearchBar';
@@ -9,6 +10,7 @@ import { chatMessages, CATEGORIES, type ChatMessage } from '@/constants/chat-dat
 import { wuzyColors, wuzyFonts } from '@/constants/wuzy-theme';
 
 export default function ChatScreen() {
+  const router = useRouter();
   const [active, setActive] = React.useState('All');
   const [searchQuery, setSearchQuery] = React.useState('');
   const { width: screenWidth } = useWindowDimensions();
@@ -70,7 +72,9 @@ export default function ChatScreen() {
           paddingTop: Math.round(22 * scale),
           paddingBottom: Math.round(70 * scale) + Math.round(45 * scale) + Math.round(20 * scale),
         }}
-        renderItem={({ item }) => <MessageRow item={item} />}
+        renderItem={({ item }) => (
+          <MessageRow item={item} onPress={() => router.push(`/chat/${item.id}`)} />
+        )}
       />
 
       <GlassNavButton icon="add" onPress={() => {}} className="absolute bottom-20 right-6 z-50" />

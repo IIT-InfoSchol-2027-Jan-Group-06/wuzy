@@ -8,6 +8,7 @@ import { useRouter } from 'expo-router';
 import { wuzyFonts } from '@/constants/wuzy-theme';
 import { mockUserProfile, type UserProfile } from '@/constants/profile-data';
 import { TagSection } from '@/components/TagSection';
+import { GlassNavButton } from '@/components/GlassNavButton';
 
 type ProfileScreenProps = {
   user?: UserProfile | null;
@@ -60,14 +61,19 @@ export default function ProfileScreen({ user }: ProfileScreenProps) {
                 end={{ x: 0, y: 1 }}
                 style={StyleSheet.absoluteFill} />
 
-              {/* Top Right Action - Connect Button */}
-              <View className="absolute top-[50px] right-[20px]">
+              {/* Top Right Action - Connect & Settings Buttons */}
+              <View className="absolute top-[50px] right-[20px] flex-row items-center gap-2">
                 <Pressable
                   onPress={() => router.push('/connect')}
                   className="items-center justify-center rounded-full"
                   style={{ width: 44, height: 44, backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' }}>
                   <Ionicons name="people" size={22} color="#FFFFFF" />
                 </Pressable>
+                <GlassNavButton
+                  icon="settings"
+                  onPress={() => router.push('/settings')}
+                  className=""
+                />
               </View>
 
               {/* Text Overlay Container - Bottom Left */}

@@ -29,7 +29,7 @@ export function ConnectCard({ username, qrValue, onBack, backgroundImage }: Conn
 
   return (
     <View style={styles.container}>
-      <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea}>
         <View style={StyleSheet.absoluteFill}>
           {backgroundImage && (
             <Image

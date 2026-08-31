@@ -1,56 +1,72 @@
 import React, { useState } from 'react';
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Switch, Text, View, useWindowDimensions } from 'react-native';
+import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+import { SafeAreaView as RNASafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
 
 import { GlassNavButton } from '@/components/GlassNavButton';
 import { wuzyFonts, wuzyColors } from '@/constants/wuzy-theme';
 
-interface SettingsItemProps {
+function SettingRow({ icon, label, onPress, showChevron = true, iconColor = wuzyColors.white, labelColor = wuzyColors.white }: {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
   onPress?: () => void;
   showChevron?: boolean;
   iconColor?: string;
   labelColor?: string;
-  rightElement?: React.ReactNode;
-}
-
-function SettingsItem({ icon, label, onPress, showChevron = true, iconColor = wuzyColors.yellow, labelColor = '#FFFFFF', rightElement }: SettingsItemProps) {
+}) {
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      style={styles.itemContainer}
-      android_ripple={{ color: 'rgba(255,255,255,0.1)' }}
+      className="flex-row items-center justify-between py-3.5"
+      android_ripple={{ color: 'rgba(255,255,255,0.08)' }}
     >
-      <Ionicons name={icon} size={22} color={iconColor} style={styles.icon} />
-      <Text style={[styles.itemLabel, { color: labelColor }]}>{label}</Text>
-      {rightElement ? (
-        rightElement
-      ) : showChevron ? (
-        <Ionicons name="chevron-forward" size={20} color="#666666" />
-      ) : null}
+      <View className="flex-row items-center">
+        <Ionicons name={icon} size={22} color={iconColor} className="mr-4" />
+        <Text style={{ fontFamily: wuzyFonts.medium, fontSize: 15, color: labelColor }}>{label}</Text>
+      </View>
+      {showChevron && <Ionicons name="chevron-forward" size={18} color="#8A919A" />}
     </Pressable>
   );
 }
 
-interface SectionHeaderProps {
-  title: string;
+function ToggleRow({ icon, label, value, onValueChange, iconColor = wuzyColors.white }: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  value: boolean;
+  onValueChange: (value: boolean) => void;
+  iconColor?: string;
+}) {
+  return (
+    <View className="flex-row items-center justify-between py-3.5">
+      <View className="flex-row items-center gap-4">
+        <Ionicons name={icon} size={22} color={iconColor} />
+        <Text style={{ fontFamily: wuzyFonts.medium, fontSize: 15, color: wuzyColors.white }}>{label}</Text>
+      </View>
+      <TouchableOpacity
+        onPress={() => onValueChange(!value)}
+        accessibilityRole="switch"
+        accessibilityState={{ checked: value }}
+        className={`w-12 h-6 rounded-full flex-row items-center px-1 ${
+          value ? 'bg-[#F0CD6D] justify-end' : 'bg-[#3A3F47] justify-start'
+        }`}
+      >
+        <View className="w-4 h-4 rounded-full bg-white" />
+      </TouchableOpacity>
+    </View>
+  );
 }
 
-function SectionHeader({ title }: SectionHeaderProps) {
-  const { width: screenWidth } = useWindowDimensions();
+function SectionHeader({ title }: { title: string }) {
   return (
     <Text
-      style={[
-        styles.sectionHeader,
-        {
-          fontSize: Math.round(screenWidth * 0.041),
-          color: wuzyColors.yellow,
-        },
-      ]}
+      style={{
+        fontFamily: wuzyFonts.semibold,
+        fontSize: 14,
+        color: '#F0CD6D',
+      }}
+      className="mb-3"
     >
       {title}
     </Text>
@@ -59,125 +75,91 @@ function SectionHeader({ title }: SectionHeaderProps) {
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const { width: screenWidth } = useWindowDimensions();
   const [pushNotifications, setPushNotifications] = useState(true);
   const [emailUpdates, setEmailUpdates] = useState(false);
 
-  const backButtonSize = Math.round((42 / 375) * Math.min(screenWidth, 375));
-  const headerFontSize = Math.round(Math.min(screenWidth, 375) * 0.061);
-
   return (
     <View style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <View style={StyleSheet.absoluteFill}>
-          <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
-        </View>
-
+      <RNASafeAreaView edges={['top']} style={styles.safeArea}>
         <ScrollView
           className="flex-1"
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* Header with back button and title */}
-          <View style={[
-            styles.header,
-            { paddingTop: 49, paddingHorizontal: 32 },
-          ]}>
-            <GlassNavButton
-              icon="arrow-back"
-              size={backButtonSize}
-              onPress={() => router.back()}
-            />
-            <Text
-              style={[
-                styles.headerTitle,
-                { fontSize: headerFontSize },
-              ]}>
-              Settings
-            </Text>
-            <View style={{ width: backButtonSize }} />
-          </View>
+          {/* Top Container */}
+          <View className="flex-1">
+            {/* Header Section - Using GlassNavButton per DESIGN.md */}
+            <View className="flex-row items-center mb-8 mt-2 px-6">
+              <GlassNavButton
+                icon="arrow-back"
+                onPress={() => router.back()}
+                className=""
+              />
+              <Text
+                style={{
+                  fontFamily: wuzyFonts.display,
+                  fontSize: Math.round(375 * 0.061),
+                  color: '#F0CD6D',
+                }}
+                className="flex-1 text-center"
+              >
+                Settings
+              </Text>
+              <View style={{ width: 44 }} />
+            </View>
 
-          {/* Section 1: Account Center */}
-          <View style={styles.section}>
-            <SectionHeader title="Account Center" />
-            <View style={styles.sectionList}>
-              <SettingsItem
-                icon="person-outline"
+            {/* Section 1: Account Center */}
+            <View className="mb-6 px-6">
+              <SectionHeader title="Account Center" />
+              <SettingRow
+                icon="person-circle-outline"
                 label="Personal Information"
                 onPress={() => console.log('Personal Information pressed')}
               />
-              <SettingsItem
-                icon="card-outline"
+              <SettingRow
+                icon="videocam-outline"
                 label="Subscriptions"
                 onPress={() => console.log('Subscriptions pressed')}
               />
-              <SettingsItem
+              <SettingRow
                 icon="shield-outline"
                 label="Security"
                 onPress={() => console.log('Security pressed')}
               />
             </View>
-          </View>
 
-          {/* Section 2: How you use WUZY */}
-          <View style={styles.section}>
-            <SectionHeader title="How you use WUZY" />
-            <View style={styles.sectionList}>
-              <SettingsItem
+            {/* Section 2: Notifications & Preferences */}
+            <View className="mt-6 mb-6 px-6">
+              <SectionHeader title="Notifications & Preferences" />
+              <ToggleRow
                 icon="notifications-outline"
                 label="Push Notifications"
-                showChevron={false}
-                rightElement={
-                  <Switch
-                    value={pushNotifications}
-                    onValueChange={setPushNotifications}
-                    trackColor={{ false: '#333333', true: wuzyColors.yellow }}
-                    thumbColor={pushNotifications ? '#0A0F17' : '#FFFFFF'}
-                    accessibilityLabel="Push Notifications"
-                  />
-                }
+                value={pushNotifications}
+                onValueChange={setPushNotifications}
               />
-              <SettingsItem
+              <ToggleRow
                 icon="mail-outline"
                 label="Email Updates"
-                showChevron={false}
-                rightElement={
-                  <Switch
-                    value={emailUpdates}
-                    onValueChange={setEmailUpdates}
-                    trackColor={{ false: '#333333', true: wuzyColors.yellow }}
-                    thumbColor={emailUpdates ? '#0A0F17' : '#FFFFFF'}
-                    accessibilityLabel="Email Updates"
-                  />
-                }
+                value={emailUpdates}
+                onValueChange={setEmailUpdates}
               />
             </View>
           </View>
 
-          {/* Section 3: Account Actions */}
-          <View style={styles.section}>
-            <View style={styles.sectionList}>
-              <SettingsItem
-                icon="log-out-outline"
-                label="Logout"
-                showChevron={false}
-                iconColor="#FFFFFF"
-                labelColor="#FFFFFF"
-                onPress={() => console.log('Logout pressed')}
-              />
-              <SettingsItem
-                icon="trash-outline"
-                label="Delete Account"
-                showChevron={false}
-                iconColor="#FF6B6B"
-                labelColor="#FF6B6B"
-                onPress={() => console.log('Delete Account pressed')}
-              />
-            </View>
+          {/* Bottom Container - Account Section */}
+          <View className="pb-6 px-6">
+            <SectionHeader title="Account" />
+            <SettingRow
+              icon="log-out-outline"
+              label="Logout"
+              showChevron={false}
+              iconColor={wuzyColors.white}
+              labelColor={wuzyColors.white}
+              onPress={() => console.log('Logout pressed')}
+            />
           </View>
         </ScrollView>
-      </SafeAreaView>
+      </RNASafeAreaView>
     </View>
   );
 }
@@ -185,51 +167,15 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0A0F17',
+    backgroundColor: '#050B14',
   },
   safeArea: {
     flex: 1,
-    backgroundColor: '#0A0F17',
+    backgroundColor: '#050B14',
   },
   scrollContent: {
-    paddingBottom: 140,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexGrow: 1,
     justifyContent: 'space-between',
-  },
-  headerTitle: {
-    fontFamily: wuzyFonts.display,
-    color: wuzyColors.yellow,
-    flex: 1,
-    textAlign: 'center',
-  },
-  section: {
-    paddingHorizontal: 24,
-    marginBottom: 24,
-  },
-  sectionHeader: {
-    fontFamily: wuzyFonts.bold,
-    marginBottom: 12,
-  },
-  sectionList: {
-    marginTop: 12,
-  },
-  itemContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#2B3545',
-  },
-  icon: {
-    marginRight: 16,
-  },
-  itemLabel: {
-    fontFamily: wuzyFonts.medium,
-    fontSize: 15,
-    flex: 1,
+    paddingTop: 16,
   },
 });

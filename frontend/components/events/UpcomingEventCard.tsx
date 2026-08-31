@@ -40,13 +40,16 @@ export function UpcomingEventCard({
   const avatarSize = spacing('md') * 1.5; // ~40px on 375px
   const hostFontSize = fontSize('tag'); // ~12px
 
-  // Date badge sizing (white square) - matches spec: w-[64px] h-[64px] rounded-[18px]
-  const dateBadgeSize = spacing('xl') * 1.6; // ~64px on 375px
-  const dateBadgeRadius = spacing('sm') * 1.8; // ~18px
+  // Date badge sizing (white square) - INCREASE SIZE HERE
+  const dateBadgeSize = spacing('xl') * 1.85; // ~74px on 375px (was 1.6 -> ~64px)
+  const dateBadgeRadius = spacing('sm') * 2.1; // ~21px rounded corners (was 1.8 -> ~18px)
   const dateBadgePadding = spacing('xs') * 0.4; // ~1.5px
-  const dateDayFontSize = fontSize('title') * 0.6; // ~22px
+  const dateDayFontSize = fontSize('title') * 0.7; // ~26px (was 0.6 -> ~22px)
   const dateMonthFontSize = fontSize('tiny'); // ~8px
   const dateMonthMarginTop = spacing('xs') * 0.05; // ~0.2px
+
+  // Badge right offset: positive = more right, negative = more left
+  const badgeRightOffset = spacing('sm') * 0.5; // ~4px extra right push
 
   return (
     // Outer container: Pressable with active feedback
@@ -84,10 +87,10 @@ export function UpcomingEventCard({
         style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
       />
 
-      {/* Content layer (z-index above gradient) */}
-      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'space-between', paddingHorizontal: horizontalPadding, paddingVertical: verticalPadding, flexDirection: 'row', alignItems: 'flex-end' }}>
+      {/* Content layer (z-index above gradient) - text content */}
+      <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'space-between', paddingHorizontal: horizontalPadding, paddingVertical: verticalPadding, flexDirection: 'row', alignItems: 'flex-end', zIndex: 10 }}>
         {/* LEFT SECTION: Event metadata */}
-        <View style={{ flex: 1, justifyContent: 'flex-end', marginRight: contentGap, zIndex: 10 }}>
+        <View style={{ flex: 1, justifyContent: 'flex-end', marginRight: contentGap }}>
           {/* Title */}
           <Text style={{ color: '#FFFFFF', fontSize: titleFontSize, fontWeight: 'bold', lineHeight: titleFontSize * 1.2, marginBottom: titleMarginBottom }}>{title}</Text>
 
@@ -110,8 +113,11 @@ export function UpcomingEventCard({
             <Text style={{ color: '#FFFFFF', fontSize: hostFontSize, fontWeight: '600' }}>{hostName}</Text>
           </View>
         </View>
+      </View>
 
-        {/* RIGHT SECTION: Date badge (white square) */}
+      {/* RIGHT SECTION: Date badge (white square) - vertically centered on card, right edge with gap */}
+      {/* badgeRightGap: base padding (horizontalPadding) + extra gap from right edge */}
+      <View style={{ position: 'absolute', right: horizontalPadding + 5, top: 0, bottom: 0, justifyContent: 'center', zIndex: 10 }}>
         <View
           style={{
             backgroundColor: '#FFFFFF',
@@ -121,7 +127,6 @@ export function UpcomingEventCard({
             padding: dateBadgePadding,
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 10,
             shadowColor: '#000',
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.1,

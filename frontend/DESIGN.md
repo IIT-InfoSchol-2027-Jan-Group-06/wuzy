@@ -82,6 +82,7 @@ Font sizes scale with screen width (`screenWidth * ratio`):
 - **Import**: `import { MessageBar } from '@/components/chat/MessageBar';`
 - **Look**: Full-round pill in solid `#3B3A2D` (the opaque blend of `yellowDim` over `bg`), 55 tall, emoji icon left, bold white "Message" input, attach and mic icons right
 - **Placement**: Floats absolutely over the thread near the bottom edge, bubbles scroll behind it
+- **Send button**: When text is typed, a `#C1AE5F` send circle slides in on the right like an elevator door and attach/mic slide left; it reverses when the text is cleared
 
 ### QrCode
 - **When to Use**: Scannable QR code for tickets, check-ins, or share links

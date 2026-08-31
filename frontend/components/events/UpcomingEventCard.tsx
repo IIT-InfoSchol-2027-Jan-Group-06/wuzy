@@ -43,13 +43,13 @@ export function UpcomingEventCard({
   // Date badge sizing (white square) - INCREASE SIZE HERE
   const dateBadgeSize = spacing('xl') * 1.85; // ~74px on 375px (was 1.6 -> ~64px)
   const dateBadgeRadius = spacing('sm') * 2.1; // ~21px rounded corners (was 1.8 -> ~18px)
-  const dateBadgePadding = spacing('xs') * 0.4; // ~1.5px
+  const dateBadgePadding = spacing('md') * 0.4; // ~1.5px
   const dateDayFontSize = fontSize('title') * 0.7; // ~26px (was 0.6 -> ~22px)
   const dateMonthFontSize = fontSize('tiny'); // ~8px
   const dateMonthMarginTop = spacing('xs') * 0.05; // ~0.2px
 
   // Badge right offset: positive = more right, negative = more left
-  const badgeRightOffset = spacing('sm') * 0.5; // ~4px extra right push
+  const badgeRightOffset = spacing('md') * 0.9; // ~4px extra right push
 
   return (
     // Outer container: Pressable with active feedback
@@ -116,8 +116,7 @@ export function UpcomingEventCard({
       </View>
 
       {/* RIGHT SECTION: Date badge (white square) - vertically centered on card, right edge with gap */}
-      {/* badgeRightGap: base padding (horizontalPadding) + extra gap from right edge */}
-      <View style={{ position: 'absolute', right: horizontalPadding + 5, top: 0, bottom: 0, justifyContent: 'center', zIndex: 10 }}>
+      <View style={{ position: 'absolute', right: horizontalPadding, top: 0, bottom: 0, justifyContent: 'center', zIndex: 10 }}>
         <View
           style={{
             backgroundColor: '#FFFFFF',

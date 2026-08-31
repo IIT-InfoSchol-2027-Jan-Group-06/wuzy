@@ -1,41 +1,75 @@
 import { CameraView as Camera, CameraType, useCameraPermissions } from 'expo-camera';
 import { launchImageLibraryAsync, MediaTypeOptions } from 'expo-image-picker';
-import { Pressable, Text, View, StyleSheet, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import { Pressable, Text, View, StyleSheet, TouchableOpacity, Image, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback, memo } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { GlassNavButton } from '@/components/GlassNavButton';
 import { wuzyFonts } from '@/constants/wuzy-theme';
 
-export default function UploadScreen() {
-  const router = useRouter();
-  const [cameraType, setCameraType] = useState<CameraType>('back');
-  const [hasPermission, requestCameraPermission] = useCameraPermissions();
-  const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
-  const [isCapturing, setIsCapturing] = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
+const CameraComponent = memo(({ type, onPictureTaken, onFlip }: { type: CameraType; onPictureTaken: (uri: string) => void; onFlip: () => void }) => {
   const cameraRef = useRef<Camera>(null);
 
-  const flipCamera = () => {
-    setCameraType(prev => prev === 'back' ? 'front' : 'back');
-  };
-
-  const takePicture = async () => {
-    if (!cameraRef.current || isCapturing) return;
-    setIsCapturing(true);
+  const takePicture = useCallback(async () => {
+    if (!cameraRef.current) return;
     try {
       const photo = await cameraRef.current.takePictureAsync({
         quality: 0.8,
         base64: false,
       });
-      setCapturedPhoto(photo.uri);
-      setShowPreview(true);
+      onPictureTaken(photo.uri);
     } catch (error) {
       console.error('Error taking picture:', error);
-    } finally {
-      setIsCapturing(false);
     }
+  }, [onPictureTaken]);
+
+  return (
+    <Camera
+      ref={cameraRef}
+      type={type}
+      style={StyleSheet.absoluteFillObject}
+      useCamera2Api={true}
+    >
+      <View className="absolute bottom-0 left-0 right-0 p-6 flex-row items-center justify-between">
+        <TouchableOpacity
+          className="w-14 h-14 rounded-full bg-white/20 items-center justify-center border border-white/30">
+          <Ionicons name="image-outline" size={28} color="#FFFFFF" />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={takePicture}
+          className="w-20 h-20 rounded-full border-4 border-white/50 items-center justify-center">
+          <View className="w-14 h-14 rounded-full border-2 border-white bg-white" />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={onFlip}
+          className="w-14 h-14 rounded-full bg-white/20 items-center justify-center border border-white/30">
+          <Ionicons name="camera-reverse-outline" size={28} color="#FFFFFF" />
+        </TouchableOpacity>
+      </View>
+    </Camera>
+  );
+});
+
+export default function UploadScreen() {
+  const router = useRouter();
+  const { width: screenWidth } = useWindowDimensions();
+  const cardWidth = screenWidth - 40;
+  const cardHeight = Math.round(cardWidth * (418 / 335));
+  const [cameraType, setCameraType] = useState<CameraType>('back');
+  const [hasPermission, requestCameraPermission] = useCameraPermissions();
+  const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
+
+  const flipCamera = () => {
+    setCameraType(prev => prev === 'back' ? 'front' : 'back');
+  };
+
+  const handlePictureTaken = (uri: string) => {
+    setCapturedPhoto(uri);
+    setShowPreview(true);
   };
 
   const pickFromGallery = async () => {
@@ -43,7 +77,7 @@ export default function UploadScreen() {
       const result = await launchImageLibraryAsync({
         mediaTypes: MediaTypeOptions.Images,
         allowsEditing: true,
-        aspect: [4, 3],
+        aspect: [418, 335],
         quality: 0.8,
       });
       if (!result.canceled && result.assets[0]) {
@@ -98,28 +132,22 @@ export default function UploadScreen() {
   }
 
   return (
-    <View className="flex-1 bg-wuzy-bg">
-      <SafeAreaView className="flex-1" style={{ backgroundColor: '#0A0F17' }}>
+    <View className="flex-1" style={{ backgroundColor: '#0A0F17' }}>
+      <SafeAreaView className="flex-1" style={{ backgroundColor: 'transparent' }}>
         <View className="flex-row items-center justify-between px-6 pt-6">
           <GlassNavButton
             icon="arrow-back"
             onPress={() => router.back()}
             className="absolute top-6 left-6 z-50"
           />
-          <Text
-            className="text-[28px] leading-[28px] text-wuzy-yellow"
-            style={{ fontFamily: wuzyFonts.display }}>
-            UPLOAD
-          </Text>
           <View style={{ width: 50 }} />
         </View>
 
         {showPreview && capturedPhoto ? (
-          <View className="flex-1">
+          <View className="flex-1 items-center justify-center">
             <Image
               source={{ uri: capturedPhoto }}
-              style={StyleSheet.absoluteFillObject}
-              resizeMode="cover"
+              style={{ width: cardWidth, height: cardHeight, resizeMode: 'cover' }}
             />
             <View className="absolute bottom-0 left-0 right-0 p-6 flex-row justify-between">
               <GlassNavButton
@@ -135,42 +163,15 @@ export default function UploadScreen() {
             </View>
           </View>
         ) : (
-          <View className="flex-1" style={{ backgroundColor: '#000' }}>
-            <Camera
-              ref={cameraRef}
-              type={cameraType}
-              style={StyleSheet.absoluteFillObject}
-              useCamera2Api={true}
-            >
-              <View className="absolute bottom-0 left-0 right-0 p-6 flex-row items-center justify-between">
-                <TouchableOpacity
-                  onPress={pickFromGallery}
-                  className="w-14 h-14 rounded-full bg-white/20 items-center justify-center border border-white/30">
-                  <Ionicons name="image-outline" size={28} color="#FFFFFF" />
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={takePicture}
-                  disabled={isCapturing}
-                  className="w-20 h-20 rounded-full border-4 border-white/50 items-center justify-center"
-                  style={{
-                    backgroundColor: isCapturing ? 'rgba(255,255,255,0.3)' : 'transparent',
-                  }}>
-                  <View
-                    className="w-14 h-14 rounded-full border-2 border-white"
-                    style={{
-                      backgroundColor: isCapturing ? 'rgba(255,255,255,0.5)' : '#FFFFFF',
-                    }}
-                  />
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={flipCamera}
-                  className="w-14 h-14 rounded-full bg-white/20 items-center justify-center border border-white/30">
-                  <Ionicons name="camera-reverse-outline" size={28} color="#FFFFFF" />
-                </TouchableOpacity>
-              </View>
-            </Camera>
+          <View className="flex-1 items-center justify-center">
+            <View style={{ width: cardWidth, height: cardHeight }}>
+              <CameraComponent
+                key={cameraType}
+                type={cameraType}
+                onPictureTaken={handlePictureTaken}
+                onFlip={flipCamera}
+              />
+            </View>
           </View>
         )}
       </SafeAreaView>

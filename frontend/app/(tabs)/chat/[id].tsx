@@ -1,5 +1,5 @@
 import React from 'react';
-import { FlatList, KeyboardAvoidingView, Platform, View, useWindowDimensions } from 'react-native';
+import { FlatList, Keyboard, KeyboardAvoidingView, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ChatBubble } from '@/components/chat/ChatBubble';
@@ -14,6 +14,16 @@ export default function ChatViewScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { width: screenWidth } = useWindowDimensions();
   const scale = screenWidth / 375;
+  const [keyboardShown, setKeyboardShown] = React.useState(false);
+
+  React.useEffect(() => {
+    const show = Keyboard.addListener('keyboardDidShow', () => setKeyboardShown(true));
+    const hide = Keyboard.addListener('keyboardDidHide', () => setKeyboardShown(false));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
 
   const chat = chatMessages.find((msg) => msg.id === id);
   const thread = chatThreads[id ?? ''];
@@ -25,9 +35,9 @@ export default function ChatViewScreen() {
 
   return (
     <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: wuzyColors.bg }}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={{ flex: 1 }}>
+      {/* enabled gate forces the padding back to 0 on hide, which Android's
+          KeyboardAvoidingView fails to do by itself under edge-to-edge */}
+      <KeyboardAvoidingView behavior="padding" enabled={keyboardShown} style={{ flex: 1 }}>
         <View style={{ marginTop: Math.round(18 * scale) }}>
           <ChatHeader
             name={chat.name}

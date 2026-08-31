@@ -29,9 +29,9 @@ export function UpcomingEventCard({
   const cardHeight = spacing('lg') * 4.5; // ~155px on 375px
   const borderRadius = spacing('md'); // ~16px
   const horizontalPadding = spacing('sm'); // ~8px
-  const verticalPadding = spacing('sm'); // ~8px
+  const verticalPadding = spacing('md'); // ~8px
   const cardMarginBottom = spacing('sm'); // ~8px
-  const contentGap = spacing('sm'); // ~8px
+  const contentGap = spacing('md'); // ~8px
   const titleMarginBottom = spacing('xs'); // ~4px
   const avatarGap = spacing('xs') * 0.65; // ~2.6px
 
@@ -75,13 +75,13 @@ export function UpcomingEventCard({
         transition={200}
       />
 
-      {/* Bottom gradient overlay for text readability */}
+      {/* Side gradient overlay for text readability - dark on sides, transparent in center */}
       <LinearGradient
-        colors={['transparent', 'rgba(10,15,23,0.6)', 'rgba(10,15,23,0.9)', 'rgba(10,15,23,0.98)']}
-        locations={[0, 0.2, 0.6, 1]}
-        start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 1 }}
-        style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '75%' }}
+        colors={['rgba(10,15,23,0.9)', 'transparent', 'rgba(10,15,23,0.9)']}
+        locations={[0, 0.5, 1]}
+        start={{ x: 0, y: 0.5 }}
+        end={{ x: 1, y: 0.5 }}
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
       />
 
       {/* Content layer (z-index above gradient) */}

@@ -129,6 +129,8 @@ export default function ExploreScreen() {
   const headerFontSize = Math.round(screenWidth * 0.065);
   const sectionTitleFontSize = Math.round(screenWidth * 0.04);
   const footerFontSize = Math.round(screenWidth * 0.025);
+  // Gap between upcoming event cards (adjust this value to change spacing)
+  const upcomingEventGap = Math.round(screenWidth * 0.035);
 
   // Filter events by category and search text
   const filteredFeaturedEvents = useMemo(() => {
@@ -249,18 +251,20 @@ export default function ExploreScreen() {
             >
               Up Coming
             </Text>
-            {filteredUpcomingEvents.map((event) => (
-              <UpcomingEventCard
-                key={event.id}
-                title={event.title}
-                hostName={event.hostName}
-                hostAvatar={event.hostAvatar}
-                dateDay={event.dateDay}
-                dateMonth={event.dateMonth}
-                imageUri={event.imageUri}
-                onPress={() => {}}
-              />
-            ))}
+            <View style={{ gap: upcomingEventGap }}>
+              {filteredUpcomingEvents.map((event) => (
+                <UpcomingEventCard
+                  key={event.id}
+                  title={event.title}
+                  hostName={event.hostName}
+                  hostAvatar={event.hostAvatar}
+                  dateDay={event.dateDay}
+                  dateMonth={event.dateMonth}
+                  imageUri={event.imageUri}
+                  onPress={() => {}}
+                />
+              ))}
+            </View>
           </View>
 
           <View style={{ marginTop: Math.round(screenWidth * 0.03) }}>

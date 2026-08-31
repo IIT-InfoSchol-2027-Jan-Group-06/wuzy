@@ -65,13 +65,13 @@ export default function ChatViewScreen() {
           contentContainerStyle={{
             paddingHorizontal: Math.round(20 * scale),
             paddingTop: Math.round(22 * scale),
-            paddingBottom: Math.round(12 * scale),
+            paddingBottom: Math.round(80 * scale),
             gap: Math.round(12 * scale),
           }}
           renderItem={({ item }) => <ChatBubble text={item.text} outgoing={item.out} />}
         />
 
-        <View style={{ paddingTop: Math.round(8 * scale), paddingBottom: Math.round(12 * scale), backgroundColor: wuzyColors.bg }}>
+        <View style={{ position: 'absolute', left: 0, right: 0, bottom: Math.round(12 * scale) }}>
           <MessageBar />
         </View>
       </KeyboardAvoidingView>

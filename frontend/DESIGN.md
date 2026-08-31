@@ -80,7 +80,8 @@ Font sizes scale with screen width (`screenWidth * ratio`):
 ### MessageBar
 - **When to Use**: Chat composer at the bottom of an open chat
 - **Import**: `import { MessageBar } from '@/components/chat/MessageBar';`
-- **Look**: Full-round pill in `yellowDim`, 55 tall, emoji icon left, bold white "Message" input, attach and mic icons right
+- **Look**: Full-round pill in solid `#3B3A2D` (the opaque blend of `yellowDim` over `bg`), 55 tall, emoji icon left, bold white "Message" input, attach and mic icons right
+- **Placement**: Floats absolutely over the thread near the bottom edge, bubbles scroll behind it
 
 ### QrCode
 - **When to Use**: Scannable QR code for tickets, check-ins, or share links

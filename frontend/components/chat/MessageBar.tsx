@@ -18,7 +18,7 @@ export function MessageBar() {
         height: Math.round(55 * scale),
         marginHorizontal: Math.round(20 * scale),
         paddingHorizontal: Math.round(18 * scale),
-        backgroundColor: wuzyColors.yellowDim,
+        backgroundColor: '#3B3A2D',
         borderRadius: 9999,
       }}>
       <Ionicons name="happy-outline" size={iconSize} color={wuzyColors.white} />
@@ -28,6 +28,8 @@ export function MessageBar() {
         style={{
           flex: 1,
           minWidth: 0,
+          alignSelf: 'stretch',
+          textAlignVertical: 'center',
           fontSize: Math.round(15 * scale),
           color: wuzyColors.white,
           fontFamily: wuzyFonts.bold,

@@ -67,7 +67,7 @@ export default function HomeScreen() {
       </SafeAreaView>
       <GlassNavButton
         icon="add"
-        onPress={() => router.push('/test-button')}
+        onPress={() => router.push('/home/upload')}
         className="absolute bottom-20 right-6 z-50"
       />
     </View>

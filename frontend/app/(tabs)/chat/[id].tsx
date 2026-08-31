@@ -1,5 +1,5 @@
 import React from 'react';
-import { FlatList, Keyboard, KeyboardAvoidingView, View, useWindowDimensions } from 'react-native';
+import { FlatList, Keyboard, KeyboardAvoidingView, Platform, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ChatBubble } from '@/components/chat/ChatBubble';
@@ -17,8 +17,12 @@ export default function ChatViewScreen() {
   const [keyboardShown, setKeyboardShown] = React.useState(false);
 
   React.useEffect(() => {
-    const show = Keyboard.addListener('keyboardDidShow', () => setKeyboardShown(true));
-    const hide = Keyboard.addListener('keyboardDidHide', () => setKeyboardShown(false));
+    // iOS will* events fire when the keyboard starts animating, so the bar
+    // moves with it instead of snapping after; Android only has did* events
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const show = Keyboard.addListener(showEvent, () => setKeyboardShown(true));
+    const hide = Keyboard.addListener(hideEvent, () => setKeyboardShown(false));
     return () => {
       show.remove();
       hide.remove();

@@ -66,6 +66,30 @@ export default function HomeScreen() {
             </Text>
           </View>
 
+          {/* Link to the event analytics dashboard */}
+          <View className="px-[32px] mt-[20px]">
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => router.push('/dashboard')}
+              className="flex-row items-center justify-between rounded-2xl border border-white/15 bg-[#171E28] px-[18px] py-[16px] active:opacity-75">
+              <View>
+                <Text className="text-[13px] text-wuzy-yellow" style={{ fontFamily: wuzyFonts.medium }}>
+                  Event Analytics
+                </Text>
+                <Text
+                  className="mt-[2px] text-[18px] text-white"
+                  style={{ fontFamily: wuzyFonts.bold }}>
+                  Dashboard
+                </Text>
+              </View>
+              <Image
+                source={require('@/assets/icons/ticket.svg')}
+                style={{ width: 21, height: 15 }}
+                contentFit="contain"
+              />
+            </Pressable>
+          </View>
+
           {/* Home feed of post cards */}
           <View className="mt-[25px] items-center gap-[29px]">
             {loading ? (

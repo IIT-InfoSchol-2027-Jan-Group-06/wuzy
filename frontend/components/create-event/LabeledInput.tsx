@@ -22,8 +22,8 @@ export function LabeledInput({
 }: LabeledInputProps) {
   const { width: screenWidth } = useWindowDimensions();
 
-  const labelFontSize = Math.round(screenWidth * 0.032);
-  const inputFontSize = Math.round(screenWidth * 0.038);
+  const labelFontSize = Math.round(screenWidth * 0.028);
+  const inputFontSize = Math.round(screenWidth * 0.034);
   const singleLineHeight = Math.round(screenWidth * 0.055);
   const multilineHeight = Math.round(screenWidth * 0.26);
 

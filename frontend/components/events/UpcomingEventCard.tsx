@@ -36,7 +36,7 @@ export function UpcomingEventCard({
   const avatarGap = spacing('xs') * 0.65; // ~2.6px
 
   // Content sizing
-  const titleFontSize = fontSize('sectionTitle'); // ~18px
+  const titleFontSize = fontSize('sectionTitle') * 0.9; // ~16px on 375px
   const avatarSize = spacing('md') * 1.5; // ~40px on 375px
   const hostFontSize = fontSize('tag'); // ~12px
 

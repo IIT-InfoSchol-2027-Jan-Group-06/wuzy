@@ -45,7 +45,7 @@ export function FeaturedEventCard({
 
   // Bottom content sizing
   const timeFontSize = fontSize('tiny');
-  const titleFontSize = fontSize('title') * 0.76; // ~0.076 ratio for ticket title
+  const titleFontSize = fontSize('title') * 0.52; // ~0.052 ratio
   const locationIconSize = fontSize('tag');
   const locationFontSize = fontSize('caption');
 

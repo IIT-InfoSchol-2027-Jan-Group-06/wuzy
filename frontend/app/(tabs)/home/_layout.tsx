@@ -6,6 +6,7 @@ export default function HomeLayout() {
       <Stack.Screen name="index" />
       <Stack.Screen name="notifications" />
       <Stack.Screen name="create-event" />
+      <Stack.Screen name="connections" />
     </Stack>
   );
 }

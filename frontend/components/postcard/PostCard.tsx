@@ -1,7 +1,16 @@
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Image, Pressable, StyleProp, Text, useWindowDimensions, View, ViewStyle } from 'react-native';
+import {
+  Animated,
+  Image,
+  Pressable,
+  StyleProp,
+  Text,
+  useWindowDimensions,
+  View,
+  ViewStyle,
+} from 'react-native';
 
 import { Post } from '@/constants/feed-data';
 import { wuzyFonts } from '@/constants/wuzy-theme';
@@ -36,17 +45,45 @@ export function PostCard({
   // Height scales with width to keep the card's proportions (335x418 base).
   const cardHeight = height ?? Math.round(cardWidth * (418 / 335));
 
-  // Vanilla state heart, shown briefly after a double tap.
-  const [showHeart, setShowHeart] = useState(false);
+  // Instagram-style heart: springs in with a bounce, holds, then fades out.
+  const heartScale = useRef(new Animated.Value(0)).current;
+  const heartOpacity = useRef(new Animated.Value(0)).current;
   // Last tap timestamp so two presses within the window read as a double tap.
   const lastTapRef = useRef(0);
+
+  const triggerHeart = () => {
+    heartScale.stopAnimation();
+    heartOpacity.stopAnimation();
+    heartScale.setValue(0.2);
+    heartOpacity.setValue(1);
+    Animated.spring(heartScale, {
+      toValue: 1,
+      friction: 6,
+      tension: 300,
+      useNativeDriver: true,
+    }).start();
+    Animated.sequence([
+      Animated.delay(600),
+      Animated.parallel([
+        Animated.timing(heartScale, {
+          toValue: 1.3,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(heartOpacity, {
+          toValue: 0,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+  };
 
   const handlePress = () => {
     const now = Date.now();
     if (now - lastTapRef.current < 300) {
       lastTapRef.current = 0;
-      setShowHeart(true);
-      setTimeout(() => setShowHeart(false), 500);
+      triggerHeart();
     } else {
       lastTapRef.current = now;
     }
@@ -64,12 +101,18 @@ export function PostCard({
         style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 120 }}
       />
 
-      {/* Heart that shows on double tap, like Instagram */}
-      {showHeart && (
-        <View className="absolute inset-0 items-center justify-center" pointerEvents="none">
-          <Ionicons name="heart" size={Math.round(cardWidth * 0.28)} color="white" />
-        </View>
-      )}
+      {/* Heart that pops in on double tap, like Instagram */}
+      <Animated.View
+        pointerEvents="none"
+        className="absolute inset-0 items-center justify-center"
+        style={{ opacity: heartOpacity, transform: [{ scale: heartScale }] }}>
+        <Ionicons
+          name="heart"
+          size={Math.round(cardWidth * 0.3)}
+          color="white"
+          style={{ textShadowColor: 'rgba(0,0,0,0.35)', textShadowRadius: 12 }}
+        />
+      </Animated.View>
 
       {/* Author row: avatar + name + location, pinned top-left */}
       <View className="absolute left-[21px] top-[19px] flex-row items-center">
@@ -90,7 +133,6 @@ export function PostCard({
         disabled={disabled}
         accessibilityLabel={`Like post by ${post.name}`}
         className="absolute inset-0"
-        style={({ pressed }) => (pressed ? { opacity: 0.5 } : undefined)}
       />
     </CardShell>
   );

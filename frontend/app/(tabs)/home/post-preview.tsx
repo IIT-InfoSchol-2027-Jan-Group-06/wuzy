@@ -1,4 +1,14 @@
-import { Pressable, Text, View, Image, TouchableOpacity } from 'react-native';
+import { useState } from 'react';
+import {
+  Pressable,
+  Text,
+  View,
+  Image,
+  TextInput,
+  ScrollView,
+  Switch,
+  useWindowDimensions,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { GlassNavButton } from '@/components/GlassNavButton';
@@ -8,77 +18,134 @@ import { Ionicons } from '@expo/vector-icons';
 export default function PostPreviewScreen() {
   const router = useRouter();
   const { imageUri } = useLocalSearchParams<{ imageUri: string }>();
+  const { width: screenWidth } = useWindowDimensions();
+
+  const [caption, setCaption] = useState('');
+  const [location, setLocation] = useState('');
+  const [saveToGrid, setSaveToGrid] = useState(false);
+
+  const cardWidth = screenWidth - 40;
+  const cardHeight = Math.round(cardWidth * (418 / 335));
+
+  const handlePost = () => {
+    console.log('Post uploaded:', {
+      imageUri,
+      caption,
+      location,
+      saveToGrid,
+    });
+    router.replace('/(tabs)/home');
+  };
 
   return (
     <View className="flex-1 bg-wuzy-bg">
       <SafeAreaView className="flex-1" style={{ backgroundColor: '#0A0F17' }}>
-        <View className="flex-row items-center justify-between px-6 pt-6">
-          <GlassNavButton
-            icon="arrow-back"
-            onPress={() => router.back()}
-            className="absolute top-6 left-6 z-50"
-          />
+        {/* Header */}
+        <View className="flex-row items-center justify-between px-4 py-3">
+          <GlassNavButton icon="arrow-back" onPress={() => router.back()} />
           <Text
-            className="text-[28px] leading-[28px] text-wuzy-yellow"
-            style={{ fontFamily: wuzyFonts.display }}>
+            className="text-wuzy-yellow"
+            style={{
+              fontFamily: wuzyFonts.display,
+              fontSize: screenWidth * 0.061,
+            }}>
             NEW POST
           </Text>
-          <Pressable
-            onPress={() => {
-              console.log('Post uploaded:', imageUri);
-              router.replace('/(tabs)/home');
-            }}
-            className="absolute top-6 right-6 px-4 py-2 rounded-full bg-wuzy-yellow">
+          <Pressable onPress={handlePost} className="px-5 py-2 rounded-full bg-wuzy-yellow">
             <Text
               className="text-wuzy-bg"
               style={{ fontFamily: wuzyFonts.semibold, fontSize: 14 }}>
-              Post
+              Share
             </Text>
           </Pressable>
         </View>
 
-        <View className="flex-1 px-6">
+        <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+          {/* Image Preview - PostCard size */}
           {imageUri && (
-            <Image
-              source={{ uri: imageUri }}
-              className="w-full aspect-[4/3] rounded-[24px]"
-              resizeMode="cover"
-              style={{ marginTop: 16 }}
-            />
-          )}
-
-          <View className="mt-6 flex-row items-start gap-4">
-            <View className="w-12 h-12 rounded-full bg-white/10 items-center justify-center flex-shrink-0">
-              <Ionicons name="person-outline" size={24} color="#FFFFFF" />
-            </View>
-            <View className="flex-1">
+            <View className="px-5 mt-2">
               <View
-                className="bg-white/5 rounded-[16px] p-4 min-h-[120px]"
-                style={{ borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1 }}>
-                <Text
-                  className="text-white"
-                  style={{ fontFamily: wuzyFonts.regular, fontSize: 16, lineHeight: 24 }}
-                  placeholder="What's happening?"
-                  placeholderTextColor="#8A96A6"
+                className="rounded-3xl overflow-hidden"
+                style={{ width: cardWidth, height: cardHeight }}>
+                <Image
+                  source={{ uri: imageUri }}
+                  style={{ width: '100%', height: '100%' }}
+                  resizeMode="cover"
                 />
               </View>
             </View>
-          </View>
+          )}
 
-          <View className="mt-4 flex-row items-center justify-between">
-            <View className="flex-row items-center gap-4">
-              <TouchableOpacity className="p-2">
-                <Ionicons name="location-outline" size={24} color="#FFE783" />
-              </TouchableOpacity>
-              <TouchableOpacity className="p-2">
-                <Ionicons name="people-outline" size={24} color="#FFE783" />
-              </TouchableOpacity>
-              <TouchableOpacity className="p-2">
-                <Ionicons name="hashtag-outline" size={24} color="#FFE783" />
-              </TouchableOpacity>
+          {/* Caption Area */}
+          <View className="px-4 mt-4">
+            <View className="flex-row items-start gap-3">
+              <View className="w-10 h-10 rounded-full bg-white/10 items-center justify-center flex-shrink-0 mt-1">
+                <Ionicons name="person-outline" size={20} color="#FFFFFF" />
+              </View>
+              <TextInput
+                className="flex-1 text-white min-h-[80px]"
+                style={{ fontFamily: wuzyFonts.regular, fontSize: 16, lineHeight: 24 }}
+                placeholder="Write a caption..."
+                placeholderTextColor="#8A96A6"
+                multiline
+                textAlignVertical="top"
+                value={caption}
+                onChangeText={setCaption}
+              />
             </View>
           </View>
-        </View>
+
+          {/* Divider */}
+          <View className="mx-4 mt-4 border-b border-white/10" />
+
+          {/* Location */}
+          <Pressable className="flex-row items-center px-4 py-4 gap-3">
+            <Ionicons name="location-outline" size={22} color="#FFE783" />
+            <TextInput
+              className="flex-1 text-white"
+              style={{ fontFamily: wuzyFonts.regular, fontSize: 15 }}
+              placeholder="Add location"
+              placeholderTextColor="#8A96A6"
+              value={location}
+              onChangeText={setLocation}
+            />
+            {location.length > 0 && (
+              <Pressable onPress={() => setLocation('')}>
+                <Ionicons name="close-circle" size={20} color="#8A96A6" />
+              </Pressable>
+            )}
+          </Pressable>
+
+          {/* Divider */}
+          <View className="mx-4 border-b border-white/10" />
+
+          {/* Save to Profile Grid Toggle */}
+          <View className="flex-row items-center justify-between px-4 py-4">
+            <View className="flex-row items-center gap-3 flex-1">
+              <Ionicons name="grid-outline" size={22} color="#FFE783" />
+              <View className="flex-1">
+                <Text
+                  className="text-white"
+                  style={{ fontFamily: wuzyFonts.medium, fontSize: 15 }}>
+                  Save to Profile Grid
+                </Text>
+                <Text
+                  className="text-wuzy-gray mt-0.5"
+                  style={{ fontFamily: wuzyFonts.regular, fontSize: 12 }}>
+                  Keep this photo on your profile
+                </Text>
+              </View>
+            </View>
+            <Switch
+              value={saveToGrid}
+              onValueChange={setSaveToGrid}
+              trackColor={{ false: '#2A2A2A', true: 'rgba(255, 231, 131, 0.4)' }}
+              thumbColor={saveToGrid ? '#FFE783' : '#8A96A6'}
+            />
+          </View>
+
+          <View className="h-10" />
+        </ScrollView>
       </SafeAreaView>
     </View>
   );

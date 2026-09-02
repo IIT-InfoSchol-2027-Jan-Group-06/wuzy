@@ -39,16 +39,12 @@ export function PostCard({
   disabled = false,
   style,
 }: PostCardProps) {
-  // Card width adapts to the screen size with 10px of margin on each side.
   const { width: screenWidth } = useWindowDimensions();
   const cardWidth = width ?? screenWidth - 40;
-  // Height scales with width to keep the card's proportions (335x418 base).
   const cardHeight = height ?? Math.round(cardWidth * (418 / 335));
 
-  // Instagram-style heart: springs in with a bounce, holds, then fades out.
   const heartScale = useRef(new Animated.Value(0)).current;
   const heartOpacity = useRef(new Animated.Value(0)).current;
-  // Last tap timestamp so two presses within the window read as a double tap.
   const lastTapRef = useRef(0);
 
   const triggerHeart = () => {
@@ -91,17 +87,14 @@ export function PostCard({
 
   return (
     <CardShell width={cardWidth} height={cardHeight} disabled={disabled} style={style}>
-      {/* Full-bleed cover image filling the entire card */}
       <Image source={post.image} className="absolute inset-0 h-full w-full" resizeMode="cover" />
 
-      {/* Top gradient so the white author text and avatar stay visible on bright photos */}
       <LinearGradient
         colors={['rgba(0,0,0,0.9)', 'rgba(0,0,0,0.4)', 'transparent']}
         locations={[0, 0.6, 1]}
         style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 120 }}
       />
 
-      {/* Heart that pops in on double tap, like Instagram */}
       <Animated.View
         pointerEvents="none"
         className="absolute inset-0 items-center justify-center"
@@ -114,7 +107,6 @@ export function PostCard({
         />
       </Animated.View>
 
-      {/* Author row: avatar + name + location, pinned top-left */}
       <View className="absolute left-[21px] top-[19px] flex-row items-center">
         <Avatar source={post.avatar} size={35} />
         <View className="ml-[10px]">
@@ -127,7 +119,6 @@ export function PostCard({
         </View>
       </View>
 
-      {/* Invisible tap layer to detect the double tap without converting the shell */}
       <Pressable
         onPress={handlePress}
         disabled={disabled}

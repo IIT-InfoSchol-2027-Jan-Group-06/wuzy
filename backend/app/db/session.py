@@ -1,6 +1,7 @@
-from sqlmodel import create_engine, Session, SQLModel
+from sqlmodel import Session, SQLModel, create_engine
+
+import app.models  # noqa: F401 - registers tables for SQLModel metadata
 from app.core.config import settings
-import app.models  # Import models so tables get registered
 
 engine = create_engine(settings.database_url)
 

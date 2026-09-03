@@ -132,6 +132,10 @@ export default function ExploreScreen() {
   // Gap between upcoming event cards (adjust this value to change spacing)
   const upcomingEventGap = Math.round(screenWidth * 0.035);
 
+  const navigateToEvent = (eventId: string) => {
+    router.push('/event-details');
+  };
+
   // Filter events by category and search text
   const filteredFeaturedEvents = useMemo(() => {
     return featuredEvents.filter((event) => {
@@ -232,7 +236,7 @@ export default function ExploreScreen() {
                   price={event.price}
                   imageUri={event.imageUri}
                   tagLabel={event.tagLabel}
-                  onVisit={() => {}}
+                  onVisit={() => navigateToEvent(event.id)}
                   onFavorite={() => {}}
                 />
               ))}
@@ -251,20 +255,18 @@ export default function ExploreScreen() {
             >
               Up Coming
             </Text>
-            <View style={{ gap: upcomingEventGap }}>
-              {filteredUpcomingEvents.map((event) => (
-                <UpcomingEventCard
-                  key={event.id}
-                  title={event.title}
-                  hostName={event.hostName}
-                  hostAvatar={event.hostAvatar}
-                  dateDay={event.dateDay}
-                  dateMonth={event.dateMonth}
-                  imageUri={event.imageUri}
-                  onPress={() => {}}
-                />
-              ))}
-            </View>
+            {filteredUpcomingEvents.map((event) => (
+              <UpcomingEventCard
+                key={event.id}
+                title={event.title}
+                hostName={event.hostName}
+                hostAvatar={event.hostAvatar}
+                dateDay={event.dateDay}
+                dateMonth={event.dateMonth}
+                imageUri={event.imageUri}
+                onPress={() => navigateToEvent(event.id)}
+              />
+            ))}
           </View>
 
           <View style={{ marginTop: Math.round(screenWidth * 0.03) }}>

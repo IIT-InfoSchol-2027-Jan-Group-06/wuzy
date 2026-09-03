@@ -69,7 +69,13 @@ export function GlassNavButton({
         className="flex-1 items-center justify-center relative z-10"
       >
         {isStringIcon ? (
-          <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={resolvedIconSize} color="#FFFFFF" />
+          <Ionicons
+            name={icon as keyof typeof Ionicons.glyphMap}
+            size={resolvedIconSize}
+            color="#FFFFFF"
+            // Android pads icon fonts by default, which pushes the glyph off centre.
+            style={{ includeFontPadding: false, textAlignVertical: 'center' }}
+          />
         ) : (
           <>{icon}</>
         )}

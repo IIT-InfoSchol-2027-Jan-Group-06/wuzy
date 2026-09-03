@@ -95,6 +95,8 @@ export default function EventDetailsScreen({ event }: EventDetailsScreenProps) {
                   name={isLiked ? 'heart' : 'heart-outline'}
                   size={likeIconSize}
                   color={isLiked ? wuzyColors.bg : wuzyColors.white}
+                  // Android pads icon fonts by default, which pushes the glyph off centre.
+                  style={{ includeFontPadding: false, textAlignVertical: 'center' }}
                 />
               </View>
             </Pressable>

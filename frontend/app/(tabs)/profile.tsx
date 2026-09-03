@@ -24,8 +24,8 @@ export default function ProfileScreen({ user }: ProfileScreenProps) {
 
   const u = user ?? mockUserProfile;
 
-  const GlassButton = ({ label }: { label: string }) => (
-    <Pressable className="rounded-full overflow-hidden" style={{ width: btnWidth, height: btnHeight }}>
+  const GlassButton = ({ label, onPress }: { label: string; onPress?: () => void }) => (
+    <Pressable className="rounded-full overflow-hidden" style={{ width: btnWidth, height: btnHeight }} onPress={onPress}>
       <BlurView
         intensity={80}
         tint="dark"
@@ -131,7 +131,7 @@ export default function ProfileScreen({ user }: ProfileScreenProps) {
           {/* 3. Action Buttons - Glassmorphism */}
           <View className="flex-row items-center justify-center px-[24px] my-[20px]" style={{ gap: 12 }}>
             <GlassButton label="Edit profile" />
-            <GlassButton label="Connections" />
+            <GlassButton label="Connections" onPress={() => router.push('/home/connections')} />
           </View>
 
           {/* 4. Timeline Section */}

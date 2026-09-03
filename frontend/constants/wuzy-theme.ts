@@ -8,6 +8,8 @@ export const wuzyColors = {
   olive: '#928753',
   gray: '#969696',
   white: '#FFFFFF',
+  surface: '#171E28',
+  online: '#22C55E',
 };
 
 export const wuzyFonts = {

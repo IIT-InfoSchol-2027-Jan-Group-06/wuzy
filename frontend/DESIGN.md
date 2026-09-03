@@ -50,6 +50,20 @@ Font sizes scale with screen width (`screenWidth * ratio`):
 - Circular frosted glass button with subtle gold sheen and dark blur
 - Renders arrow-back or custom icons
 
+### ConnectionCard
+- **When to Use**: One person in the Connections list (`app/(tabs)/home/connections.tsx`)
+- **Import**: `import { ConnectionCard } from '@/components/ConnectionCard';`
+- **Layout**: Raised `surface` card, radius 24, padding 12. Name (Poppins SemiBold, body ratio, yellow) over username (Poppins Regular, small ratio, white) on the left; 40px avatar with a 12px `badge-online` dot on the right; interest tags below via `TagSection` (`yellowDim` fill, no border, `#CDC6B2` medium text)
+- **Sizing**: Fills its parent's height (`flex-1`), so the list slot decides the card height
+
+### Wheel
+- **When to Use**: An endless vertical picker where one item is highlighted in the centre and the rest wrap around it (Connections list)
+- **Import**: `import { Wheel } from '@/components/Wheel';`
+- **Props**: `data`, `keyExtractor`, `renderItem`, `itemHeight`, `gap` (default 8). Each item fills a slot of `itemHeight`; the rendered item should use `flex-1`
+- **Feel**: Items are projected onto a cylinder. The centred item is full size and opacity; neighbours sit one slot apart near the centre, then compress and shrink continuously toward the top and bottom (`scale = cos(angle)`), fading out about 3.5 items away. Past the last item comes the first
+- **Gesture**: Vertical pan (horizontal swipes fall through). Release projects the fling a few items and settles on the nearest item with an ease-out
+- **Knobs**: `STEP`, `VISIBLE`, `FLING`, `MAX_FLING`, `SETTLE_MS` at the top of `components/Wheel.tsx`
+
 ### TicketCard
 - **When to Use**: Event tickets with authentic notch silhouette, dashed divider, dark photo backdrop, and centered QR code
 - **Import**: `import { TicketCard } from '@/components/TicketCard';`
@@ -98,3 +112,10 @@ Font sizes scale with screen width (`screenWidth * ratio`):
 - Route: `app/(tabs)/home/ticket-vault.tsx`
 - Header: `ScreenHeader` with title `TICKETS`
 - Carousel: Horizontal `FlatList` with `snapToInterval={cardWidth + cardGap}`, `decelerationRate="fast"`, and active card centered (`(screenWidth - cardWidth) / 2` padding)
+
+---
+
+## Connections Screen
+
+- `ScreenHeader`, `SearchBar` and connection count in normal flow, then a `Wheel` of `ConnectionCard` rows (slot 100 tall, 8 gap, 44 horizontal padding) filling the rest of the screen
+- Search filters by name, username or tag; the wheel resets to the first result. No match shows a centred gray "No connections match your search"

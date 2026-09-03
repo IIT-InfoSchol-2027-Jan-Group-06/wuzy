@@ -18,6 +18,9 @@ venv/
 .coverage
 htmlcov/
 
+# Uploaded media (created at runtime / seeded)
+storage/
+
 # IDE
 .idea/
 .vscode/

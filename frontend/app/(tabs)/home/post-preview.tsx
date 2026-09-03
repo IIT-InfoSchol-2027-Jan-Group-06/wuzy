@@ -7,6 +7,7 @@ import {
   TextInput,
   ScrollView,
   Switch,
+  ActivityIndicator,
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,6 +15,8 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { GlassNavButton } from '@/components/GlassNavButton';
 import { wuzyFonts } from '@/constants/wuzy-theme';
 import { Ionicons } from '@expo/vector-icons';
+import { apiPost, uploadImage } from '@/lib/api';
+import { CURRENT_USER_ID } from '@/hooks/useFeed';
 
 export default function PostPreviewScreen() {
   const router = useRouter();
@@ -23,18 +26,31 @@ export default function PostPreviewScreen() {
   const [caption, setCaption] = useState('');
   const [location, setLocation] = useState('');
   const [saveToGrid, setSaveToGrid] = useState(false);
+  const [sharing, setSharing] = useState(false);
 
   const cardWidth = screenWidth - 40;
   const cardHeight = Math.round(cardWidth * (418 / 335));
 
-  const handlePost = () => {
-    console.log('Post uploaded:', {
-      imageUri,
-      caption,
-      location,
-      saveToGrid,
-    });
-    router.replace('/(tabs)/home');
+  const handlePost = async () => {
+    if (!imageUri || sharing) return;
+    try {
+      setSharing(true);
+      const { url } = await uploadImage('post', imageUri, CURRENT_USER_ID);
+      await apiPost(
+        '/posts/',
+        {
+          media_url: url,
+          caption: caption || null,
+          location: location || null,
+          save_to_profile: saveToGrid,
+        },
+        CURRENT_USER_ID,
+      );
+      router.replace('/(tabs)/home');
+    } catch (e) {
+      console.error('Failed to share post:', e);
+      setSharing(false);
+    }
   };
 
   return (
@@ -51,12 +67,16 @@ export default function PostPreviewScreen() {
             }}>
             NEW POST
           </Text>
-          <Pressable onPress={handlePost} className="px-5 py-2 rounded-full bg-wuzy-yellow">
-            <Text
-              className="text-wuzy-bg"
-              style={{ fontFamily: wuzyFonts.semibold, fontSize: 14 }}>
-              Share
-            </Text>
+          <Pressable onPress={handlePost} className="px-5 py-2 rounded-full bg-wuzy-yellow" disabled={sharing}>
+            {sharing ? (
+              <ActivityIndicator size="small" color="#0A0F17" />
+            ) : (
+              <Text
+                className="text-wuzy-bg"
+                style={{ fontFamily: wuzyFonts.semibold, fontSize: 14 }}>
+                Share
+              </Text>
+            )}
           </Pressable>
         </View>
 
@@ -84,7 +104,7 @@ export default function PostPreviewScreen() {
               </View>
               <TextInput
                 className="flex-1 text-white min-h-[80px]"
-                style={{ fontFamily: wuzyFonts.regular, fontSize: 16, lineHeight: 24 }}
+                style={{ fontFamily: wuzyFonts.body, fontSize: 16, lineHeight: 24 }}
                 placeholder="Write a caption..."
                 placeholderTextColor="#8A96A6"
                 multiline
@@ -103,7 +123,7 @@ export default function PostPreviewScreen() {
             <Ionicons name="location-outline" size={22} color="#FFE783" />
             <TextInput
               className="flex-1 text-white"
-              style={{ fontFamily: wuzyFonts.regular, fontSize: 15 }}
+              style={{ fontFamily: wuzyFonts.body, fontSize: 15 }}
               placeholder="Add location"
               placeholderTextColor="#8A96A6"
               value={location}
@@ -131,7 +151,7 @@ export default function PostPreviewScreen() {
                 </Text>
                 <Text
                   className="text-wuzy-gray mt-0.5"
-                  style={{ fontFamily: wuzyFonts.regular, fontSize: 12 }}>
+                  style={{ fontFamily: wuzyFonts.body, fontSize: 12 }}>
                   Keep this photo on your profile
                 </Text>
               </View>

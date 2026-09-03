@@ -1,5 +1,6 @@
 import { Image, Pressable, Platform, ScrollView, Text, View, useWindowDimensions, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Image as SvgImage } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
@@ -35,6 +36,12 @@ export default function EventDetailsScreen({ event }: EventDetailsScreenProps) {
   const bodyFontSize = Math.round(screenWidth * 0.035);
   const detailFontSize = Math.round(screenWidth * 0.032);
   const buttonFontSize = Math.round(screenWidth * 0.04);
+
+  // Action row: gift pill then Buy Ticket. Figma has them 60x50 and 208x50, 30 apart.
+  const actionHeight = Math.round(screenWidth * 0.13);
+  const giftWidth = Math.round(actionHeight * 1.2);
+  const giftIconSize = Math.round(actionHeight * 0.6);
+  const actionGap = Math.round(screenWidth * 0.075);
 
   const handleLikePress = () => {
     setIsLiked(!isLiked);
@@ -240,14 +247,32 @@ export default function EventDetailsScreen({ event }: EventDetailsScreenProps) {
               </View>
             </View>
 
-            {/* Buy Ticket Button */}
-            <View className="pt-[8px] pb-[20px]">
+            {/* Gift + Buy Ticket */}
+            <View className="flex-row items-center pt-[8px] pb-[20px]" style={{ gap: actionGap }}>
+              <Pressable
+                onPress={() => {}}
+                accessibilityRole="button"
+                accessibilityLabel="Gift a ticket"
+                className="items-center justify-center rounded-full overflow-hidden active:opacity-80"
+                style={{
+                  width: giftWidth,
+                  height: actionHeight,
+                  backgroundColor: wuzyColors.yellowDim,
+                }}
+              >
+                <SvgImage
+                  source={require('@/assets/icons/gift.svg')}
+                  style={{ width: giftIconSize, height: giftIconSize }}
+                  contentFit="contain"
+                />
+              </Pressable>
+
               <Pressable
                 onPress={() => {
                   router.push('/ticket');
                 }}
-                className="rounded-full overflow-hidden w-full"
-                style={{ height: Math.round(screenWidth * 0.13) }}
+                className="flex-1 rounded-full overflow-hidden"
+                style={{ height: actionHeight }}
               >
                 <View style={StyleSheet.absoluteFillObject} className="bg-wuzy-yellow" />
                 <View className="flex-1 items-center justify-center relative z-10">

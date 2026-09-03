@@ -12,12 +12,12 @@ import {
   ViewStyle,
 } from 'react-native';
 
-import { Post } from '@/constants/feed-data';
+import { assetUrl, ApiPost } from '@/lib/api';
 import { wuzyFonts } from '@/constants/wuzy-theme';
 import { Avatar, CardShell } from './shared';
 
 type PostCardProps = {
-  post: Post;
+  post: ApiPost;
   width?: number;
   height?: number;
   disabled?: boolean;
@@ -87,7 +87,7 @@ export function PostCard({
 
   return (
     <CardShell width={cardWidth} height={cardHeight} disabled={disabled} style={style}>
-      <Image source={post.image} className="absolute inset-0 h-full w-full" resizeMode="cover" />
+      <Image source={{ uri: assetUrl(post.media_url) }} className="absolute inset-0 h-full w-full" resizeMode="cover" />
 
       <LinearGradient
         colors={['rgba(0,0,0,0.9)', 'rgba(0,0,0,0.4)', 'transparent']}
@@ -108,13 +108,13 @@ export function PostCard({
       </Animated.View>
 
       <View className="absolute left-[21px] top-[19px] flex-row items-center">
-        <Avatar source={post.avatar} size={35} />
+        <Avatar source={{ uri: assetUrl(post.user?.avatar_url ?? '') }} size={35} />
         <View className="ml-[10px]">
           <Text className="text-[14px] text-white" style={{ fontFamily: wuzyFonts.medium }}>
-            {post.name}
+            {post.user?.username ?? 'Unknown'}
           </Text>
           <Text className="-mt-[2px] text-[12px] text-white" style={{ fontFamily: wuzyFonts.medium }}>
-            {post.location}
+            {post.location ?? ''}
           </Text>
         </View>
       </View>
@@ -122,7 +122,7 @@ export function PostCard({
       <Pressable
         onPress={handlePress}
         disabled={disabled}
-        accessibilityLabel={`Like post by ${post.name}`}
+        accessibilityLabel={`Like post by ${post.user?.username ?? 'Unknown'}`}
         className="absolute inset-0"
       />
     </CardShell>

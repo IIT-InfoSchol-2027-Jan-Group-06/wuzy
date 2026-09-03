@@ -4,12 +4,15 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
+from app.schemas.user import UserRead
+
 
 class PostCreate(BaseModel):
     """Payload for creating a new post."""
 
     media_url: str
     caption: str | None = None
+    location: str | None = None
     save_to_profile: bool = False
 
 
@@ -19,9 +22,11 @@ class PostRead(BaseModel):
     id: int
     media_url: str
     caption: str | None = None
+    location: str | None = None
     save_to_profile: bool
     user_id: int
     created_at: datetime
+    user: UserRead | None = None
 
     model_config = {"from_attributes": True}
 

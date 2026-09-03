@@ -29,6 +29,7 @@ def create_post(
     post = Post(
         media_url=payload.media_url,
         caption=payload.caption,
+        location=payload.location,
         save_to_profile=payload.save_to_profile,
         user_id=current_user_id,
     )

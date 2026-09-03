@@ -6,6 +6,7 @@ GET  /feed/profile/{user_id}     - Permanent profile posts for a user
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Response
+from sqlalchemy.orm import selectinload
 from sqlmodel import Session, col, select
 
 from app.core.auth import get_current_user_id
@@ -46,7 +47,7 @@ def discover_feed(
         ephemeral_unviewed = Post.save_to_profile == False  # noqa: E712
 
     permanent = Post.save_to_profile == True  # noqa: E712
-    stmt = select(Post).where(ephemeral_unviewed | permanent)
+    stmt = select(Post).options(selectinload(Post.user)).where(ephemeral_unviewed | permanent)
 
     posts = session.exec(stmt.order_by(col(Post.created_at).desc())).all()
     return posts
@@ -93,6 +94,7 @@ def profile_feed(
     """
     posts = session.exec(
         select(Post)
+        .options(selectinload(Post.user))
         .where(Post.user_id == user_id, Post.save_to_profile == True)  # noqa: E712
         .order_by(col(Post.created_at).desc())
     ).all()

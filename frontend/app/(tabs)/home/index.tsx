@@ -1,17 +1,26 @@
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
+import { useCallback } from 'react';
 import { Image } from 'expo-image';
 
 import { PostCard } from '@/components/postcard';
 import { GlassNavButton } from '@/components/GlassNavButton';
-import { posts } from '@/constants/feed-data';
+import { useFeed } from '@/hooks/useFeed';
 import { wuzyFonts } from '@/constants/wuzy-theme';
 
 export default function HomeScreen() {
   const router = useRouter();
   const { href } = useLocalSearchParams();
   const isOnNotifications = href?.includes('notifications');
+  const { posts, loading, error, refresh } = useFeed();
+
+  // Refetch whenever the home screen regains focus (e.g. after sharing a post)
+  useFocusEffect(
+    useCallback(() => {
+      refresh();
+    }, [refresh]),
+  );
 
   const handleNotificationPress = () => {
     if (isOnNotifications) {
@@ -59,9 +68,20 @@ export default function HomeScreen() {
 
           {/* Home feed of post cards */}
           <View className="mt-[25px] items-center gap-[29px]">
-            {posts.map((post) => (
-              <PostCard key={post.id} post={post} />
-            ))}
+            {loading ? (
+              <ActivityIndicator size="large" color="#FFE783" className="mt-[40px]" />
+            ) : error ? (
+              <Pressable onPress={refresh} className="mt-[40px] items-center px-8">
+                <Text className="text-wuzy-gray text-center" style={{ fontFamily: wuzyFonts.medium }}>
+                  {error}
+                </Text>
+                <Text className="mt-3 text-wuzy-yellow" style={{ fontFamily: wuzyFonts.semibold }}>
+                  Tap to retry
+                </Text>
+              </Pressable>
+            ) : (
+              posts.map((post) => <PostCard key={post.id} post={post} />)
+            )}
           </View>
         </ScrollView>
       </SafeAreaView>

@@ -41,7 +41,7 @@ export default function EventDetailsScreen({ event }: EventDetailsScreenProps) {
   };
 
   const handleBackPress = () => {
-    router.replace('/explore');
+    router.back();
   };
 
   const handleShowMore = () => {

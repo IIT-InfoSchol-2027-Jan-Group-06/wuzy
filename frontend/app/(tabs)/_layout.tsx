@@ -1,13 +1,10 @@
-﻿import { Tabs, useRouter, useLocalSearchParams, useSegments } from 'expo-router';
+﻿import { Tabs, useRouter, useSegments } from 'expo-router';
 import { NavBar } from '@/components/NavBar';
-import { useState, useEffect } from 'react';
 import type { NavBarItem } from '@/components/NavBar';
 
 export default function TabLayout() {
   const router = useRouter();
-  const { href } = useLocalSearchParams();
   const segments = useSegments();
-  const [activeTab, setActiveTab] = useState<'home' | 'events' | 'awards' | 'chat' | 'profile'>('home');
 
   const routes = {
     home: '/home',
@@ -17,23 +14,27 @@ export default function TabLayout() {
     profile: '/profile',
   } as const;
 
-  useEffect(() => {
-    if (href?.includes('explore')) setActiveTab('events');
-    else if (href?.includes('awards')) setActiveTab('awards');
-    else if (href?.includes('chat')) setActiveTab('chat');
-    else if (href?.includes('profile')) setActiveTab('profile');
-    else setActiveTab('home');
-  }, [href]);
+  const path = segments as string[];
+
+  // Read the active tab off the route, so it cannot go stale when a screen navigates on its own.
+  const activeTab: NavBarItem = path.includes('explore')
+    ? 'events'
+    : path.includes('awards')
+      ? 'awards'
+      : path.includes('chat')
+        ? 'chat'
+        : path.includes('profile')
+          ? 'profile'
+          : 'home';
 
   const handlePress = (item: NavBarItem) => {
     const key = item as keyof typeof routes;
     if (key in routes && key !== activeTab) {
-      setActiveTab(key as 'home' | 'events' | 'awards' | 'chat' | 'profile');
       router.push(routes[key]);
     }
   };
 
-  const isFullScreen = (segments as string[]).includes('notifications') || (segments as string[]).includes('ticket-vault') || (segments as string[]).includes('[id]') || (segments as string[]).includes('upload') || (segments as string[]).includes('post-preview') || (segments as string[]).includes('connections');
+  const isFullScreen = path.includes('notifications') || path.includes('ticket-vault') || path.includes('[id]') || path.includes('upload') || path.includes('post-preview') || path.includes('connections');
 
   return (
     <Tabs

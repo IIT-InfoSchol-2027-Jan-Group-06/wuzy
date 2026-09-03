@@ -218,7 +218,7 @@ export default function EventDetailsScreen({ event }: EventDetailsScreenProps) {
               </View>
             </View>
 
-            {/* Map Section - Static map image for Expo Go compatibility */}
+            {/* Map Section - local image, no maps API key needed */}
             <View className="gap-[12px]" style={{ marginTop: 8 }}>
               <Text
                 className="text-wuzy-yellow"
@@ -231,9 +231,7 @@ export default function EventDetailsScreen({ event }: EventDetailsScreenProps) {
               </Text>
               <View style={{ borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
                 <Image
-                  source={{
-                    uri: `https://maps.googleapis.com/maps/api/staticmap?center=${e.latitude},${e.longitude}&zoom=15&size=${Math.round(screenWidth)}x${Math.round(screenWidth * 0.6)}&maptype=roadmap&markers=color:red%7Clabel:${encodeURIComponent(e.venue.charAt(0))}%7C${e.latitude},${e.longitude}&style=feature:all%7Celement:geometry%7Ccolor:0x1a2330&style=feature:all%7Celement:labels%7Cvisibility:off&key=${process.env.GOOGLE_MAPS_API_KEY}`,
-                  }}
+                  source={e.mapImage}
                   style={{ width: '100%', height: Math.round(screenWidth * 0.6) }}
                   resizeMode="cover"
                 />

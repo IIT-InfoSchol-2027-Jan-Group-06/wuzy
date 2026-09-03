@@ -10,6 +10,7 @@ export interface EventDetails {
   id: string;
   title: string;
   image: ImageSourcePropType;
+  mapImage: ImageSourcePropType;
   description: string;
   date: string;
   time: string;
@@ -27,6 +28,8 @@ export const mockEvent: EventDetails = {
   id: '1',
   title: 'THE LIFE OF A SHOWGIRL',
   image: require('@/assets/images/event1.png'),
+  // Placeholder art. Swap the file, keep the name.
+  mapImage: require('@/assets/images/event-map.png'),
   description:
     'Step into the dazzling world of showgirls in this exclusive behind-the-scenes experience. "THE LIFE OF A SHOWGIRL" takes you on an intimate journey through the glamour, grit, and grace of the iconic performers who have graced the world\'s most famous stages. From the feathers and sequins to the discipline and dedication, discover what it truly means to live the life of a showgirl. This immersive exhibition features rare costumes, personal archives, and never-before-seen footage spanning decades of theatrical history. Join us for an unforgettable evening celebrating the artistry, resilience, and sisterhood of these extraordinary women.',
   date: '9 AUG',

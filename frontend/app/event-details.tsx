@@ -74,29 +74,6 @@ export default function EventDetailsScreen({ event }: EventDetailsScreenProps) {
               style={StyleSheet.absoluteFillObject}
             />
 
-            {/* Top Bar: Back Button (left) + Share + More (right) - absolutely positioned over cover image */}
-            <View className="absolute top-0 left-0 right-0 z-10 flex-row justify-between px-[32px] pt-[49px]">
-              {/* Back button - circular glass */}
-              <GlassNavButton
-                icon="arrow-back"
-                size={backButtonSize}
-                onPress={handleBackPress}
-              />
-              {/* Share + More as separate circular glass buttons */}
-              <View className="flex-row items-center gap-[16px]">
-                <GlassNavButton
-                  icon="share-outline"
-                  size={backButtonSize}
-                  onPress={() => {}}
-                />
-                <GlassNavButton
-                  icon="ellipsis-horizontal-outline"
-                  size={backButtonSize}
-                  onPress={() => {}}
-                />
-              </View>
-            </View>
-
             {/* Like Button - absolutely positioned over cover image at specific coordinates */}
             <Pressable
               onPress={handleLikePress}
@@ -288,6 +265,23 @@ export default function EventDetailsScreen({ event }: EventDetailsScreenProps) {
             </View>
           </View>
         </ScrollView>
+
+        {/* Top Bar: floats over the scrolling content, box-none so the strip still scrolls */}
+        <View
+          pointerEvents="box-none"
+          className="absolute top-0 left-0 right-0 z-10 flex-row justify-between px-[32px] pt-[49px]">
+          {/* Back button - circular glass */}
+          <GlassNavButton icon="arrow-back" size={backButtonSize} onPress={handleBackPress} />
+          {/* Share + More as separate circular glass buttons */}
+          <View className="flex-row items-center gap-[16px]">
+            <GlassNavButton icon="share-outline" size={backButtonSize} onPress={() => {}} />
+            <GlassNavButton
+              icon="ellipsis-horizontal-outline"
+              size={backButtonSize}
+              onPress={() => {}}
+            />
+          </View>
+        </View>
       </SafeAreaView>
     </View>
   );

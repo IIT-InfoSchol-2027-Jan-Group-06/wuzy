@@ -33,7 +33,7 @@ export default function TabLayout() {
     }
   };
 
-  const isFullScreen = (segments as string[]).includes('notifications') || (segments as string[]).includes('ticket-vault');
+  const isFullScreen = (segments as string[]).includes('notifications') || (segments as string[]).includes('ticket-vault') || (segments as string[]).includes('[id]') || (segments as string[]).includes('upload') || (segments as string[]).includes('post-preview');
 
   return (
     <Tabs

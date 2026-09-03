@@ -59,6 +59,31 @@ Font sizes scale with screen width (`screenWidth * ratio`):
 - **Top Section**: Event title (`Poppins_700Bold`, uppercase, white), date & venue (`Poppins_500Medium`, uppercase, white/85)
 - **Bottom Section**: Centered pure white QR code overlay (`QrCode` with `color="#FFFFFF"`, `card={false}`)
 
+### ChatHeader
+- **When to Use**: Top bar of an open chat (`app/(tabs)/chat/[id].tsx`)
+- **Import**: `import { ChatHeader } from '@/components/chat/ChatHeader';`
+- **Layout**: Floating `GlassNavButton` back button, avatar with soft yellow ring (`rgba(255,231,131,0.35)`), name (Poppins Medium, white) over status (Poppins Regular 12, `rgba(255,231,131,0.8)`) sitting flat with no pill behind them, then floating `GlassNavButton` call (`call-outline`) and video call (`videocam-outline`) buttons
+
+### ChatBubble
+- **When to Use**: A single message inside a chat thread
+- **Import**: `import { ChatBubble } from '@/components/chat/ChatBubble';`
+- **Props**: `text: string`, `outgoing: boolean`
+- **Outgoing**: dim yellow `#C1AE5F` background, `#000811` text, radius 16 with a 2px top-right nick, soft matching glow shadow
+- **Incoming**: glass `rgba(84, 82, 56, 0.35)` background (the `GlassNavButton` fill) with `rgba(255,255,255,0.3)` border, white text, radius 16 with a 2px top-left nick
+- Max width 280, text Poppins Regular 16/24, all scaled by `screenWidth / 375`
+
+### DateChip
+- **When to Use**: Date separator between chat messages
+- **Import**: `import { DateChip } from '@/components/chat/DateChip';`
+- **Look**: Self-centered pill, `rgba(0, 19, 103, 0.5)` background, white/10 border, uppercase Poppins Medium 12 in white/60 with 0.6 letter spacing
+
+### MessageBar
+- **When to Use**: Chat composer at the bottom of an open chat
+- **Import**: `import { MessageBar } from '@/components/chat/MessageBar';`
+- **Look**: Full-round pill in solid `#3B3A2D` (the opaque blend of `yellowDim` over `bg`), 55 tall, emoji icon left, bold white "Message" input, attach and mic icons right
+- **Placement**: Floats absolutely over the thread near the bottom edge, bubbles scroll behind it
+- **Send button**: When text is typed, a `#C1AE5F` send circle slides in on the right like an elevator door and attach/mic slide left; it reverses when the text is cleared
+
 ### QrCode
 - **When to Use**: Scannable QR code for tickets, check-ins, or share links
 - **Import**: `import { QrCode } from '@/components/QrCode';`

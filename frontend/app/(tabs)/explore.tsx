@@ -129,6 +129,8 @@ export default function ExploreScreen() {
   const headerFontSize = Math.round(screenWidth * 0.065);
   const sectionTitleFontSize = Math.round(screenWidth * 0.04);
   const footerFontSize = Math.round(screenWidth * 0.025);
+  // Gap between upcoming event cards (adjust this value to change spacing)
+  const upcomingEventGap = Math.round(screenWidth * 0.035);
 
   const navigateToEvent = (eventId: string) => {
     router.push('/event-details');
@@ -220,8 +222,9 @@ export default function ExploreScreen() {
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: horizontalPadding }}
-              snapToInterval={Math.round(screenWidth * 0.78)} // cardWidth + marginRight
+              // Left padding minimal so first card aligns to left edge
+              // Right padding large so next card peeks, signaling horizontal scroll
+              contentContainerStyle={{ paddingLeft: Math.round(screenWidth * 0.00), paddingRight: Math.round(screenWidth * 0.0), gap: Math.round(screenWidth * 0.03) }}
               decelerationRate="fast"
             >
               {filteredFeaturedEvents.map((event) => (

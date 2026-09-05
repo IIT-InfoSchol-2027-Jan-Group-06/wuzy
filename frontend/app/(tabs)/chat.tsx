@@ -1,82 +1,53 @@
 import React from 'react';
-import { FlatList, Text, View, useWindowDimensions } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { FlatList, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+
 import { CategoryFilter } from '@/components/CategoryFilter';
-import { GlassNavButton } from '@/components/GlassNavButton';
+import { useNavBarMetrics } from '@/components/NavBar';
+import { Screen } from '@/components/Screen';
 import { SearchBar } from '@/components/SearchBar';
 import { MessageRow } from '@/components/chat/MessageRow';
 import { chatMessages, CATEGORIES } from '@/constants/chat-data';
-import { wuzyColors, wuzyFonts } from '@/constants/wuzy-theme';
+import { wuzyFonts, wuzyLayout } from '@/constants/wuzy-theme';
+import { useResponsive } from '@/hooks/useResponsive';
+
+const categoryOptions = CATEGORIES.map((c) => ({ id: c, label: c }));
 
 export default function ChatScreen() {
   const router = useRouter();
-  const [active, setActive] = React.useState('All');
+  const { fontSize } = useResponsive();
+  const { clearance } = useNavBarMetrics();
+  const [active, setActive] = React.useState<string | number>('All');
   const [searchQuery, setSearchQuery] = React.useState('');
-  const { width: screenWidth } = useWindowDimensions();
-  const scale = screenWidth / 375;
 
-  const horizontalPadding = Math.round(20 * scale);
-
-  const categoryOptions = CATEGORIES.map((c) => ({ id: c, label: c }));
-
+  const q = searchQuery.trim().toLowerCase();
   const filteredMessages = chatMessages.filter((msg) => {
-    switch (active) {
-      case 'All':
-        return true;
-      case 'Unread':
-        return msg.unread;
-      case 'Community':
-        return msg.category === 'community';
-      case 'Groups':
-        return msg.category === 'group';
-      default:
-        return true;
-    }
-  }).filter((msg) => {
-    if (!searchQuery) return true;
-    return msg.preview.toLowerCase().includes(searchQuery.toLowerCase());
+    if (active === 'Unread' && !msg.unread) return false;
+    if (active === 'Community' && msg.category !== 'community') return false;
+    if (active === 'Groups' && msg.category !== 'group') return false;
+    return !q || msg.name.toLowerCase().includes(q) || msg.preview.toLowerCase().includes(q);
   });
 
   return (
-    <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: wuzyColors.bg }}>
-      <Text
-        className="text-center text-2xl pt-2"
-        style={{ color: wuzyColors.yellow, fontFamily: wuzyFonts.semibold, marginTop: Math.round(10 * scale) }}>
-        Messages
-      </Text>
-
-      <View collapsable={false} className="mx-[30px] mt-[19px]" style={{ zIndex: 10, elevation: 10 }}>
-        <SearchBar
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholder="Search messages"
-        />
-      </View>
-
-      <View style={{ marginTop: Math.round(25 * scale), paddingHorizontal: horizontalPadding }}>
-        <CategoryFilter
-          options={categoryOptions}
-          selectedId={active}
-          onSelect={(id) => setActive(id as string)}
-        />
+    <Screen>
+      <View style={{ gap: wuzyLayout.itemGap }}>
+        <Text
+          className="text-wuzy-yellow"
+          style={{ fontFamily: wuzyFonts.display, fontSize: fontSize('display'), lineHeight: fontSize('display') }}>
+          Messages
+        </Text>
+        <SearchBar value={searchQuery} onChangeText={setSearchQuery} placeholder="Search messages" />
+        <CategoryFilter options={categoryOptions} selectedId={active} onSelect={setActive} />
       </View>
 
       <FlatList
         data={filteredMessages}
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="always"
-        contentContainerStyle={{
-          paddingTop: Math.round(22 * scale),
-          paddingBottom: Math.round(70 * scale) + Math.round(45 * scale) + Math.round(20 * scale),
-        }}
-        renderItem={({ item }) => (
-          <MessageRow item={item} onPress={() => router.push(`/chat/${item.id}`)} />
-        )}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{ paddingTop: wuzyLayout.gap, paddingBottom: clearance, gap: wuzyLayout.itemGap }}
+        renderItem={({ item }) => <MessageRow item={item} onPress={() => router.push(`/chat/${item.id}`)} />}
       />
-
-      <GlassNavButton icon="add" onPress={() => {}} className="absolute bottom-20 right-6 z-50" />
-    </SafeAreaView>
+    </Screen>
   );
 }

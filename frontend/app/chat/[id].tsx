@@ -1,19 +1,18 @@
 import React from 'react';
-import { FlatList, KeyboardAvoidingView, Platform, View, useWindowDimensions } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { FlatList, KeyboardAvoidingView, Platform, View } from 'react-native';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
+
 import { ChatBubble } from '@/components/chat/ChatBubble';
 import { ChatHeader } from '@/components/chat/ChatHeader';
-import { Chip } from '@/components/Chip';
 import { MessageBar } from '@/components/chat/MessageBar';
+import { Chip } from '@/components/Chip';
+import { Screen } from '@/components/Screen';
 import { chatMessages, chatThreads, type ThreadMessage } from '@/constants/chat-data';
-import { wuzyColors } from '@/constants/wuzy-theme';
+import { wuzyLayout } from '@/constants/wuzy-theme';
 
 export default function ChatViewScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { width: screenWidth } = useWindowDimensions();
-  const scale = screenWidth / 375;
 
   const chat = chatMessages.find((msg) => msg.id === id);
   const thread = chatThreads[id ?? ''];
@@ -30,11 +29,9 @@ export default function ChatViewScreen() {
   const reversed = [...messages].reverse();
 
   return (
-    <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: wuzyColors.bg }}>
+    <Screen>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <View style={{ marginTop: Math.round(18 * scale), paddingBottom: Math.round(8 * scale) }}>
-          <ChatHeader name={chat.name} avatar={chat.avatar} status="Online" onBack={() => router.back()} />
-        </View>
+        <ChatHeader name={chat.name} avatar={chat.avatar} status="Online" onBack={() => router.back()} />
 
         <FlatList
           data={reversed}
@@ -43,24 +40,18 @@ export default function ChatViewScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           ListFooterComponent={
-            <View style={{ marginBottom: Math.round(6 * scale) }}>
-              <View style={{ alignSelf: 'center' }}>
-                <Chip label={thread.date} />
-              </View>
+            <View className="self-center" style={{ marginBottom: wuzyLayout.itemGap }}>
+              <Chip label={thread.date} />
             </View>
           }
-          contentContainerStyle={{
-            paddingHorizontal: Math.round(20 * scale),
-            paddingVertical: Math.round(12 * scale),
-            gap: Math.round(12 * scale),
-          }}
+          contentContainerStyle={{ paddingVertical: wuzyLayout.gap, gap: wuzyLayout.itemGap }}
           renderItem={({ item }) => <ChatBubble text={item.text} outgoing={item.out} />}
         />
 
-        <View style={{ paddingBottom: Math.round(12 * scale) }}>
+        <View style={{ paddingBottom: wuzyLayout.itemGap }}>
           <MessageBar onSend={send} />
         </View>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </Screen>
   );
 }

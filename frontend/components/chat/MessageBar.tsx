@@ -2,7 +2,7 @@ import React from 'react';
 import { Pressable, TextInput, View, useWindowDimensions } from 'react-native';
 import Animated, { Easing, interpolate, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
-import { wuzyColors, wuzyFonts } from '@/constants/wuzy-theme';
+import { wuzyColors, wuzyFonts, wuzyType } from '@/constants/wuzy-theme';
 
 export function MessageBar({ onSend }: { onSend?: (text: string) => void }) {
   const { width: screenWidth } = useWindowDimensions();
@@ -45,7 +45,6 @@ export function MessageBar({ onSend }: { onSend?: (text: string) => void }) {
         alignItems: 'center',
         gap,
         height: Math.round(55 * scale),
-        marginHorizontal: Math.round(20 * scale),
         paddingHorizontal: Math.round(18 * scale),
         backgroundColor: '#3B3A2D',
         borderRadius: 9999,
@@ -61,7 +60,7 @@ export function MessageBar({ onSend }: { onSend?: (text: string) => void }) {
           minWidth: 0,
           alignSelf: 'stretch',
           textAlignVertical: 'center',
-          fontSize: Math.round(15 * scale),
+          fontSize: Math.round(screenWidth * wuzyType.body),
           color: wuzyColors.white,
           fontFamily: wuzyFonts.bold,
           letterSpacing: 0.15,
@@ -86,11 +85,11 @@ export function MessageBar({ onSend }: { onSend?: (text: string) => void }) {
             width: sendSize,
             height: sendSize,
             borderRadius: sendSize / 2,
-            backgroundColor: '#C1AE5F',
+            backgroundColor: wuzyColors.yellowMuted,
             alignItems: 'center',
             justifyContent: 'center',
           }}>
-          <Ionicons name="send" size={Math.round(sendSize * 0.5)} color="#000811" />
+          <Ionicons name="send" size={Math.round(sendSize * 0.5)} color={wuzyColors.bg} />
         </Pressable>
       </Animated.View>
     </View>

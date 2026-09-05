@@ -1,7 +1,11 @@
 import React from 'react';
-import { Image, Text, View, useWindowDimensions } from 'react-native';
+import { Image, Text, View } from 'react-native';
+
 import { GlassNavButton } from '@/components/GlassNavButton';
-import { wuzyColors, wuzyFonts } from '@/constants/wuzy-theme';
+import { wuzyColors, wuzyFonts, wuzyLayout } from '@/constants/wuzy-theme';
+import { useResponsive } from '@/hooks/useResponsive';
+
+const AVATAR = 44;
 
 type ChatHeaderProps = {
   name: string;
@@ -10,54 +14,29 @@ type ChatHeaderProps = {
   onBack: () => void;
 };
 
+/** Thread header: back button, ringed avatar, name over status. Relies on Screen for padding. */
 export function ChatHeader({ name, avatar, status, onBack }: ChatHeaderProps) {
-  const { width: screenWidth } = useWindowDimensions();
-  const scale = screenWidth / 375;
-
-  const avatarSize = Math.round(42 * scale);
-  const gap = Math.round(10 * scale);
+  const { fontSize } = useResponsive();
 
   return (
-    <View
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap,
-        paddingHorizontal: Math.round(20 * scale),
-      }}>
+    <View className="flex-row items-center" style={{ gap: wuzyLayout.itemGap }}>
       <GlassNavButton icon="arrow-back" onPress={onBack} />
       <View
         style={{
-          width: avatarSize,
-          height: avatarSize,
-          borderRadius: avatarSize / 2,
-          borderWidth: Math.max(1, Math.round(1 * scale)),
-          borderColor: 'rgba(255, 231, 131, 0.35)',
-          padding: Math.round(2 * scale),
-          marginLeft: Math.round(4 * scale),
+          width: AVATAR,
+          height: AVATAR,
+          borderRadius: AVATAR / 2,
+          borderWidth: 1,
+          borderColor: wuzyColors.yellowDim,
+          padding: 2,
         }}>
-        <Image source={avatar} style={{ width: '100%', height: '100%', borderRadius: avatarSize / 2 }} />
+        <Image source={avatar} style={{ width: '100%', height: '100%', borderRadius: AVATAR / 2 }} />
       </View>
-      <View style={{ flex: 1 }}>
-        <Text
-          numberOfLines={1}
-          style={{
-            fontSize: Math.round(15 * scale),
-            lineHeight: Math.round(22 * scale),
-            color: wuzyColors.white,
-            fontFamily: wuzyFonts.medium,
-          }}>
+      <View className="flex-1">
+        <Text numberOfLines={1} style={{ fontFamily: wuzyFonts.medium, fontSize: fontSize('body'), color: wuzyColors.white }}>
           {name}
         </Text>
-        <Text
-          style={{
-            fontSize: Math.round(12 * scale),
-            lineHeight: Math.round(15 * scale),
-            color: 'rgba(255, 231, 131, 0.8)',
-            fontFamily: wuzyFonts.body,
-          }}>
-          {status}
-        </Text>
+        <Text style={{ fontFamily: wuzyFonts.body, fontSize: fontSize('caption'), color: wuzyColors.yellowSoft }}>{status}</Text>
       </View>
     </View>
   );

@@ -30,16 +30,14 @@ export default function TabLayout() {
   const handlePress = (item: NavBarItem) => {
     const key = item as keyof typeof routes;
     if (key in routes && key !== activeTab) {
-      router.push(routes[key]);
+      router.navigate(routes[key]);
     }
   };
-
-  const isFullScreen = path.includes('notifications') || path.includes('ticket-vault') || path.includes('[id]') || path.includes('upload') || path.includes('post-preview') || path.includes('connections');
 
   return (
     <Tabs
       screenOptions={{ headerShown: false }}
-      tabBar={() => isFullScreen ? null : <NavBar active={activeTab} onItemPress={handlePress} />}
+      tabBar={() => <NavBar active={activeTab} onItemPress={handlePress} />}
     >
       <Tabs.Screen name="home" />
       <Tabs.Screen name="explore" />

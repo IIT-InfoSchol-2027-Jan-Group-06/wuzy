@@ -183,7 +183,7 @@ export default function ExploreScreen() {
                     contentFit="contain"
                   />
                 }
-                onPress={() => router.push('/home/ticket-vault')}
+                onPress={() => router.push('/ticket-vault')}
               />
             </View>
           </View>

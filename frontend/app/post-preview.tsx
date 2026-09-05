@@ -51,7 +51,7 @@ export default function PostPreviewScreen() {
         },
         CURRENT_USER_ID,
       );
-      router.replace('/(tabs)/home');
+      router.dismissAll();
     } catch (e) {
       console.error('Failed to share post:', e);
       setSharing(false);

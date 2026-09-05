@@ -20,7 +20,7 @@ export default function HomeScreen() {
     }, [refresh]),
   );
 
-  const handleNotificationPress = () => router.push('/home/notifications');
+  const handleNotificationPress = () => router.push('/notifications');
 
   return (
     <View className="flex-1 bg-wuzy-bg">
@@ -79,7 +79,7 @@ export default function HomeScreen() {
       </SafeAreaView>
       <GlassNavButton
         icon="add"
-        onPress={() => router.push('/home/upload')}
+        onPress={() => router.push('/upload')}
         className="absolute bottom-20 right-6 z-50"
       />
     </View>

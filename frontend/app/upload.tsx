@@ -101,7 +101,7 @@ export default function UploadScreen() {
     if (capturedPhoto) {
       setPendingPhoto(capturedPhoto);
       router.push({
-        pathname: '/home/post-preview',
+        pathname: '/post-preview',
         params: { imageUri: capturedPhoto },
       });
     }

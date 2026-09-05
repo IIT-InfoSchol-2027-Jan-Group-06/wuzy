@@ -126,7 +126,7 @@ export default function ProfileScreen() {
           {/* 3. Action Buttons - Glassmorphism */}
           <View className="flex-row items-center justify-center px-[24px] my-[20px]" style={{ gap: 12 }}>
             {glassButton('Edit profile')}
-            {glassButton('Connections', () => router.push('/home/connections'))}
+            {glassButton('Connections', () => router.push('/connections'))}
           </View>
 
           {/* 4. Timeline Section */}

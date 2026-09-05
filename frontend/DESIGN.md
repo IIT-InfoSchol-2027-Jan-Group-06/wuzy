@@ -62,8 +62,8 @@ const { fontSize } = useResponsive();
 
 Other fixed values: cards radius 24, inputs and map radius 16, glass and nav buttons `50/375 * screenWidth`, chips px 16 py 8, motion 250ms, wheel settle 400ms.
 
-### Design width and wide screens
-`useResponsive().screenWidth` is the window width capped at `maxWidth` (430), so every ratio stops growing on tablets and web. `Screen` centers a `maxWidth` column, so wide screens show a phone layout on the `bg` color instead of a stretched one. Always size from `useResponsive()`, never from `useWindowDimensions` directly.
+### Design width
+`useResponsive().screenWidth` is the window width, so every ratio scales with the actual screen. Always size from `useResponsive()`, never from `useWindowDimensions` directly.
 
 Full-bleed content inside a padded screen uses `marginHorizontal: -wuzyLayout.side` with `paddingHorizontal: wuzyLayout.side` on the scroll content, so the first item still aligns to the gutter (see `CategoryFilter`, the Today row on Explore).
 

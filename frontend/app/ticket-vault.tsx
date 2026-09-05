@@ -35,7 +35,7 @@ export default function TicketVaultScreen() {
         style={StyleSheet.absoluteFill}
       />
 
-      <SafeAreaView edges={['top', 'bottom']} className="flex-1 w-full self-center" style={{ maxWidth: wuzyLayout.maxWidth }}>
+      <SafeAreaView edges={['top', 'bottom']} className="flex-1">
         <View style={{ paddingTop: wuzyLayout.top, paddingHorizontal: wuzyLayout.side }}>
           <ScreenHeader title="Tickets" />
         </View>

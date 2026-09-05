@@ -23,7 +23,7 @@ export function Screen({ scroll, padded = true, style, overlay, children }: Prop
 
   return (
     <SafeAreaView edges={isTab ? ['top'] : ['top', 'bottom']} className="flex-1 bg-wuzy-bg">
-      <View className="flex-1 w-full self-center" style={{ maxWidth: wuzyLayout.maxWidth }}>
+      <View className="flex-1">
         {scroll ? (
           <ScrollView
             className="flex-1"

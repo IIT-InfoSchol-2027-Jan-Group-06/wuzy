@@ -1,208 +1,62 @@
 import { useState } from 'react';
-import {
-  FlatList,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
-  Platform,
-  StyleSheet,
-  Text,
-  View,
-  useWindowDimensions,
-} from 'react-native';
+import { FlatList, NativeScrollEvent, NativeSyntheticEvent, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
 
-import { GlassNavButton } from '@/components/GlassNavButton';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { TicketCard } from '@/components/TicketCard';
 import { tickets, type Ticket } from '@/constants/ticket-data';
-import { wuzyColors, wuzyFonts } from '@/constants/wuzy-theme';
+import { wuzyLayout } from '@/constants/wuzy-theme';
 
+const CARD_GAP = 16;
+
+/** Blurred active-ticket art fills the whole screen, so this route composes the shell by hand instead of using Screen. */
 export default function TicketVaultScreen() {
-  const router = useRouter();
-  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const { width: screenWidth } = useWindowDimensions();
   const [activeIndex, setActiveIndex] = useState(0);
 
-  const isWebDesktop = Platform.OS === 'web' && windowWidth > 480;
-  const screenWidth = isWebDesktop ? 412 : windowWidth;
-  const screenHeight = isWebDesktop ? Math.min(windowHeight * 0.94, 880) : windowHeight;
-
   const cardWidth = Math.round(screenWidth * 0.78);
-  const cardGap = 18;
   const sidePadding = (screenWidth - cardWidth) / 2;
-  const backButtonSize = Math.round((42 / 375) * screenWidth);
-
   const activeTicket = tickets[activeIndex] ?? tickets[0];
 
   const handleMomentumScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const offsetX = event.nativeEvent.contentOffset.x;
-    const itemTotalWidth = cardWidth + cardGap;
-    const index = Math.round(offsetX / itemTotalWidth);
-    const clampedIndex = Math.max(0, Math.min(index, tickets.length - 1));
-    if (clampedIndex !== activeIndex) {
-      setActiveIndex(clampedIndex);
-    }
+    const index = Math.round(event.nativeEvent.contentOffset.x / (cardWidth + CARD_GAP));
+    setActiveIndex(Math.max(0, Math.min(index, tickets.length - 1)));
   };
 
-  const desktopFrameStyle = isWebDesktop
-    ? {
-      borderRadius: 48,
-      borderWidth: 3,
-      borderColor: '#1F242D',
-      ...(Platform.OS === 'web'
-        ? ({
-          boxShadow: '0 30px 80px rgba(0, 0, 0, 0.95), 0 0 60px rgba(255, 231, 131, 0.04)',
-        } as any)
-        : {
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 20 },
-          shadowOpacity: 0.9,
-          shadowRadius: 30,
-          elevation: 25,
-        }),
-    }
-    : {};
-
-  // Frosted-glass blur over the background image: CSS backdrop-filter on web, BlurView on native.
-  const backgroundBlur = Platform.OS === 'web'
-    ? (
-      <View
-        style={[
-          StyleSheet.absoluteFill,
-          { backdropFilter: 'blur(22px)', WebkitBackdropFilter: 'blur(22px)', pointerEvents: 'none' } as any,
-        ]}
-      />
-    )
-    : (
-      <BlurView
-        intensity={45}
-        tint="dark"
-        style={StyleSheet.absoluteFill}
-      />
-    );
-
-  const screenContent = (
-    <View
-      style={[
-        {
-          width: screenWidth,
-          height: isWebDesktop ? screenHeight : '100%',
-          backgroundColor: '#0A0D12',
-          overflow: 'hidden',
-          position: 'relative',
-        },
-        desktopFrameStyle,
-      ]}
-    >
-      {/* Dynamic Full-Screen Background Image matching active ticket */}
-      <Image
-        key={activeTicket.id}
-        source={activeTicket.image}
-        style={StyleSheet.absoluteFill}
-        contentFit="cover"
-        transition={300}
-        blurRadius={20}
-      />
-
-      {/* Heavily Blurred Full-Screen Layer */}
-      {backgroundBlur}
-
-      {/* Frosted, slightly brightened translucent overlay over the blurred image */}
+  return (
+    <View className="flex-1 bg-wuzy-bg">
+      <Image key={activeTicket.id} source={activeTicket.image} style={StyleSheet.absoluteFill} contentFit="cover" transition={250} blurRadius={20} />
+      <BlurView intensity={45} tint="dark" style={StyleSheet.absoluteFill} />
       <LinearGradient
-        colors={['rgba(10, 14, 20, 0.38)', 'rgba(8, 12, 18, 0.5)', 'rgba(5, 8, 14, 0.64)']}
+        colors={['rgba(10, 15, 23, 0.38)', 'rgba(10, 15, 23, 0.5)', 'rgba(10, 15, 23, 0.64)']}
         locations={[0, 0.5, 1]}
         style={StyleSheet.absoluteFill}
       />
 
       <SafeAreaView edges={['top', 'bottom']} className="flex-1">
-        {/* Top Header: Gold/Yellow Bold Uppercase Header with Back Button on Left */}
-        <View className="flex-row items-center px-[24px] pt-[20px] pb-[16px]">
-          {/* Circular Glassmorphism Back Button */}
-          <GlassNavButton
-            icon="arrow-back"
-            size={backButtonSize}
-            onPress={() => router.back()}
-          />
-
-          {/* Centered Gold/Yellow Bold Uppercase Header */}
-          <Text
-            className="flex-1 text-center select-none font-bold uppercase"
-            style={{
-              fontFamily: 'Montserrat_700Bold',
-              fontSize: Math.round(screenWidth * 0.056),
-              letterSpacing: 4,
-              color: wuzyColors.yellow,
-            }}
-          >
-            TICKETS
-          </Text>
-
-          {/* Symmetrical Right Spacer for Perfect Centering */}
-          <View style={{ width: backButtonSize }} />
+        <View style={{ paddingTop: wuzyLayout.top, paddingHorizontal: wuzyLayout.side }}>
+          <ScreenHeader title="Tickets" />
         </View>
 
-        {/* Central Element: Horizontal Carousel with Centered Active Card */}
-        <View className="flex-1 justify-center py-[6px]">
+        <View className="flex-1 justify-center">
           <FlatList
             data={tickets}
             keyExtractor={(item: Ticket) => item.id}
             horizontal
             showsHorizontalScrollIndicator={false}
-            snapToInterval={cardWidth + cardGap}
+            snapToInterval={cardWidth + CARD_GAP}
             decelerationRate="fast"
-            contentContainerStyle={{
-              paddingHorizontal: sidePadding,
-              alignItems: 'center',
-            }}
-            ItemSeparatorComponent={() => <View style={{ width: cardGap }} />}
+            contentContainerStyle={{ paddingHorizontal: sidePadding, alignItems: 'center' }}
+            ItemSeparatorComponent={() => <View style={{ width: CARD_GAP }} />}
             onMomentumScrollEnd={handleMomentumScrollEnd}
-            getItemLayout={(_, index) => ({
-              length: cardWidth + cardGap,
-              offset: (cardWidth + cardGap) * index,
-              index,
-            })}
-            renderItem={({ item }) => (
-              <TicketCard ticket={item} width={cardWidth} />
-            )}
+            getItemLayout={(_, index) => ({ length: cardWidth + CARD_GAP, offset: (cardWidth + CARD_GAP) * index, index })}
+            renderItem={({ item }) => <TicketCard ticket={item} width={cardWidth} />}
           />
         </View>
       </SafeAreaView>
-    </View>
-  );
-
-  if (isWebDesktop) {
-    return (
-      <View
-        style={{
-          minHeight: '100vh' as any,
-          backgroundColor: '#05070A',
-          alignItems: 'center',
-          justifyContent: 'center',
-          paddingVertical: 24,
-        }}
-      >
-        <Text
-          style={{
-            fontFamily: wuzyFonts.medium,
-            fontSize: 14,
-            letterSpacing: 2,
-            color: '#3F4857',
-            marginBottom: 16,
-            textTransform: 'lowercase',
-          }}
-        >
-          ticket_vault
-        </Text>
-        {screenContent}
-      </View>
-    );
-  }
-
-  return (
-    <View style={{ flex: 1, backgroundColor: '#05070A' }}>
-      {screenContent}
     </View>
   );
 }

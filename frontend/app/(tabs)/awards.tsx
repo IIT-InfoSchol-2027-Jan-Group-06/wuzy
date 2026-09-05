@@ -11,7 +11,7 @@ export default function AwardsScreen() {
   return (
     <Screen scroll style={{ gap: wuzyLayout.gap }}>
       <TabHeader title="Awards" />
-      <View className="items-center" style={{ marginTop: wuzyLayout.gap }}>
+      <View className="items-center">
         <Text style={{ fontFamily: wuzyFonts.body, fontSize: fontSize('body'), color: wuzyColors.gray }}>
           Awards are on the way. Check back after the first events.
         </Text>

@@ -66,7 +66,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   const { fontSize } = useResponsive();
   return (
     <View>
-      <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: fontSize('small'), color: wuzyColors.yellow, marginBottom: 4 }}>{title}</Text>
+      <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: fontSize('small'), color: wuzyColors.yellow }}>{title}</Text>
       {children}
     </View>
   );

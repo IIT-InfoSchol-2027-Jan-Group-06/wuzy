@@ -50,7 +50,7 @@ export function UpcomingEventCard({ event, onPress }: { event: UpcomingEvent; on
         <View
           className="items-center justify-center"
           style={{ width: BADGE, height: BADGE, borderRadius: 16, backgroundColor: wuzyColors.white }}>
-          <Text style={{ fontFamily: wuzyFonts.bold, fontSize: fontSize('section'), lineHeight: fontSize('section'), color: wuzyColors.bg }}>
+          <Text style={{ fontFamily: wuzyFonts.bold, fontSize: fontSize('section'), lineHeight: Math.round(fontSize('section') * 1.05), includeFontPadding: false, color: wuzyColors.bg }}>
             {event.dateDay}
           </Text>
           <Text

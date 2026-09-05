@@ -63,7 +63,7 @@ const { fontSize } = useResponsive();
 Other fixed values: cards radius 24, inputs and map radius 16, glass and nav buttons `50/375 * screenWidth`, chips px 16 py 8, motion 250ms, wheel settle 400ms.
 
 ### Design width and wide screens
-`useResponsive().screenWidth` is the window width clamped to `[minWidth 320, maxWidth 430]`, so every ratio stops growing on tablets and web and stops shrinking on dense Android display-size settings. `Screen` centers a `maxWidth` column, so wide screens show a phone layout on the `bg` color instead of a stretched one. Always size from `useResponsive()`, never from `useWindowDimensions` directly.
+`useResponsive().screenWidth` is the window width capped at `maxWidth` (430), so every ratio stops growing on tablets and web. `Screen` centers a `maxWidth` column, so wide screens show a phone layout on the `bg` color instead of a stretched one. Always size from `useResponsive()`, never from `useWindowDimensions` directly.
 
 Full-bleed content inside a padded screen uses `marginHorizontal: -wuzyLayout.side` with `paddingHorizontal: wuzyLayout.side` on the scroll content, so the first item still aligns to the gutter (see `CategoryFilter`, the Today row on Explore).
 
@@ -79,11 +79,11 @@ Full-bleed content inside a padded screen uses `marginHorizontal: -wuzyLayout.si
 
 ### TabHeader
 - `import { TabHeader } from '@/components/TabHeader';`
-- Header for the five tab roots: Bebas `display` title on the left, optional glass buttons in `right`. Always at least one GlassNavButton tall, so Wuzy, Explore, Awards, Messages, and Profile titles sit on the same baseline whether or not a button is present.
+- Header for the tab roots: Bebas `display` title on the left, optional glass buttons in `right`. The row is exactly one GlassNavButton tall (`50/375 * screenWidth`) with no padding of its own, so the title top is always `12 + (row - lineHeight) / 2` from the safe-area inset, with or without a button. Under a header, a `SearchBar` or `CategoryFilter` sits at `itemGap` (12); the first content block sits at `gap` (24).
 
 ### ScreenHeader
 - `import { ScreenHeader } from '@/components/ScreenHeader';`
-- Back `GlassNavButton` on the left, uppercase Bebas `title` centered, optional `right` slot (share button, Share pill). The right slot is at least as wide as the back button so the title stays centered. No padding of its own; relies on `Screen`.
+- Back `GlassNavButton` on the left, uppercase Bebas `title` centered as an overlay across the whole row, optional `right` slot (share button, Share pill) of any width. The row is exactly one GlassNavButton tall, same as `TabHeader`. No padding of its own; relies on `Screen`.
 
 ### NavBar and useNavBarMetrics
 - Frosted pill, 72% of screen width, rendered by the tabs layout only. Respects the bottom safe-area inset.

@@ -8,6 +8,7 @@ import { LabeledInput } from "@/components/create-event/LabeledInput";
 import { PublishButton } from "@/components/create-event/PublishButton";
 import { SelectRow } from "@/components/create-event/SelectRow";
 import { ToggleRow } from "@/components/create-event/ToggleRow";
+import { wuzyLayout } from "@/constants/wuzy-theme";
 
 export default function CreateEventScreen() {
   const [title, setTitle] = useState("");
@@ -16,7 +17,7 @@ export default function CreateEventScreen() {
   const [isPaid, setIsPaid] = useState(false);
 
   return (
-    <Screen scroll style={{ gap: 24 }}>
+    <Screen scroll style={{ gap: wuzyLayout.gap }}>
       <ScreenHeader title="Create event" />
 
       <View className="gap-[24px]">
@@ -24,7 +25,7 @@ export default function CreateEventScreen() {
           imageUri={require("@/assets/images/event-poster-c.png")}
         />
 
-        <View className="gap-[20px]">
+        <View style={{ gap: wuzyLayout.itemGap }}>
           <LabeledInput
             label="Event Title"
             value={title}

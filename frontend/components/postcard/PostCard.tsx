@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 
 import { assetUrl, ApiPost } from '@/lib/api';
-import { wuzyFonts } from '@/constants/wuzy-theme';
+import { wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 import { Avatar, CardShell } from './shared';
 
 type PostCardProps = {
@@ -29,7 +29,7 @@ type PostCardProps = {
  *
  * Combines the cover image and author info (avatar + name + location) into one
  * component using NativeWind utility classes. The card fills the screen width
- * with a 10px gap on both sides, keeping the height proportional to its width.
+ * inside the 32px gutters, keeping the height proportional to its width.
  * Double-tapping the card pops a heart, like Instagram.
  */
 export function PostCard({
@@ -40,7 +40,7 @@ export function PostCard({
   style,
 }: PostCardProps) {
   const { width: screenWidth } = useWindowDimensions();
-  const cardWidth = width ?? screenWidth - 40;
+  const cardWidth = width ?? screenWidth - 2 * wuzyLayout.side;
   const cardHeight = height ?? Math.round(cardWidth * (418 / 335));
 
   const [heartScale] = useState(() => new Animated.Value(0));
@@ -107,13 +107,13 @@ export function PostCard({
         />
       </Animated.View>
 
-      <View className="absolute left-[21px] top-[19px] flex-row items-center">
+      <View className="absolute left-[16px] top-[16px] flex-row items-center">
         <Avatar source={{ uri: assetUrl(post.user?.avatar_url ?? '') }} size={35} />
-        <View className="ml-[10px]">
-          <Text className="text-[14px] text-white" style={{ fontFamily: wuzyFonts.medium }}>
+        <View className="ml-[12px]">
+          <Text className="text-white" style={{ fontFamily: wuzyFonts.medium, fontSize: Math.round(screenWidth * wuzyType.body) }}>
             {post.user?.username ?? 'Unknown'}
           </Text>
-          <Text className="-mt-[2px] text-[12px] text-white" style={{ fontFamily: wuzyFonts.medium }}>
+          <Text className="text-white" style={{ fontFamily: wuzyFonts.medium, fontSize: Math.round(screenWidth * wuzyType.small) }}>
             {post.location ?? ''}
           </Text>
         </View>

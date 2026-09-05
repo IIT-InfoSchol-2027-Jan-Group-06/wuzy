@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 
 import { assetUrl, ApiPost } from '@/lib/api';
-import { wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
+import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 import { Avatar, CardShell } from './shared';
 
 type PostCardProps = {
@@ -30,7 +30,8 @@ type PostCardProps = {
  * Combines the cover image and author info (avatar + name + location) into one
  * component using NativeWind utility classes. The card fills the screen width
  * inside the 32px gutters, keeping the height proportional to its width.
- * Double-tapping the card pops a heart, like Instagram.
+ * Double-tapping toggles a like: a heart pops in, or a broken heart shakes and falls
+ * on unlike. A small yellow heart in the corner marks a liked post and unlikes on tap.
  */
 export function PostCard({
   post,
@@ -43,16 +44,25 @@ export function PostCard({
   const cardWidth = width ?? screenWidth - 2 * wuzyLayout.side;
   const cardHeight = height ?? Math.round(cardWidth * (418 / 335));
 
-  const [heartScale] = useState(() => new Animated.Value(0));
-  const [heartOpacity] = useState(() => new Animated.Value(0));
+  const [liked, setLiked] = useState(false);
+  const [popScale] = useState(() => new Animated.Value(0));
+  const [popOpacity] = useState(() => new Animated.Value(0));
+  const [breakScale] = useState(() => new Animated.Value(0));
+  const [breakOpacity] = useState(() => new Animated.Value(0));
+  const [breakRotation] = useState(() => new Animated.Value(0));
   const lastTapRef = useRef(0);
 
-  const triggerHeart = () => {
-    heartScale.stopAnimation();
-    heartOpacity.stopAnimation();
-    heartScale.setValue(0.2);
-    heartOpacity.setValue(1);
-    Animated.spring(heartScale, {
+  const triggerPop = () => {
+    // Like animation: solid heart pops in, then fades out.
+    popScale.stopAnimation();
+    popOpacity.stopAnimation();
+    breakScale.stopAnimation();
+    breakOpacity.stopAnimation();
+    breakRotation.stopAnimation();
+    breakOpacity.setValue(0);
+    popScale.setValue(0.2);
+    popOpacity.setValue(1);
+    Animated.spring(popScale, {
       toValue: 1,
       friction: 6,
       tension: 300,
@@ -61,12 +71,12 @@ export function PostCard({
     Animated.sequence([
       Animated.delay(600),
       Animated.parallel([
-        Animated.timing(heartScale, {
+        Animated.timing(popScale, {
           toValue: 1.3,
           duration: 500,
           useNativeDriver: true,
         }),
-        Animated.timing(heartOpacity, {
+        Animated.timing(popOpacity, {
           toValue: 0,
           duration: 500,
           useNativeDriver: true,
@@ -75,11 +85,88 @@ export function PostCard({
     ]).start();
   };
 
+  const triggerBreak = () => {
+    // Unlike animation: broken heart shakes, then breaks apart and falls away.
+    popScale.stopAnimation();
+    popOpacity.stopAnimation();
+    breakScale.stopAnimation();
+    breakOpacity.stopAnimation();
+    breakRotation.stopAnimation();
+    popOpacity.setValue(0);
+    breakScale.setValue(1);
+    breakOpacity.setValue(1);
+    breakRotation.setValue(0);
+    Animated.sequence([
+      Animated.parallel([
+        Animated.sequence([
+          Animated.timing(breakRotation, {
+            toValue: -0.15,
+            duration: 90,
+            useNativeDriver: true,
+          }),
+          Animated.timing(breakRotation, {
+            toValue: 0.15,
+            duration: 90,
+            useNativeDriver: true,
+          }),
+          Animated.timing(breakRotation, {
+            toValue: -0.1,
+            duration: 90,
+            useNativeDriver: true,
+          }),
+          Animated.timing(breakRotation, {
+            toValue: 0.1,
+            duration: 90,
+            useNativeDriver: true,
+          }),
+          Animated.timing(breakRotation, {
+            toValue: 0,
+            duration: 90,
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.spring(breakScale, {
+          toValue: 1.25,
+          friction: 5,
+          tension: 200,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(breakScale, {
+          toValue: 0.2,
+          duration: 350,
+          useNativeDriver: true,
+        }),
+        Animated.timing(breakRotation, {
+          toValue: 0.6,
+          duration: 350,
+          useNativeDriver: true,
+        }),
+        Animated.timing(breakOpacity, {
+          toValue: 0,
+          duration: 350,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+  };
+
+  const toggleLike = () => {
+    const nextLiked = !liked;
+    setLiked(nextLiked);
+    if (nextLiked) {
+      triggerPop();
+    } else {
+      triggerBreak();
+    }
+  };
+
   const handlePress = () => {
     const now = Date.now();
     if (now - lastTapRef.current < 300) {
       lastTapRef.current = 0;
-      triggerHeart();
+      toggleLike();
     } else {
       lastTapRef.current = now;
     }
@@ -98,7 +185,7 @@ export function PostCard({
       <Animated.View
         pointerEvents="none"
         className="absolute inset-0 items-center justify-center"
-        style={{ opacity: heartOpacity, transform: [{ scale: heartScale }] }}>
+        style={{ opacity: popOpacity, transform: [{ scale: popScale }] }}>
         <Ionicons
           name="heart"
           size={Math.round(cardWidth * 0.3)}
@@ -107,7 +194,25 @@ export function PostCard({
         />
       </Animated.View>
 
-      <View className="absolute left-[16px] top-[16px] flex-row items-center">
+      <Animated.View
+        pointerEvents="none"
+        className="absolute inset-0 items-center justify-center"
+        style={{
+          opacity: breakOpacity,
+          transform: [
+            { scale: breakScale },
+            { rotate: breakRotation.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] }) },
+          ],
+        }}>
+        <Ionicons
+          name="heart-dislike"
+          size={Math.round(cardWidth * 0.3)}
+          color="white"
+          style={{ textShadowColor: 'rgba(0,0,0,0.35)', textShadowRadius: 12 }}
+        />
+      </Animated.View>
+
+      <View className="absolute left-[21px] top-[19px] flex-row items-center">
         <Avatar source={{ uri: assetUrl(post.user?.avatar_url ?? '') }} size={35} />
         <View className="ml-[12px]">
           <Text className="text-white" style={{ fontFamily: wuzyFonts.medium, fontSize: Math.round(screenWidth * wuzyType.body) }}>
@@ -125,6 +230,24 @@ export function PostCard({
         accessibilityLabel={`Like post by ${post.user?.username ?? 'Unknown'}`}
         className="absolute inset-0"
       />
+
+      {liked && (
+        <Pressable
+          onPress={toggleLike}
+          disabled={disabled}
+          accessibilityLabel="Unlike post"
+          accessibilityRole="button"
+          hitSlop={10}
+
+          className="absolute bottom-[21px] right-[21px]">
+          <Ionicons
+            name="heart"
+            size={Math.round(cardWidth * 0.075)}
+            color="#FFE783"
+            style={{ textShadowColor: 'rgba(0,0,0,0.5)', textShadowRadius: 6 }}
+          />
+        </Pressable>
+      )}
     </CardShell>
   );
 }

@@ -50,7 +50,7 @@ function WheelItem({
     const angle = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, r * STEP));
     const radius = slot / STEP;
     return {
-      opacity: interpolate(Math.abs(r), [0, 1, VISIBLE], [1, 0.6, 0], 'clamp'),
+      opacity: interpolate(Math.abs(r), [0, 1, VISIBLE], [1, 0.85, 0], 'clamp'),
       transform: [{ translateY: radius * Math.sin(angle) }, { scale: Math.cos(angle) }],
     };
   });
@@ -70,7 +70,7 @@ export function Wheel<T>({ data, keyExtractor, renderItem, itemHeight, gap = 8 }
   const start = useSharedValue(0);
 
   useEffect(() => {
-    offset.value = 0;
+    offset.value = withTiming(0, { duration: 250 });
   }, [data, offset]);
 
   const pan = Gesture.Pan()

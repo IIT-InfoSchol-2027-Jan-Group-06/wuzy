@@ -1,8 +1,7 @@
 import '../global.css';
 
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router/react-navigation';
+import { DarkTheme, ThemeProvider } from 'expo-router/react-navigation';
 import { BebasNeue_400Regular } from '@expo-google-fonts/bebas-neue';
-import { Montserrat_700Bold } from '@expo-google-fonts/montserrat';
 import {
   Poppins_400Regular,
   Poppins_500Medium,
@@ -16,7 +15,6 @@ import { ActivityIndicator, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { wuzyColors } from '@/constants/wuzy-theme';
 
 export const unstable_settings = {
@@ -24,10 +22,8 @@ export const unstable_settings = {
 };
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
   const [fontsLoaded] = useFonts({
     BebasNeue_400Regular,
-    Montserrat_700Bold,
     Poppins_400Regular,
     Poppins_500Medium,
     Poppins_600SemiBold,
@@ -44,7 +40,7 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <ThemeProvider value={DarkTheme}>
         <View style={{ flex: 1, backgroundColor: '#0A0F17' }}>
           <Stack>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -53,7 +49,7 @@ export default function RootLayout() {
             <Stack.Screen name="settings" options={{ headerShown: false }} />
             <Stack.Screen name="ticket" options={{ headerShown: false }} />
           </Stack>
-          <StatusBar style="auto" />
+          <StatusBar style="light" />
         </View>
       </ThemeProvider>
     </GestureHandlerRootView>

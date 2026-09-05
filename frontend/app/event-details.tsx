@@ -8,19 +8,15 @@ import { useRouter } from 'expo-router';
 
 import { GlassNavButton } from '@/components/GlassNavButton';
 import { wuzyColors, wuzyFonts } from '@/constants/wuzy-theme';
-import { mockEvent, type EventDetails } from '@/constants/event-data';
+import { mockEvent } from '@/constants/event-data';
 
-type EventDetailsScreenProps = {
-  event?: EventDetails | null;
-};
-
-export default function EventDetailsScreen({ event }: EventDetailsScreenProps) {
+export default function EventDetailsScreen() {
   const router = useRouter();
   const { width: screenWidth } = useWindowDimensions();
   const [isLiked, setIsLiked] = useState(false);
   const [showMore, setShowMore] = useState(false);
 
-  const e = event ?? mockEvent;
+  const e = mockEvent;
 
   // Responsive sizing
   const heroHeight = Math.round(screenWidth * 0.95);

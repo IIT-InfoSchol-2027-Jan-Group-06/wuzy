@@ -1,6 +1,6 @@
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
 import { Image } from 'expo-image';
 
@@ -11,8 +11,6 @@ import { wuzyFonts } from '@/constants/wuzy-theme';
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { href } = useLocalSearchParams();
-  const isOnNotifications = href?.includes('notifications');
   const { posts, loading, error, refresh } = useFeed();
 
   // Refetch whenever the home screen regains focus (e.g. after sharing a post)
@@ -22,13 +20,7 @@ export default function HomeScreen() {
     }, [refresh]),
   );
 
-  const handleNotificationPress = () => {
-    if (isOnNotifications) {
-      router.back();
-    } else {
-      router.push('/home/notifications');
-    }
-  };
+  const handleNotificationPress = () => router.push('/home/notifications');
 
   return (
     <View className="flex-1 bg-wuzy-bg">

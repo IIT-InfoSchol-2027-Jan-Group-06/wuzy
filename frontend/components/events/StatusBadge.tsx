@@ -9,8 +9,6 @@ export interface StatusBadgeProps {
   textColor?: string;
   bgColor?: string;
   borderColor?: string;
-  iconSize?: number;
-  fontSize?: number;
   className?: string;
   style?: ViewStyle;
   textStyle?: TextStyle;

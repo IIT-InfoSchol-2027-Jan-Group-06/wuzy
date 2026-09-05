@@ -1,4 +1,3 @@
-import { wuzyColors } from './wuzy-theme';
 
 export type ChatMessage = {
   id: string;

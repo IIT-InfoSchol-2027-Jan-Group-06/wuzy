@@ -1,7 +1,7 @@
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, View, useWindowDimensions, type StyleProp, type ViewStyle } from 'react-native';
+import { Platform, Pressable, StyleSheet, View, useWindowDimensions, type StyleProp, type ViewStyle } from 'react-native';
 import type { ReactNode } from 'react';
 
 import { wuzyColors } from '@/constants/wuzy-theme';
@@ -40,6 +40,10 @@ export function GlassNavButton({
     >
       <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
       <View style={StyleSheet.absoluteFill}>
+        {/* ponytail: Android BlurView only blurs a BlurTargetView it sits outside of, which inline buttons cannot do. A frosted fill stands in. */}
+        {Platform.OS === 'android' && (
+          <View className="absolute inset-0 rounded-full" style={{ backgroundColor: wuzyColors.surface, opacity: 0.85 }} />
+        )}
         <View className="absolute inset-0 rounded-full" style={{ backgroundColor: wuzyColors.glassFill }} />
         <View className="absolute inset-0 rounded-full" style={{ backgroundColor: 'rgba(244, 196, 0, 0.1)' }} />
         <LinearGradient

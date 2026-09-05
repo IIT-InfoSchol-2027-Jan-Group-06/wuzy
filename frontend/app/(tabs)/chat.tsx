@@ -3,6 +3,7 @@ import { FlatList, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { CategoryFilter } from '@/components/CategoryFilter';
+import { Fab } from '@/components/Fab';
 import { useNavBarMetrics } from '@/components/NavBar';
 import { Screen } from '@/components/Screen';
 import { SearchBar } from '@/components/SearchBar';
@@ -29,7 +30,7 @@ export default function ChatScreen() {
   });
 
   return (
-    <Screen>
+    <Screen overlay={<Fab onPress={() => {}} />}>
       <View style={{ gap: wuzyLayout.itemGap }}>
         <Text
           className="text-wuzy-yellow"

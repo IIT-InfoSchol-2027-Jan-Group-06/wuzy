@@ -27,7 +27,7 @@ export default function HomeScreen() {
   return (
     <Screen overlay={<Fab onPress={() => router.push('/upload')} />}>
       {/* Fixed header that stays in place while the feed scrolls */}
-      <View className="flex-row items-center justify-between">
+      <View className="flex-row items-center justify-between" style={{ paddingBottom: 8 }}>
         <Text
           className="text-wuzy-yellow"
           style={{ fontFamily: wuzyFonts.display, fontSize: fontSize('display'), lineHeight: fontSize('display') }}>

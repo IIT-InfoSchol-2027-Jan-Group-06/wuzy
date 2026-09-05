@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { FlatList, NativeScrollEvent, NativeSyntheticEvent, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
-import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { ScreenHeader } from '@/components/ScreenHeader';
@@ -29,7 +28,6 @@ export default function TicketVaultScreen() {
   return (
     <View className="flex-1 bg-wuzy-bg">
       <Image key={activeTicket.id} source={activeTicket.image} style={StyleSheet.absoluteFill} contentFit="cover" transition={250} blurRadius={20} />
-      <BlurView intensity={45} tint="dark" style={StyleSheet.absoluteFill} />
       <LinearGradient
         colors={['rgba(10, 15, 23, 0.38)', 'rgba(10, 15, 23, 0.5)', 'rgba(10, 15, 23, 0.64)']}
         locations={[0, 0.5, 1]}

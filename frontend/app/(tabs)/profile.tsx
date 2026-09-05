@@ -18,7 +18,8 @@ export default function ProfileScreen() {
   const u = mockUserProfile;
 
   const heroHeight = Math.round(screenWidth * 1.3);
-  const gridItemSize = (screenWidth - GRID_GAP * 2) / 3;
+  // Floor so three cells plus two gaps never exceed the width after pixel rounding.
+  const gridItemSize = Math.floor((screenWidth - GRID_GAP * 2) / 3);
   const [firstName, ...rest] = u.name.split(' ');
   const lastName = rest.join(' ');
 

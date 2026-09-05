@@ -3,7 +3,7 @@ services:
     build: .
     # Mount source code for hot reload
     volumes:
-      - .:/app
+      - .:/app:z
     ports:
       - "8000:8000"
     # Load environment variables

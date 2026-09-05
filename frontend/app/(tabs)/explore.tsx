@@ -193,7 +193,6 @@ export default function ExploreScreen() {
               value={searchText}
               onChangeText={setSearchText}
               placeholder="Search events..."
-              className="mb-4"
             />
           </View>
 
@@ -202,7 +201,6 @@ export default function ExploreScreen() {
               options={categories}
               selectedId={selectedCategory}
               onSelect={setSelectedCategory}
-              containerStyle={{ marginTop: 0, marginHorizontal: -(horizontalPadding - 50) }}
             />
           </View>
 

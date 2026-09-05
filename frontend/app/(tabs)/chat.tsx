@@ -6,7 +6,7 @@ import { CategoryFilter } from '@/components/CategoryFilter';
 import { GlassNavButton } from '@/components/GlassNavButton';
 import { SearchBar } from '@/components/SearchBar';
 import { MessageRow } from '@/components/chat/MessageRow';
-import { chatMessages, CATEGORIES, type ChatMessage } from '@/constants/chat-data';
+import { chatMessages, CATEGORIES } from '@/constants/chat-data';
 import { wuzyColors, wuzyFonts } from '@/constants/wuzy-theme';
 
 export default function ChatScreen() {
@@ -55,11 +55,10 @@ export default function ChatScreen() {
       </View>
 
       <View style={{ marginTop: Math.round(25 * scale), paddingHorizontal: horizontalPadding }}>
-        <CategoryFilter<ChatMessage>
+        <CategoryFilter
           options={categoryOptions}
           selectedId={active}
           onSelect={(id) => setActive(id as string)}
-          containerStyle={{ paddingHorizontal: 0 }}
         />
       </View>
 

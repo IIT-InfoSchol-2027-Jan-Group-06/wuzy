@@ -1,6 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { wuzyLayout } from '@/constants/wuzy-theme';
 
 export type NavBarItem = 'home' | 'events' | 'awards' | 'chat' | 'profile';
 
@@ -17,39 +20,39 @@ const NAV_ITEMS: { key: NavBarItem; label: string; icon: keyof typeof Ionicons.g
   { key: 'profile', label: 'Profile', icon: 'person-circle' },
 ];
 
+/** NavBar geometry, shared with anything that must clear it (Fab, scroll padding). */
+export function useNavBarMetrics() {
+  const { width } = useWindowDimensions();
+  const { bottom: inset } = useSafeAreaInsets();
+  const barWidth = Math.round(width * 0.72);
+  const height = Math.round(barWidth * (50 / 290));
+  const bottom = Math.max(wuzyLayout.navBottom, inset + 12);
+  return { barWidth, height, bottom, clearance: bottom + height + 16 };
+}
+
 export function NavBar({ active = 'home', onItemPress }: NavBarProps) {
-  // Size scales with the screen: width is 92% of the device width, height and
-  // icons stay proportional so the bar looks the same on any phone.
-  const { width: screenWidth } = useWindowDimensions();
-  const barWidth = Math.round(screenWidth * 0.72);
-  const barHeight = Math.round(barWidth * (50 / 290));
-  const iconSize = Math.round(barHeight * 0.52);
+  const { barWidth, height, bottom } = useNavBarMetrics();
+  const iconSize = Math.round(height * 0.52);
 
   return (
-    <View className="pointer-events-box-none absolute inset-x-0 bottom-8 items-center">
+    <View className="pointer-events-box-none absolute inset-x-0 items-center" style={{ bottom }}>
       <View
         className="overflow-hidden rounded-full border border-white/20 bg-[#F4C400]/10 shadow-lg shadow-black/40"
-        style={{ width: barWidth, height: barHeight }}>
-        <BlurView
-          intensity={80}
-          tint="dark"
-          style={StyleSheet.absoluteFill}
-          pointerEvents="none"
-        />
+        style={{ width: barWidth, height }}>
+        <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} pointerEvents="none" />
         <View className="flex-1 flex-row items-center justify-between px-6">
-          {NAV_ITEMS.map((item) => {
-            return (
-              <Pressable
-                key={item.key}
-                accessibilityRole="button"
-                accessibilityLabel={item.label}
-                onPress={() => onItemPress?.(item.key)}
-                className="items-center justify-center rounded-full active:scale-90"
-                style={{ width: barHeight * 0.8, height: barHeight * 0.8 }}>
-                <Ionicons name={item.icon} size={iconSize} color="#ffffff" />
-              </Pressable>
-            );
-          })}
+          {NAV_ITEMS.map((item) => (
+            <Pressable
+              key={item.key}
+              accessibilityRole="button"
+              accessibilityLabel={item.label}
+              accessibilityState={{ selected: item.key === active }}
+              onPress={() => onItemPress?.(item.key)}
+              className="items-center justify-center rounded-full active:scale-90"
+              style={{ width: height * 0.8, height: height * 0.8 }}>
+              <Ionicons name={item.icon} size={iconSize} color="#ffffff" />
+            </Pressable>
+          ))}
         </View>
       </View>
     </View>

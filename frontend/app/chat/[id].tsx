@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { ChatBubble } from '@/components/chat/ChatBubble';
 import { ChatHeader } from '@/components/chat/ChatHeader';
-import { DateChip } from '@/components/chat/DateChip';
+import { Chip } from '@/components/Chip';
 import { MessageBar } from '@/components/chat/MessageBar';
 import { chatMessages, chatThreads, type ThreadMessage } from '@/constants/chat-data';
 import { wuzyColors } from '@/constants/wuzy-theme';
@@ -44,7 +44,9 @@ export default function ChatViewScreen() {
           keyboardShouldPersistTaps="handled"
           ListFooterComponent={
             <View style={{ marginBottom: Math.round(6 * scale) }}>
-              <DateChip label={thread.date} />
+              <View style={{ alignSelf: 'center' }}>
+                <Chip label={thread.date} />
+              </View>
             </View>
           }
           contentContainerStyle={{

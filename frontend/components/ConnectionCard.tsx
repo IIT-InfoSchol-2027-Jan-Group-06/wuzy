@@ -40,13 +40,9 @@ export function ConnectionCard({ connection }: { connection: Connection }) {
           )}
         </View>
       </View>
-      <TagSection
-        tags={connection.tags}
-        containerStyle={{ paddingHorizontal: 0, marginTop: 4 }}
-        contentContainerStyle={{ gap: 6, paddingBottom: 0 }}
-        tagStyle={{ backgroundColor: wuzyColors.yellowDim, borderWidth: 0, paddingHorizontal: 10, paddingVertical: 4 }}
-        textStyle={{ fontFamily: wuzyFonts.medium, fontSize: smallSize, color: '#CDC6B2' }}
-      />
+      <View className="mt-[8px]">
+        <TagSection tags={connection.tags} />
+      </View>
     </View>
   );
 }

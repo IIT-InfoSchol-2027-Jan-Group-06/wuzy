@@ -41,7 +41,6 @@ export default function NotificationsScreen() {
             options={categories}
             selectedId={selectedCategory}
             onSelect={setSelectedCategory}
-            containerStyle={{ marginTop: 16, marginHorizontal: 16 }}
           />
 
           <View className="px-[32px] mt-[24px] gap-[24px]">

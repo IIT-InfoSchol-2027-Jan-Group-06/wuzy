@@ -15,11 +15,47 @@ import { ActivityIndicator, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 
+import { AuthProvider, useAuth } from '@/context/auth';
 import { wuzyColors } from '@/constants/wuzy-theme';
 
 export const unstable_settings = {
   anchor: '(tabs)',
 };
+
+function RootNavigator() {
+  const { user, restoring } = useAuth();
+
+  if (restoring) {
+    return (
+      <View className="flex-1 items-center justify-center bg-wuzy-bg">
+        <ActivityIndicator color={wuzyColors.yellow} />
+      </View>
+    );
+  }
+
+  return (
+    <View style={{ flex: 1, backgroundColor: '#0A0F17' }}>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="login" />
+        <Stack.Protected guard={!!user}>
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="chat" />
+          <Stack.Screen name="notifications" />
+          <Stack.Screen name="settings" />
+          <Stack.Screen name="connect" />
+          <Stack.Screen name="connections" />
+          <Stack.Screen name="create-event" />
+          <Stack.Screen name="event-details" />
+          <Stack.Screen name="post-preview" />
+          <Stack.Screen name="ticket" />
+          <Stack.Screen name="ticket-vault" />
+          <Stack.Screen name="upload" />
+        </Stack.Protected>
+      </Stack>
+      <StatusBar style="light" />
+    </View>
+  );
+}
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -41,10 +77,9 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider value={DarkTheme}>
-        <View style={{ flex: 1, backgroundColor: '#0A0F17' }}>
-          <Stack screenOptions={{ headerShown: false }} />
-          <StatusBar style="light" />
-        </View>
+        <AuthProvider>
+          <RootNavigator />
+        </AuthProvider>
       </ThemeProvider>
     </GestureHandlerRootView>
   );

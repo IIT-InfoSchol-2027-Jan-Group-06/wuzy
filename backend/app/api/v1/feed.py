@@ -11,6 +11,7 @@ from sqlmodel import Session, col, select
 
 from app.core.auth import get_current_user_id
 from app.db.session import get_session
+from app.models.follow import Follow
 from app.models.post import Post
 from app.models.post_view import PostView
 from app.schemas.post import PostRead
@@ -25,12 +26,22 @@ def discover_feed(
 ):
     """Return posts the current user can discover.
 
-    Includes:
+    Only posts from people the current user follows (and the user's own posts)
+    are included:
     - Ephemeral posts (save_to_profile=False) the user has NOT viewed yet
-    - Permanent profile posts (save_to_profile=True) from all authors
+    - Permanent profile posts (save_to_profile=True)
 
     Ephemeral posts disappear from this feed once the user views them.
     """
+    # IDs of users whose posts are visible: self + everyone this user follows
+    followed_ids = [
+        f.followed_id
+        for f in session.exec(
+            select(Follow).where(Follow.follower_id == current_user_id)
+        ).all()
+    ]
+    author_ids = {current_user_id, *followed_ids}
+
     # IDs of posts this user has already viewed
     viewed_post_ids = [
         pv.post_id
@@ -39,7 +50,8 @@ def discover_feed(
         ).all()
     ]
 
-    # Query: (ephemeral AND not yet viewed by this user) OR permanent
+    # Query: (ephemeral AND not yet viewed by this user) OR permanent,
+    # restricted to the visible authors
     if viewed_post_ids:
         ephemeral_unviewed = (Post.save_to_profile == False) & ~col(Post.id).in_(viewed_post_ids)  # noqa: E712
     else:
@@ -47,7 +59,12 @@ def discover_feed(
         ephemeral_unviewed = Post.save_to_profile == False  # noqa: E712
 
     permanent = Post.save_to_profile == True  # noqa: E712
-    stmt = select(Post).options(selectinload(Post.user)).where(ephemeral_unviewed | permanent)
+    stmt = (
+        select(Post)
+        .options(selectinload(Post.user))
+        .where(col(Post.user_id).in_(author_ids))
+        .where(ephemeral_unviewed | permanent)
+    )
 
     posts = session.exec(stmt.order_by(col(Post.created_at).desc())).all()
     return posts

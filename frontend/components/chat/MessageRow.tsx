@@ -1,14 +1,22 @@
 import React from 'react';
-import { Image, Pressable, Text, View } from 'react-native';
+import { Image, ImageSourcePropType, Pressable, Text, View } from 'react-native';
 
-import type { ChatMessage } from '@/constants/chat-data';
 import { wuzyColors, wuzyFonts, wuzyLayout } from '@/constants/wuzy-theme';
 import { useResponsive } from '@/hooks/useResponsive';
 
 const AVATAR = 48;
 
+export interface MessageRowItem {
+  id: string;
+  name: string;
+  preview: string;
+  time: string;
+  avatar: ImageSourcePropType;
+  unread: boolean;
+}
+
 /** One thread in the chat list: ringed avatar, name over preview, time and unread dot on the right. */
-export function MessageRow({ item, onPress }: { item: ChatMessage; onPress?: () => void }) {
+export function MessageRow({ item, onPress }: { item: MessageRowItem; onPress?: () => void }) {
   const { fontSize } = useResponsive();
 
   return (

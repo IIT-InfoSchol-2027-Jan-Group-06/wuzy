@@ -1,6 +1,7 @@
 import React from 'react';
-import { FlatList, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { ActivityIndicator, FlatList, Pressable, Text, View } from 'react-native';
+import { useRouter, useFocusEffect } from 'expo-router';
+import { useCallback } from 'react';
 
 import { CategoryFilter } from '@/components/CategoryFilter';
 import { Fab } from '@/components/Fab';
@@ -9,23 +10,43 @@ import { Screen } from '@/components/Screen';
 import { SearchBar } from '@/components/SearchBar';
 import { TabHeader } from '@/components/TabHeader';
 import { MessageRow } from '@/components/chat/MessageRow';
-import { chatMessages, CATEGORIES } from '@/constants/chat-data';
-import { wuzyLayout } from '@/constants/wuzy-theme';
+import { wuzyColors, wuzyFonts, wuzyLayout } from '@/constants/wuzy-theme';
+import { useConversations } from '@/hooks/useConversations';
+import { useResponsive } from '@/hooks/useResponsive';
+import { assetUrl, relativeTime } from '@/lib/api';
 
+const defaultAvatar = require('@/assets/images/avatar1.png');
+
+const CATEGORIES = ['All', 'Unread'];
 const categoryOptions = CATEGORIES.map((c) => ({ id: c, label: c }));
 
 export default function ChatScreen() {
   const router = useRouter();
+  const { fontSize } = useResponsive();
   const { clearance } = useNavBarMetrics();
+  const { conversations, loading, error, refresh } = useConversations();
   const [active, setActive] = React.useState<string | number>('All');
   const [searchQuery, setSearchQuery] = React.useState('');
 
+  useFocusEffect(
+    useCallback(() => {
+      refresh();
+    }, [refresh]),
+  );
+
   const q = searchQuery.trim().toLowerCase();
-  const filteredMessages = chatMessages.filter((msg) => {
-    if (active === 'Unread' && !msg.unread) return false;
-    if (active === 'Community' && msg.category !== 'community') return false;
-    if (active === 'Groups' && msg.category !== 'group') return false;
-    return !q || msg.name.toLowerCase().includes(q) || msg.preview.toLowerCase().includes(q);
+  const items = conversations.map((c) => ({
+    id: String(c.id),
+    name: c.other?.display_name ?? c.other?.username ?? 'Chat',
+    preview: c.preview ?? '',
+    time: relativeTime(c.last_message_at),
+    avatar: c.other?.avatar_url ? { uri: assetUrl(c.other.avatar_url) } : defaultAvatar,
+    unread: c.unread > 0,
+  }));
+
+  const filtered = items.filter((item) => {
+    if (active === 'Unread' && !item.unread) return false;
+    return !q || item.name.toLowerCase().includes(q) || item.preview.toLowerCase().includes(q);
   });
 
   return (
@@ -36,14 +57,34 @@ export default function ChatScreen() {
         <CategoryFilter options={categoryOptions} selectedId={active} onSelect={setActive} />
       </View>
 
-      <FlatList
-        data={filteredMessages}
-        keyExtractor={(item) => item.id}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ paddingTop: wuzyLayout.gap, paddingBottom: clearance, gap: wuzyLayout.itemGap }}
-        renderItem={({ item }) => <MessageRow item={item} onPress={() => router.push(`/chat/${item.id}`)} />}
-      />
+      {loading ? (
+        <ActivityIndicator size="large" color={wuzyColors.yellow} style={{ marginTop: wuzyLayout.gap }} />
+      ) : error ? (
+        <Pressable onPress={refresh} className="items-center" style={{ marginTop: wuzyLayout.gap, paddingHorizontal: wuzyLayout.side }}>
+          <Text className="text-center text-wuzy-gray" style={{ fontFamily: wuzyFonts.medium, fontSize: fontSize('body') }}>
+            {error}
+          </Text>
+          <Text className="text-wuzy-yellow" style={{ marginTop: wuzyLayout.itemGap, fontFamily: wuzyFonts.semibold, fontSize: fontSize('body') }}>
+            Tap to retry
+          </Text>
+        </Pressable>
+      ) : (
+        <FlatList
+          data={filtered}
+          keyExtractor={(item) => item.id}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ paddingTop: wuzyLayout.gap, paddingBottom: clearance, gap: wuzyLayout.itemGap }}
+          renderItem={({ item }) => <MessageRow item={item} onPress={() => router.push(`/chat/${item.id}`)} />}
+          ListEmptyComponent={
+            <View className="items-center" style={{ paddingTop: wuzyLayout.gap }}>
+              <Text style={{ fontFamily: wuzyFonts.medium, fontSize: fontSize('body'), color: wuzyColors.gray }}>
+                {searchQuery ? 'Nothing matches your search' : 'No conversations yet'}
+              </Text>
+            </View>
+          }
+        />
+      )}
     </Screen>
   );
 }

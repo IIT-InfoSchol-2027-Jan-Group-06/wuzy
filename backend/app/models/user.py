@@ -1,19 +1,45 @@
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
+from sqlalchemy import JSON, Column
 from sqlmodel import Field, Relationship, SQLModel
 
 if TYPE_CHECKING:
+    from app.models.conversation import Conversation
+    from app.models.follow import Follow
+    from app.models.message import Message
     from app.models.post import Post
 
 
 class User(SQLModel, table=True):
+    """A Wuzy account. Identity and profile live on the same row."""
+
     id: int | None = Field(default=None, primary_key=True)
     email: str = Field(unique=True, index=True)
     username: str = Field(unique=True, index=True)
     hashed_password: str
+    display_name: str | None = Field(default=None)
+    bio: str | None = Field(default=None)
+    hobbies: list[str] | None = Field(default=None, sa_column=Column(JSON))
     avatar_url: str | None = Field(default=None)
     is_active: bool = Field(default=True)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
-    posts: list["Post"] = Relationship(back_populates="user")  # noqa: F821
+    posts: list["Post"] = Relationship(back_populates="user")
+    follows: list["Follow"] = Relationship(
+        back_populates="follower",
+        sa_relationship_kwargs={"foreign_keys": "Follow.follower_id"},
+    )
+    followed_by: list["Follow"] = Relationship(
+        back_populates="followed",
+        sa_relationship_kwargs={"foreign_keys": "Follow.followed_id"},
+    )
+    conversations: list["Conversation"] = Relationship(
+        back_populates="members",
+        sa_relationship_kwargs={"secondary": "conversation_member"},
+    )
+    sent_messages: list["Message"] = Relationship(back_populates="sender")
+
+    @property
+    def following_ids(self) -> list[int]:
+        return [f.followed_id for f in self.follows]

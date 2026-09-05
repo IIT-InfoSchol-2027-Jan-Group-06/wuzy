@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { useAuth } from '@/context/auth';
-import { ApiPost, apiGet } from '@/lib/api';
+import { apiGet, type ApiConversation } from '@/lib/api';
 
-export function useFeed() {
+export function useConversations() {
   const { user } = useAuth();
-  const [posts, setPosts] = useState<ApiPost[]>([]);
+  const [conversations, setConversations] = useState<ApiConversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -14,10 +14,9 @@ export function useFeed() {
     try {
       setLoading(true);
       setError(null);
-      const data = await apiGet<ApiPost[]>('/feed/discover');
-      setPosts(data);
+      setConversations(await apiGet<ApiConversation[]>('/chat/conversations'));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load feed');
+      setError(e instanceof Error ? e.message : 'Failed to load messages');
     } finally {
       setLoading(false);
     }
@@ -27,5 +26,5 @@ export function useFeed() {
     refresh();
   }, [refresh]);
 
-  return { posts, loading, error, refresh };
+  return { conversations, loading, error, refresh };
 }

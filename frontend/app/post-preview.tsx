@@ -7,13 +7,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { wuzyColors, wuzyFonts, wuzyLayout } from '@/constants/wuzy-theme';
-import { CURRENT_USER_ID } from '@/hooks/useFeed';
+import { useAuth } from '@/context/auth';
 import { useResponsive } from '@/hooks/useResponsive';
 import { apiPost, uploadImage } from '@/lib/api';
 import { getPendingPhoto } from '@/lib/media';
 
 export default function PostPreviewScreen() {
   const router = useRouter();
+  const { user } = useAuth();
   const params = useLocalSearchParams<{ imageUri?: string | string[] }>();
   const paramImageUri = Array.isArray(params.imageUri) ? params.imageUri[0] : params.imageUri;
   const imageUri = getPendingPhoto() ?? paramImageUri;
@@ -28,15 +29,16 @@ export default function PostPreviewScreen() {
   const cardHeight = Math.round(cardWidth * (418 / 335));
 
   const handlePost = async () => {
-    if (!imageUri || sharing) return;
+    if (!imageUri || sharing || !user) return;
     try {
       setSharing(true);
-      const { url } = await uploadImage('post', imageUri, CURRENT_USER_ID);
-      await apiPost(
-        '/posts/',
-        { media_url: url, caption: caption || null, location: location || null, save_to_profile: saveToGrid },
-        CURRENT_USER_ID,
-      );
+      const { url } = await uploadImage('post', imageUri);
+      await apiPost('/posts/', {
+        media_url: url,
+        caption: caption || null,
+        location: location || null,
+        save_to_profile: saveToGrid,
+      });
       router.dismissAll();
     } catch (e) {
       console.error('Failed to share post:', e);

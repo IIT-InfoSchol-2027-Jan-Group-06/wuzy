@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Pressable, Switch, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { wuzyColors, wuzyFonts, wuzyLayout } from '@/constants/wuzy-theme';
+import { useAuth } from '@/context/auth';
 import { useResponsive } from '@/hooks/useResponsive';
 
 function SettingRow({
@@ -73,8 +75,15 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 export default function SettingsScreen() {
+  const router = useRouter();
+  const { logout } = useAuth();
   const [pushNotifications, setPushNotifications] = useState(true);
   const [emailUpdates, setEmailUpdates] = useState(false);
+
+  const handleLogout = async () => {
+    await logout();
+    router.replace('/login');
+  };
 
   return (
     <Screen scroll style={{ flexGrow: 1, justifyContent: 'space-between', gap: wuzyLayout.gap }}>
@@ -94,7 +103,7 @@ export default function SettingsScreen() {
       </View>
 
       <Section title="Account">
-        <SettingRow icon="log-out-outline" label="Log out" showChevron={false} />
+        <SettingRow icon="log-out-outline" label="Log out" showChevron={false} onPress={handleLogout} />
       </Section>
     </Screen>
   );

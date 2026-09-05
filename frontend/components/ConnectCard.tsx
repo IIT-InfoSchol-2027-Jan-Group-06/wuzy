@@ -33,7 +33,7 @@ export function ConnectCard({ username, qrValue, onBack, backgroundImage }: Conn
         style={StyleSheet.absoluteFill}
       />
 
-      <SafeAreaView edges={['top', 'bottom']} className="flex-1 w-full self-center" style={{ maxWidth: wuzyLayout.maxWidth }}>
+      <SafeAreaView edges={['top', 'bottom']} className="flex-1">
         <View style={{ paddingTop: wuzyLayout.top, paddingHorizontal: wuzyLayout.side }}>
           <GlassNavButton icon="arrow-back" onPress={onBack} />
         </View>

@@ -44,13 +44,13 @@ export function FeaturedEventCard({
   const favIconSize = Math.round(favBtnSize * 0.48);
 
   // Bottom content sizing
-  const timeFontSize = fontSize('tiny');
-  const titleFontSize = fontSize('title') * 0.52; // ~0.052 ratio
-  const locationIconSize = fontSize('tag');
+  const timeFontSize = fontSize('caption');
+  const titleFontSize = fontSize('display') * 0.52; // ~0.052 ratio
+  const locationIconSize = fontSize('small');
   const locationFontSize = fontSize('caption');
 
-  const priceLabelFontSize = fontSize('tiny');
-  const priceFontSize = fontSize('title') * 0.48; // ~0.048 ratio
+  const priceLabelFontSize = fontSize('caption');
+  const priceFontSize = fontSize('display') * 0.48; // ~0.048 ratio
 
   return (
     // Outer container: Pressable for full-card tap + clips rounded corners
@@ -127,8 +127,8 @@ export function FeaturedEventCard({
 
                 {/* Location row with map pin icon */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing('sm') }}>
-                  <Ionicons name="location-outline" size={locationIconSize} color={wuzyColors.bronze} style={{ marginRight: spacing('xs') / 3 }} />
-                  <Text style={{ color: wuzyColors.bronze, fontSize: locationFontSize, fontWeight: '500', flex: 1, fontFamily: wuzyFonts.medium }}>{location}</Text>
+                  <Ionicons name="location-outline" size={locationIconSize} color={wuzyColors.yellowSoft} style={{ marginRight: spacing('xs') / 3 }} />
+                  <Text style={{ color: wuzyColors.yellowSoft, fontSize: locationFontSize, fontWeight: '500', flex: 1, fontFamily: wuzyFonts.medium }}>{location}</Text>
                 </View>
 
                 {/* Footer: price (left) + visit button (right) */}

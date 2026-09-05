@@ -36,16 +36,16 @@ export function UpcomingEventCard({
   const avatarGap = spacing('xs') * 0.65; // ~2.6px
 
   // Content sizing
-  const titleFontSize = fontSize('sectionTitle') * 0.9; // ~16px on 375px
+  const titleFontSize = fontSize('section') * 0.9; // ~16px on 375px
   const avatarSize = spacing('md') * 1.5; // ~40px on 375px
-  const hostFontSize = fontSize('tag'); // ~12px
+  const hostFontSize = fontSize('small'); // ~12px
 
   // Date badge sizing (white square) - INCREASE SIZE HERE
   const dateBadgeSize = spacing('xl') * 1.85; // ~74px on 375px (was 1.6 -> ~64px)
   const dateBadgeRadius = spacing('sm') * 2.1; // ~21px rounded corners (was 1.8 -> ~18px)
   const dateBadgePadding = spacing('md') * 0.4; // ~1.5px
-  const dateDayFontSize = fontSize('title') * 0.7; // ~26px (was 0.6 -> ~22px)
-  const dateMonthFontSize = fontSize('tiny'); // ~8px
+  const dateDayFontSize = fontSize('display') * 0.7; // ~26px (was 0.6 -> ~22px)
+  const dateMonthFontSize = fontSize('caption'); // ~8px
   const dateMonthMarginTop = spacing('xs') * 0.05; // ~0.2px
 
   return (

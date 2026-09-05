@@ -1,9 +1,10 @@
 import React from 'react';
-import { Image, SafeAreaView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Image, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { GlassNavButton } from '@/components/GlassNavButton';
-import { wuzyFonts, wuzyColors } from '@/constants/wuzy-theme';
+import { wuzyColors, wuzyFonts, wuzyLayout } from '@/constants/wuzy-theme';
 import QRCode from 'react-native-qrcode-svg';
 
 interface ConnectCardProps {
@@ -22,7 +23,6 @@ export function ConnectCard({ username, qrValue, onBack, backgroundImage }: Conn
   const cardWidth = Math.min(maxCardWidth, screenWidth - 48);
   const cardHeight = isDesktop ? 580 : isTablet ? 540 : screenHeight * 0.68;
   const qrSize = Math.min(cardWidth * 0.6, isDesktop ? 240 : 200);
-  const backButtonSize = Math.round((42 / 375) * Math.min(screenWidth, 375));
   const headerFontSize = Math.round(Math.min(screenWidth, 375) * 0.061);
   const nameFontSize = Math.round(Math.min(screenWidth, 375) * 0.10);
   const nameLineHeight = Math.round(Math.min(screenWidth, 375) * 0.11);
@@ -50,10 +50,9 @@ export function ConnectCard({ username, qrValue, onBack, backgroundImage }: Conn
         </View>
 
         <View style={styles.centerWrapper}>
-          <View style={[styles.backButtonWrapper, { top: 50, left: 24 }]}>
+          <View style={[styles.backButtonWrapper, { top: wuzyLayout.top, left: wuzyLayout.side }]}>
             <GlassNavButton
               icon="arrow-back"
-              size={backButtonSize}
               onPress={onBack}
             />
           </View>

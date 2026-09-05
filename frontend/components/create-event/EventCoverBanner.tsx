@@ -3,7 +3,7 @@ import type { ImageSourcePropType } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 
-import { wuzyFonts } from '@/constants/wuzy-theme';
+import { wuzyColors, wuzyFonts } from '@/constants/wuzy-theme';
 
 export interface EventCoverBannerProps {
   imageUri?: ImageSourcePropType;
@@ -35,7 +35,7 @@ export function EventCoverBanner({ imageUri, onPress }: EventCoverBannerProps) {
       ) : (
         <View className="items-center gap-[8px]">
           <Ionicons name="image-outline" size={iconSize} color="rgba(255, 231, 131, 0.5)" />
-          <Text style={{ fontFamily: wuzyFonts.body, fontSize: hintFontSize, color: '#888888' }}>
+          <Text style={{ fontFamily: wuzyFonts.body, fontSize: hintFontSize, color: wuzyColors.gray }}>
             Event Cover
           </Text>
         </View>

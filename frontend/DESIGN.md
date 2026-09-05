@@ -1,121 +1,146 @@
-﻿# Wuzy Frontend Design System
+# Wuzy Frontend Design System
 
-This file defines the source of truth for UI design in Wuzy. Follow these tokens and components strictly across all screens.
+Source of truth for UI in Wuzy. Every value here lives in code at `constants/wuzy-theme.ts`; import from there, never retype a hex or a ratio. `tailwind.config.js` reads the same file, so `bg-wuzy-bg` and `wuzyColors.bg` are always the same color.
 
 ---
 
-## Colors
+## Colors (`wuzyColors`)
 
-| Token | Hex / Value | Usage |
-|-------|-------------|-------|
-| `bg` | `#0A0F17` | Screen background (dark charcoal) |
-| `surface` | `#171E28` | Elevated surfaces, cards, rows |
-| `surface-glass` | `rgba(23, 30, 40, 0.65)` | Frosted glass containers |
-| `border-glass` | `rgba(255, 255, 255, 0.15)` | Glass borders |
-| `yellow` | `#FFE783` | Primary display accents, active tabs, header titles |
-| `white` | `#FFFFFF` | Primary text, bright icons |
-| `gray` | `#8A96A6` | Secondary text, inactive tab icons, subtext |
-| `badge-online` | `#22C55E` | Online presence indicators |
+| Token | Value | Usage |
+|-------|-------|-------|
+| `bg` | `#0A0F17` | Screen background |
+| `surface` | `#171E28` | Cards, rows, input fields |
+| `surfaceBorder` | `#2B3545` | Borders on surface cards |
+| `yellow` | `#FFE783` | Titles, section titles, primary buttons, selected chips |
+| `yellowSoft` | `#FDF3C0` | Soft yellow text over photos (profile name, locations) |
+| `yellowDim` | `rgba(255,231,131,0.2)` | Unselected chips, search bar, icon pills |
+| `yellowMuted` | `#C1AE5F` | Outgoing chat bubble, send button |
+| `gray` | `#8A96A6` | Secondary text, placeholders, inactive icons |
+| `white` | `#FFFFFF` | Primary text |
+| `online` | `#22C55E` | Presence dot |
+| `glassFill` | `rgba(84,82,56,0.35)` | Glass button fill, incoming chat bubble |
+| `glassBorder` | `rgba(255,255,255,0.15)` | Hairline borders on glass and cards |
+
+Tailwind classes: `bg-wuzy-<token>`, `text-wuzy-<token>`, `border-wuzy-<token>`.
 
 ---
 
 ## Typography
 
-### Fonts
-- **Display**: `BebasNeue_400Regular` (`wuzyFonts.display`)
-- **Body / Headings**: `Poppins` (`wuzyFonts.regular`, `wuzyFonts.medium`, `wuzyFonts.semibold`, `wuzyFonts.bold`)
+### Fonts (`wuzyFonts`)
+- Display: `BebasNeue_400Regular` (`wuzyFonts.display`). Screen titles, hero titles, dates.
+- Everything else: Poppins via `wuzyFonts.body`, `medium`, `semibold`, `bold`.
 
-### Font Size Ratios
-Font sizes scale with screen width (`screenWidth * ratio`):
+### Sizes (`wuzyType`, via `useResponsive().fontSize(name)`)
+Sizes are `screenWidth * ratio`, rounded. Never hardcode a pixel font size.
 
-| Ratio | Multiplier | Usage |
-|-------|------------|-------|
-| Title / Header | `0.061` | Screen titles in `ScreenHeader` |
-| Ticket Title | `0.076` | Main event title on `TicketCard` |
-| Ticket Subtext | `0.033` | Event date and venue on `TicketCard` |
-| Body Regular | `0.037` | Main text content |
-| Small / Badge | `0.030` | Timestamps, status labels |
+| Name | Ratio | At 375 | Usage |
+|------|-------|--------|-------|
+| `display` | 0.10 | 38 | Tab-root titles (Wuzy, Explore, Messages, Awards), profile name, event hero title |
+| `title` | 0.061 | 23 | `ScreenHeader` titles, ticket card title, event date and time |
+| `section` | 0.045 | 17 | Section titles (Today, Timeline, Location), card titles, prices |
+| `body` | 0.037 | 14 | Body text, list names, inputs, buttons |
+| `small` | 0.030 | 11 | Chips, secondary lines, timestamps in rows |
+| `caption` | 0.025 | 9 | Smallest labels only (time above a title, awards label). Never below this. |
+
+```ts
+const { fontSize } = useResponsive();
+<Text style={{ fontFamily: wuzyFonts.semibold, fontSize: fontSize('body') }} />
+```
 
 ---
 
-## Components
+## Layout (`wuzyLayout`)
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| `side` | 32 | Horizontal gutter on every screen |
+| `top` | 12 | Padding between the safe-area inset and the first element |
+| `gap` | 24 | Between sections |
+| `itemGap` | 12 | Between items in a list or row |
+| `navBottom` | 32 | Minimum NavBar distance from the screen bottom |
+
+Other fixed values: cards radius 24, inputs and map radius 16, glass and nav buttons `50/375 * screenWidth`, chips px 16 py 8, motion 250ms, wheel settle 400ms.
+
+Full-bleed content inside a padded screen uses `marginHorizontal: -wuzyLayout.side` with `paddingHorizontal: wuzyLayout.side` on the scroll content, so the first item still aligns to the gutter (see `CategoryFilter`, the Today row on Explore).
+
+---
+
+## Shell components
+
+### Screen
+- Wraps every route. Owns background, safe area, top padding, and the 32 gutter.
+- `import { Screen } from '@/components/Screen';`
+- Props: `scroll` (renders a ScrollView whose bottom padding clears the NavBar on tab screens), `padded` (default true; false for full-bleed heroes), `style` (merged into the content container), `overlay` (floating controls rendered above the content, e.g. `Fab` or a floating header).
+- Tab screens get the top inset only; pushed screens get top and bottom. Screens that own their own list use `useNavBarMetrics().clearance` as the list's bottom padding.
 
 ### ScreenHeader
-- Fixed header on pushed sub-screens
-- Left: `GlassNavButton`
-- Center: Yellow uppercase title with Bebas Neue (`fontFamily: wuzyFonts.display`)
-- Right: Spacer of equal size to maintain symmetry
+- `import { ScreenHeader } from '@/components/ScreenHeader';`
+- Back `GlassNavButton` on the left, uppercase Bebas `title` centered, optional `right` slot (share button, Share pill). The right slot is at least as wide as the back button so the title stays centered. No padding of its own; relies on `Screen`.
+
+### NavBar and useNavBarMetrics
+- Frosted pill, 72% of screen width, rendered by the tabs layout only. Respects the bottom safe-area inset.
+- `useNavBarMetrics()` returns `{ barWidth, height, bottom, clearance }`. `clearance` is the space a screen must leave at the bottom so content and the `Fab` sit 16 above the bar.
+
+### Fab
+- `import { Fab } from '@/components/Fab';`
+- The floating add button. `right: side`, `bottom: clearance`. Pass through `Screen`'s `overlay` prop. Used on Home.
 
 ### GlassNavButton
-- Circular frosted glass button with subtle gold sheen and dark blur
-- Renders arrow-back or custom icons
+- Circular frosted glass button, default size `50/375 * screenWidth`. Never pass a smaller `size` for a nav or action button; every back, settings, like, share, and camera control is this size.
+- `icon` takes an Ionicons name or a node. `children` plus a `style` width and height makes a glass pill (`PublishButton`, profile action buttons).
+
+### Chip
+- `import { Chip } from '@/components/Chip';`
+- The one pill: `rounded-full px-[16px] py-[8px]`, contents centered, Poppins semibold `small`. `selected` is solid yellow with bg text; otherwise `yellowDim` fill with yellow text. Used for filters, tags, status labels, date separators, and small primary actions (Visit, Allow camera).
+
+### CategoryFilter
+- Horizontal row of `Chip`s that bleeds to the screen edges. Props: `options`, `selectedId`, `onSelect`.
+
+### TagSection
+- Horizontal row of `Chip`s inside the caller's gutter. Props: `tags`, `onTagPress`.
+
+### SearchBar
+- 44 tall `yellowDim` pill, search icon, Poppins `body` input, clear button when there is text.
+
+---
+
+## Feature components
+
+### UserRow
+- 48 avatar, gray label with white name inline (`body`), gray timestamp (`small`). Notifications list.
 
 ### ConnectionCard
-- **When to Use**: One person in the Connections list (`app/(tabs)/home/connections.tsx`)
-- **Import**: `import { ConnectionCard } from '@/components/ConnectionCard';`
-- **Layout**: Raised `surface` card, radius 24, padding 12. Name (Poppins SemiBold, body ratio, yellow) over username (Poppins Regular, small ratio, white) on the left; 40px avatar with a 12px `badge-online` dot on the right; interest tags below via `TagSection` (`yellowDim` fill, no border, `#CDC6B2` medium text)
-- **Sizing**: Fills its parent's height (`flex-1`), so the list slot decides the card height
+- `surface` card, radius 24, padding 16. Yellow name (`body` semibold) over white username (`small`), 56 avatar with 14 online dot, `TagSection` below. Fills its `Wheel` slot.
 
 ### Wheel
-- **When to Use**: An endless vertical picker where one item is highlighted in the centre and the rest wrap around it (Connections list)
-- **Import**: `import { Wheel } from '@/components/Wheel';`
-- **Props**: `data`, `keyExtractor`, `renderItem`, `itemHeight`, `gap` (default 8). Each item fills a slot of `itemHeight`; the rendered item should use `flex-1`
-- **Feel**: Items are projected onto a cylinder. The centred item is full size and opacity; neighbours sit one slot apart near the centre, then compress and shrink continuously toward the top and bottom (`scale = cos(angle)`), fading out about 3.5 items away. Past the last item comes the first
-- **Gesture**: Vertical pan (horizontal swipes fall through). Release projects the fling a few items and settles on the nearest item with an ease-out
-- **Knobs**: `STEP`, `VISIBLE`, `FLING`, `MAX_FLING`, `SETTLE_MS` at the top of `components/Wheel.tsx`
+- Endless vertical picker. Props: `data`, `keyExtractor`, `renderItem`, `itemHeight`, `gap`. Centered item full size, neighbours at 0.85 opacity, fade out 3.5 items away. Resets to the first item with a 250ms ease when `data` changes. Knobs at the top of `components/Wheel.tsx`.
+
+### PostCard
+- Home feed card, width `screenWidth - 2 * side`, 418:335 aspect. Avatar and name (`body`) with location (`small`) at top-left. Double tap pops a heart.
+
+### FeaturedEventCard and UpcomingEventCard
+- Explore. Featured: 0.75 x 1.05 of screen width poster, `Chip` tag and `GlassNavButton` heart on top, time (`caption`), title (`section` bold), location (`small` yellowSoft), price and a selected Visit `Chip` at the bottom. Upcoming: 120 tall banner, title (`body` bold), 28 host avatar, white 64 date badge with bg-colored text.
 
 ### TicketCard
-- **When to Use**: Event tickets with authentic notch silhouette, dashed divider, dark photo backdrop, and centered QR code
-- **Import**: `import { TicketCard } from '@/components/TicketCard';`
-- **Shape**: Rounded rectangle (`24px` border radius) with circular side notches (`26px` diameter) dividing top and bottom sections
-- **Divider**: Dashed horizontal line connecting the side notches
-- **Background**: Full-bleed event image with dark frosted overlay (`rgba(10, 15, 23, 0.74)`)
-- **Top Section**: Event title (`Poppins_700Bold`, uppercase, white), date & venue (`Poppins_500Medium`, uppercase, white/85)
-- **Bottom Section**: Centered pure white QR code overlay (`QrCode` with `color="#FFFFFF"`, `card={false}`)
+- Radius 24, 13 notch radius, dashed `glassBorder` divider, dark photo backdrop, white QR. Type scales with the card width (title `width * 0.09`).
 
-### ChatHeader
-- **When to Use**: Top bar of an open chat (`app/(tabs)/chat/[id].tsx`)
-- **Import**: `import { ChatHeader } from '@/components/chat/ChatHeader';`
-- **Layout**: Floating `GlassNavButton` back button, avatar with soft yellow ring (`rgba(255,231,131,0.35)`), name (Poppins Medium, white) over status (Poppins Regular 12, `rgba(255,231,131,0.8)`) sitting flat with no pill behind them
-
-### ChatBubble
-- **When to Use**: A single message inside a chat thread
-- **Import**: `import { ChatBubble } from '@/components/chat/ChatBubble';`
-- **Props**: `text: string`, `outgoing: boolean`
-- **Outgoing**: dim yellow `#C1AE5F` background, `#000811` text, radius 16 with a 2px top-right nick, soft matching glow shadow
-- **Incoming**: glass `rgba(84, 82, 56, 0.35)` background (the `GlassNavButton` fill) with `rgba(255,255,255,0.3)` border, white text, radius 16 with a 2px top-left nick
-- Max width 280, text Poppins Regular 16/24, all scaled by `screenWidth / 375`
-
-### DateChip
-- **When to Use**: Date separator between chat messages
-- **Import**: `import { DateChip } from '@/components/chat/DateChip';`
-- **Look**: Self-centered pill, `rgba(0, 19, 103, 0.5)` background, white/10 border, uppercase Poppins Medium 12 in white/60 with 0.6 letter spacing
-
-### MessageBar
-- **When to Use**: Chat composer at the bottom of an open chat
-- **Import**: `import { MessageBar } from '@/components/chat/MessageBar';`
-- **Look**: Full-round pill in solid `#3B3A2D` (the opaque blend of `yellowDim` over `bg`), 55 tall, emoji icon left, bold white "Message" input, attach and mic icons right
-- **Placement**: Floats absolutely over the thread near the bottom edge, bubbles scroll behind it
-- **Send button**: When text is typed, a `#C1AE5F` send circle slides in on the right like an elevator door and attach/mic slide left; it reverses when the text is cleared
+### ChatHeader, ChatBubble, MessageBar, MessageRow
+- Header: back button, 44 ringed avatar, name (`body` medium) over status (`caption` yellowSoft).
+- Bubble: `body` text, radius 16 with a 2 nick. Outgoing `yellowMuted` with bg text; incoming `glassFill` with `glassBorder`.
+- MessageBar: 55 tall pill in `#3B3A2D` (opaque blend of `yellowDim` over `bg`), bold `body` input, send circle slides in when there is text. `onSend(text)` fires on the send button.
+- MessageRow: 48 ringed avatar, name (`body` semibold) over preview (`small` gray), time (`caption`) and unread dot on the right.
 
 ### QrCode
-- **When to Use**: Scannable QR code for tickets, check-ins, or share links
-- **Import**: `import { QrCode } from '@/components/QrCode';`
-- **Props**: `value: string`, `size?: number`, `color?: string`, `card?: boolean`
-- **Modes**: Default card mode with white rounded container, or overlay mode (`card={false}`) for bare white modules over dark images
+- `value`, `size`, `color`, `card`. Card mode is a white rounded container; `card={false}` renders bare modules over dark images.
 
 ---
 
-## Ticket Vault Screen
+## Screens
 
-### Structure
-- Route: `app/(tabs)/home/ticket-vault.tsx`
-- Header: `ScreenHeader` with title `TICKETS`
-- Carousel: Horizontal `FlatList` with `snapToInterval={cardWidth + cardGap}`, `decelerationRate="fast"`, and active card centered (`(screenWidth - cardWidth) / 2` padding)
+Tab roots (Home, Explore, Awards, Messages, Profile) open with a Bebas `display` title in the gutter and an optional `GlassNavButton` on the right. Pushed screens open with `ScreenHeader`.
 
----
-
-## Connections Screen
-
-- `ScreenHeader`, `SearchBar` and connection count in normal flow, then a `Wheel` of `ConnectionCard` rows (slot 100 tall, 8 gap, 44 horizontal padding) filling the rest of the screen
-- Search filters by name, username or tag; the wheel resets to the first result. No match shows a centred gray "No connections match your search"
+- Connections: `ScreenHeader`, `SearchBar`, count, then a `Wheel` of `ConnectionCard`s (slot 132, gap 12) filling the rest of the screen.
+- Ticket vault: blurred active-ticket art fills the screen behind a `ScreenHeader` and a snapping horizontal carousel (card 78% of width, gap 16).
+- Chat thread: `ChatHeader`, inverted message list with a date `Chip` at the top, `MessageBar` in normal flow under the list inside a `KeyboardAvoidingView`.
+- Event details: full-bleed hero with the Bebas title and a like button at its foot, floating `ScreenHeader` with a share button, then description, attendees, venue, date and time, map, gift and Buy ticket actions.

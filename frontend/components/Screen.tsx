@@ -10,12 +10,12 @@ type Props = {
   scroll?: boolean;
   padded?: boolean;
   style?: StyleProp<ViewStyle>;
-  fab?: ReactNode;
+  overlay?: ReactNode;
   children: ReactNode;
 };
 
-/** Shell for every route: bg, safe area, 12 top. padded = 32 sides. scroll = ScrollView that clears the NavBar on tab screens. */
-export function Screen({ scroll, padded = true, style, fab, children }: Props) {
+/** Shell for every route: bg, safe area, 12 top. padded = 32 sides. scroll = ScrollView that clears the NavBar on tab screens. overlay = floating controls above the content. */
+export function Screen({ scroll, padded = true, style, overlay, children }: Props) {
   const isTab = useSegments()[0] === '(tabs)';
   const { clearance } = useNavBarMetrics();
   const pad = { paddingTop: wuzyLayout.top, paddingHorizontal: padded ? wuzyLayout.side : 0 };
@@ -35,7 +35,7 @@ export function Screen({ scroll, padded = true, style, fab, children }: Props) {
           {children}
         </View>
       )}
-      {fab}
+      {overlay}
     </SafeAreaView>
   );
 }

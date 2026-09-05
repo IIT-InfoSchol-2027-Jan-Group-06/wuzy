@@ -1,39 +1,30 @@
 import { Image } from 'expo-image';
 import { useState } from 'react';
-import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  Switch,
-  Text,
-  TextInput,
-  useWindowDimensions,
-  View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, Switch, Text, TextInput, View } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { GlassNavButton } from '@/components/GlassNavButton';
-import { wuzyFonts } from '@/constants/wuzy-theme';
 import { Ionicons } from '@expo/vector-icons';
+
+import { Screen } from '@/components/Screen';
+import { ScreenHeader } from '@/components/ScreenHeader';
+import { wuzyColors, wuzyFonts, wuzyLayout } from '@/constants/wuzy-theme';
+import { CURRENT_USER_ID } from '@/hooks/useFeed';
+import { useResponsive } from '@/hooks/useResponsive';
 import { apiPost, uploadImage } from '@/lib/api';
 import { getPendingPhoto } from '@/lib/media';
-import { CURRENT_USER_ID } from '@/hooks/useFeed';
 
 export default function PostPreviewScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ imageUri?: string | string[] }>();
   const paramImageUri = Array.isArray(params.imageUri) ? params.imageUri[0] : params.imageUri;
   const imageUri = getPendingPhoto() ?? paramImageUri;
-  const { width: screenWidth } = useWindowDimensions();
+  const { screenWidth, fontSize } = useResponsive();
 
   const [caption, setCaption] = useState('');
   const [location, setLocation] = useState('');
   const [saveToGrid, setSaveToGrid] = useState(false);
   const [sharing, setSharing] = useState(false);
 
-  const cardWidth = screenWidth - 40;
+  const cardWidth = screenWidth - 2 * wuzyLayout.side;
   const cardHeight = Math.round(cardWidth * (418 / 335));
 
   const handlePost = async () => {
@@ -43,12 +34,7 @@ export default function PostPreviewScreen() {
       const { url } = await uploadImage('post', imageUri, CURRENT_USER_ID);
       await apiPost(
         '/posts/',
-        {
-          media_url: url,
-          caption: caption || null,
-          location: location || null,
-          save_to_profile: saveToGrid,
-        },
+        { media_url: url, caption: caption || null, location: location || null, save_to_profile: saveToGrid },
         CURRENT_USER_ID,
       );
       router.dismissAll();
@@ -58,122 +44,90 @@ export default function PostPreviewScreen() {
     }
   };
 
-  return (
-    <View className="flex-1 bg-wuzy-bg">
-      <SafeAreaView className="flex-1" style={{ backgroundColor: '#0A0F17' }}>
-        {/* Header */}
-        <View className="flex-row items-center justify-between px-4 py-3">
-          <GlassNavButton icon="arrow-back" onPress={() => router.back()} />
-          <Text
-            className="text-wuzy-yellow"
-            style={{
-              fontFamily: wuzyFonts.display,
-              fontSize: screenWidth * 0.061,
-            }}>
-            NEW POST
-          </Text>
-          <Pressable onPress={handlePost} className="px-5 py-2 rounded-full bg-wuzy-yellow" disabled={sharing}>
-            {sharing ? (
-              <ActivityIndicator size="small" color="#0A0F17" />
-            ) : (
-              <Text
-                className="text-wuzy-bg"
-                style={{ fontFamily: wuzyFonts.semibold, fontSize: 14 }}>
-                Share
-              </Text>
-            )}
-          </Pressable>
-        </View>
+  const sharePill = (
+    <Pressable
+      onPress={handlePost}
+      disabled={sharing}
+      accessibilityRole="button"
+      className="items-center justify-center rounded-full px-[16px] active:opacity-80"
+      style={{ height: 36, minWidth: 72, backgroundColor: wuzyColors.yellow }}>
+      {sharing ? (
+        <ActivityIndicator size="small" color={wuzyColors.bg} />
+      ) : (
+        <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: fontSize('small'), color: wuzyColors.bg }}>Share</Text>
+      )}
+    </Pressable>
+  );
 
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <ScrollView className="flex-1" showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-          {/* Image Preview - PostCard size */}
+  const rowText = { fontFamily: wuzyFonts.body, fontSize: fontSize('body'), color: wuzyColors.white };
+  const divider = { borderBottomWidth: 1, borderBottomColor: wuzyColors.glassBorder };
+
+  return (
+    <Screen>
+      <ScreenHeader title="New post" right={sharePill} />
+
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+        <ScrollView
+          className="flex-1"
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ paddingVertical: wuzyLayout.gap, gap: wuzyLayout.itemGap }}>
           {imageUri && (
-            <View className="px-5 mt-2">
-              <View
-                className="rounded-3xl overflow-hidden"
-                style={{ width: cardWidth, height: cardHeight }}>
-                <Image
-                  source={imageUri}
-                  style={{ width: '100%', height: '100%' }}
-                  contentFit="cover"
-                />
-              </View>
+            <View style={{ width: cardWidth, height: cardHeight, borderRadius: 24, overflow: 'hidden' }}>
+              <Image source={imageUri} style={{ width: '100%', height: '100%' }} contentFit="cover" />
             </View>
           )}
 
-          {/* Caption Area */}
-          <View className="px-4 mt-4">
-            <View className="flex-row items-start gap-3">
-              <View className="w-10 h-10 rounded-full bg-white/10 items-center justify-center flex-shrink-0 mt-1">
-                <Ionicons name="person-outline" size={20} color="#FFFFFF" />
-              </View>
-              <TextInput
-                className="flex-1 text-white min-h-[80px]"
-                style={{ fontFamily: wuzyFonts.body, fontSize: 16, lineHeight: 24 }}
-                placeholder="Write a caption..."
-                placeholderTextColor="#8A96A6"
-                multiline
-                textAlignVertical="top"
-                value={caption}
-                onChangeText={setCaption}
-              />
+          <View className="flex-row items-start" style={{ gap: wuzyLayout.itemGap, paddingVertical: wuzyLayout.itemGap, ...divider }}>
+            <View className="w-10 h-10 rounded-full items-center justify-center" style={{ backgroundColor: wuzyColors.yellowDim }}>
+              <Ionicons name="person-outline" size={20} color={wuzyColors.white} />
             </View>
+            <TextInput
+              className="flex-1 min-h-[80px]"
+              style={{ ...rowText, lineHeight: Math.round(fontSize('body') * 1.5), paddingTop: 8 }}
+              placeholder="Write a caption"
+              placeholderTextColor={wuzyColors.gray}
+              multiline
+              textAlignVertical="top"
+              value={caption}
+              onChangeText={setCaption}
+            />
           </View>
 
-          {/* Divider */}
-          <View className="mx-4 mt-4 border-b border-white/10" />
-
-          {/* Location */}
-          <Pressable className="flex-row items-center px-4 py-4 gap-3">
-            <Ionicons name="location-outline" size={22} color="#FFE783" />
+          <View className="flex-row items-center" style={{ gap: wuzyLayout.itemGap, paddingVertical: wuzyLayout.itemGap, ...divider }}>
+            <Ionicons name="location-outline" size={22} color={wuzyColors.yellow} />
             <TextInput
-              className="flex-1 text-white"
-              style={{ fontFamily: wuzyFonts.body, fontSize: 15 }}
+              className="flex-1"
+              style={{ ...rowText, paddingVertical: 0 }}
               placeholder="Add location"
-              placeholderTextColor="#8A96A6"
+              placeholderTextColor={wuzyColors.gray}
               value={location}
               onChangeText={setLocation}
             />
             {location.length > 0 && (
-              <Pressable onPress={() => setLocation('')}>
-                <Ionicons name="close-circle" size={20} color="#8A96A6" />
+              <Pressable onPress={() => setLocation('')} accessibilityLabel="Clear location">
+                <Ionicons name="close-circle" size={20} color={wuzyColors.gray} />
               </Pressable>
             )}
-          </Pressable>
+          </View>
 
-          {/* Divider */}
-          <View className="mx-4 border-b border-white/10" />
-
-          {/* Save to Profile Grid Toggle */}
-          <View className="flex-row items-center justify-between px-4 py-4">
-            <View className="flex-row items-center gap-3 flex-1">
-              <Ionicons name="grid-outline" size={22} color="#FFE783" />
+          <View className="flex-row items-center justify-between" style={{ gap: wuzyLayout.itemGap, paddingVertical: wuzyLayout.itemGap }}>
+            <View className="flex-row items-center flex-1" style={{ gap: wuzyLayout.itemGap }}>
+              <Ionicons name="grid-outline" size={22} color={wuzyColors.yellow} />
               <View className="flex-1">
-                <Text
-                  className="text-white"
-                  style={{ fontFamily: wuzyFonts.medium, fontSize: 15 }}>
-                  Save to Profile Grid
-                </Text>
-                <Text
-                  className="text-wuzy-gray mt-0.5"
-                  style={{ fontFamily: wuzyFonts.body, fontSize: 12 }}>
-                  Keep this photo on your profile
-                </Text>
+                <Text style={{ fontFamily: wuzyFonts.medium, fontSize: fontSize('body'), color: wuzyColors.white }}>Save to profile grid</Text>
+                <Text style={{ fontFamily: wuzyFonts.body, fontSize: fontSize('small'), color: wuzyColors.gray }}>Keep this photo on your profile</Text>
               </View>
             </View>
             <Switch
               value={saveToGrid}
               onValueChange={setSaveToGrid}
-              trackColor={{ false: '#2A2A2A', true: 'rgba(255, 231, 131, 0.4)' }}
-              thumbColor={saveToGrid ? '#FFE783' : '#8A96A6'}
+              trackColor={{ false: wuzyColors.surface, true: wuzyColors.yellowDim }}
+              thumbColor={saveToGrid ? wuzyColors.yellow : wuzyColors.gray}
             />
           </View>
-
-          <View className="h-10" />
         </ScrollView>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-    </View>
+      </KeyboardAvoidingView>
+    </Screen>
   );
 }

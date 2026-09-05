@@ -1,16 +1,16 @@
 import { CameraView as Camera, CameraType, useCameraPermissions } from 'expo-camera';
-import { launchImageLibraryAsync, MediaTypeOptions } from 'expo-image-picker';
+import { launchImageLibraryAsync } from 'expo-image-picker';
 import { Image } from 'expo-image';
-import { Pressable, Text, View, StyleSheet, TouchableOpacity, ActivityIndicator, Dimensions } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useState, useRef, useCallback, useImperativeHandle, forwardRef } from 'react';
-import { Ionicons } from '@expo/vector-icons';
-import { GlassNavButton } from '@/components/GlassNavButton';
-import { wuzyFonts } from '@/constants/wuzy-theme';
-import { setPendingPhoto } from '@/lib/media';
 
-const { width: screenWidth } = Dimensions.get('window');
+import { Chip } from '@/components/Chip';
+import { GlassNavButton } from '@/components/GlassNavButton';
+import { Screen } from '@/components/Screen';
+import { wuzyColors, wuzyFonts, wuzyLayout } from '@/constants/wuzy-theme';
+import { useResponsive } from '@/hooks/useResponsive';
+import { setPendingPhoto } from '@/lib/media';
 
 type CameraComponentRef = {
   takePicture: () => void;
@@ -24,10 +24,7 @@ const CameraComponent = forwardRef<CameraComponentRef, { type: CameraType; onPic
     if (!cameraRef.current || capturingRef.current) return;
     capturingRef.current = true;
     try {
-      const photo = await cameraRef.current.takePictureAsync({
-        quality: 0.8,
-        base64: false,
-      });
+      const photo = await cameraRef.current.takePictureAsync({ quality: 0.8, base64: false });
       onPictureTaken(photo.uri);
     } catch (error) {
       console.error('Error taking picture:', error);
@@ -36,9 +33,7 @@ const CameraComponent = forwardRef<CameraComponentRef, { type: CameraType; onPic
     }
   }, [onPictureTaken]);
 
-  useImperativeHandle(ref, () => ({
-    takePicture,
-  }), [takePicture]);
+  useImperativeHandle(ref, () => ({ takePicture }), [takePicture]);
 
   // Scale on a wrapper View: a transform on the CameraView itself can break the Android preview.
   return (
@@ -58,153 +53,99 @@ CameraComponent.displayName = 'CameraComponent';
 
 export default function UploadScreen() {
   const router = useRouter();
+  const { screenWidth, fontSize } = useResponsive();
   const cameraRef = useRef<CameraComponentRef>(null);
   const [cameraType, setCameraType] = useState<CameraType>('back');
   const [hasPermission, requestCameraPermission] = useCameraPermissions();
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
-  const [showPreview, setShowPreview] = useState(false);
+
+  const viewportWidth = screenWidth - 2 * wuzyLayout.side;
+  const viewport = { width: viewportWidth, height: Math.round(viewportWidth * (418 / 335)), borderRadius: 24, overflow: 'hidden' as const };
 
   const flipCamera = () => {
-    setCameraType(prev => prev === 'back' ? 'front' : 'back');
+    setCameraType((prev) => (prev === 'back' ? 'front' : 'back'));
     setIsCameraReady(false);
-  };
-
-  const handlePictureTaken = (uri: string) => {
-    setCapturedPhoto(uri);
-    setShowPreview(true);
   };
 
   const pickFromGallery = async () => {
     try {
-      const result = await launchImageLibraryAsync({
-        mediaTypes: MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [418, 335],
-        quality: 0.8,
-      });
-      if (!result.canceled && result.assets[0]) {
-        setCapturedPhoto(result.assets[0].uri);
-        setShowPreview(true);
-      }
+      const result = await launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [335, 418], quality: 0.8 });
+      if (!result.canceled && result.assets[0]) setCapturedPhoto(result.assets[0].uri);
     } catch (error) {
       console.error('Error picking from gallery:', error);
     }
   };
 
-  const retakePhoto = () => {
-    setCapturedPhoto(null);
-    setShowPreview(false);
-  };
-
   const confirmPhoto = () => {
-    if (capturedPhoto) {
-      setPendingPhoto(capturedPhoto);
-      router.push({
-        pathname: '/post-preview',
-        params: { imageUri: capturedPhoto },
-      });
-    }
+    if (!capturedPhoto) return;
+    setPendingPhoto(capturedPhoto);
+    router.push({ pathname: '/post-preview', params: { imageUri: capturedPhoto } });
   };
 
   if (hasPermission === null) {
     return (
-      <View className="flex-1 bg-wuzy-bg items-center justify-center">
-        <ActivityIndicator size="large" color="#FFE783" />
-      </View>
+      <Screen>
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color={wuzyColors.yellow} />
+        </View>
+      </Screen>
     );
   }
 
   if (!hasPermission?.granted) {
     return (
-      <View className="flex-1 bg-wuzy-bg items-center justify-center px-6">
-        <Text className="text-wuzy-yellow text-center" style={{ fontFamily: wuzyFonts.display, fontSize: 28 }}>
-          Camera Permission Required
-        </Text>
-        <Text className="text-wuzy-gray text-center mt-4" style={{ fontFamily: wuzyFonts.body, fontSize: 16 }}>
-          Please enable camera access in settings to take photos.
-        </Text>
-        <Pressable
-          className="mt-6 px-8 py-3 rounded-full border border-wuzy-yellow"
-          onPress={requestCameraPermission}>
-          <Text className="text-wuzy-yellow" style={{ fontFamily: wuzyFonts.semibold, fontSize: 16 }}>
-            Grant Permission
+      <Screen>
+        <GlassNavButton icon="arrow-back" onPress={() => router.back()} />
+        <View className="flex-1 items-center justify-center" style={{ gap: wuzyLayout.itemGap }}>
+          <Text className="text-wuzy-yellow text-center" style={{ fontFamily: wuzyFonts.display, fontSize: fontSize('title') }}>
+            Camera access needed
           </Text>
-        </Pressable>
-      </View>
+          <Text className="text-center text-wuzy-gray" style={{ fontFamily: wuzyFonts.body, fontSize: fontSize('body') }}>
+            Allow camera access to take photos for your posts.
+          </Text>
+          <View style={{ marginTop: wuzyLayout.itemGap }}>
+            <Chip label="Allow camera" selected onPress={requestCameraPermission} />
+          </View>
+        </View>
+      </Screen>
     );
   }
 
   return (
-    <View className="flex-1" style={{ backgroundColor: '#0A0F17' }}>
-      <SafeAreaView className="flex-1" style={{ backgroundColor: 'transparent' }}>
-        <View className="flex-row items-center justify-between px-6 pt-6">
-          <GlassNavButton
-            icon="arrow-back"
-            onPress={() => router.back()}
-            className="absolute top-6 left-6 z-50"
-          />
-          <View style={{ width: 50 }} />
+    <Screen>
+      <GlassNavButton icon="arrow-back" onPress={() => router.back()} />
+
+      <View className="flex-1 items-center justify-center" style={{ gap: wuzyLayout.gap }}>
+        <View style={viewport}>
+          {capturedPhoto ? (
+            <Image source={capturedPhoto} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+          ) : (
+            <CameraComponent ref={cameraRef} key={cameraType} type={cameraType} onPictureTaken={setCapturedPhoto} onReadyChange={setIsCameraReady} />
+          )}
         </View>
 
-        {showPreview && capturedPhoto ? (
-          <View className="flex-1 items-center justify-center">
-            <View style={{ width: screenWidth - 40, height: Math.round((screenWidth - 40) * (418 / 335)), borderRadius: 40, overflow: 'hidden' }}>
-              <Image
-                source={capturedPhoto}
-                style={{ width: '100%', height: '100%' }}
-                contentFit="cover"
-              />
-            </View>
-            <View className="absolute bottom-0 left-0 right-0 p-6 flex-row justify-between">
-              <GlassNavButton
-                icon="refresh"
-                onPress={retakePhoto}
-                size={56}
-              />
-              <GlassNavButton
-                icon="checkmark"
-                onPress={confirmPhoto}
-                size={56}
-              />
-            </View>
+        {capturedPhoto ? (
+          <View className="w-full flex-row items-center justify-evenly">
+            <GlassNavButton icon="refresh" accessibilityLabel="Retake" onPress={() => setCapturedPhoto(null)} />
+            <GlassNavButton icon="checkmark" accessibilityLabel="Use photo" onPress={confirmPhoto} />
           </View>
         ) : (
-          <View className="flex-1 items-center justify-center">
-            <View style={{ width: screenWidth - 40, height: Math.round((screenWidth - 40) * (418 / 335)), borderRadius: 40, overflow: 'hidden' }}>
-              <CameraComponent
-                ref={cameraRef}
-                key={cameraType}
-                type={cameraType}
-                onPictureTaken={handlePictureTaken}
-                onReadyChange={setIsCameraReady}
-              />
-            </View>
-            <View className="mt-20 w-full px-6 pb-[58px] flex-row items-center justify-between max-w-[400px] mx-auto">
-              <TouchableOpacity
-                onPress={pickFromGallery}
-                className="w-14 h-14 rounded-lg bg-white/10 items-center justify-center border border-white/20 backdrop-blur-sm">
-                <Ionicons name="image-outline" size={28} color="#FFFFFF" />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => cameraRef.current?.takePicture()}
-                disabled={!isCameraReady}
-                className="w-32 h-32 rounded-full border-4 border-white items-center justify-center"
-                activeOpacity={0.8}
-                style={{ opacity: isCameraReady ? 1 : 0.5 }}>
-                <View className="w-20 h-20 rounded-full border-2 border-white bg-white" />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={flipCamera}
-                className="w-14 h-14 rounded-full bg-white/10 items-center justify-center border border-white/20 backdrop-blur-sm">
-                <Ionicons name="camera-reverse-outline" size={28} color="#FFFFFF" />
-              </TouchableOpacity>
-            </View>
+          <View className="w-full flex-row items-center justify-between">
+            <GlassNavButton icon="image-outline" accessibilityLabel="Pick from gallery" onPress={pickFromGallery} />
+            <Pressable
+              onPress={() => cameraRef.current?.takePicture()}
+              disabled={!isCameraReady}
+              accessibilityRole="button"
+              accessibilityLabel="Take photo"
+              className="items-center justify-center rounded-full border-4 border-white active:opacity-80"
+              style={{ width: 80, height: 80, opacity: isCameraReady ? 1 : 0.5 }}>
+              <View className="rounded-full bg-white" style={{ width: 64, height: 64 }} />
+            </Pressable>
+            <GlassNavButton icon="camera-reverse-outline" accessibilityLabel="Flip camera" onPress={flipCamera} />
           </View>
         )}
-      </SafeAreaView>
-    </View>
+      </View>
+    </Screen>
   );
 }

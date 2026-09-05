@@ -25,7 +25,7 @@ export default function HomeScreen() {
   );
 
   return (
-    <Screen fab={<Fab onPress={() => router.push('/upload')} />}>
+    <Screen overlay={<Fab onPress={() => router.push('/upload')} />}>
       {/* Fixed header that stays in place while the feed scrolls */}
       <View className="flex-row items-center justify-between">
         <Text

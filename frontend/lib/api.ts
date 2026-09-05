@@ -1,4 +1,5 @@
 import Constants from 'expo-constants';
+import { File } from 'expo-file-system';
 
 /**
  * Base URL for the Wuzy backend.
@@ -38,13 +39,9 @@ export async function apiPost<T>(path: string, body: unknown, userId?: number): 
 }
 
 export async function uploadImage(kind: 'post' | 'avatar', uri: string, userId: number) {
-  const filename = uri.split('/').pop() ?? 'upload.jpg';
+  const file = new File(uri);
   const form = new FormData();
-  form.append('file', {
-    uri,
-    name: filename,
-    type: 'image/jpeg',
-  } as unknown as Blob);
+  form.append('file', file as unknown as Blob);
 
   const res = await fetch(`${API_URL}/upload/${kind}`, {
     method: 'POST',

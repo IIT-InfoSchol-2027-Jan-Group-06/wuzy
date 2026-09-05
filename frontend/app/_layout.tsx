@@ -1,6 +1,6 @@
 import '../global.css';
 
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router/react-navigation';
 import { BebasNeue_400Regular } from '@expo-google-fonts/bebas-neue';
 import { Montserrat_700Bold } from '@expo-google-fonts/montserrat';
 import {
@@ -51,6 +51,7 @@ export default function RootLayout() {
             <Stack.Screen name="event-details" options={{ headerShown: false }} />
             <Stack.Screen name="connect" options={{ headerShown: false }} />
             <Stack.Screen name="settings" options={{ headerShown: false }} />
+            <Stack.Screen name="ticket" options={{ headerShown: false }} />
           </Stack>
           <StatusBar style="auto" />
         </View>

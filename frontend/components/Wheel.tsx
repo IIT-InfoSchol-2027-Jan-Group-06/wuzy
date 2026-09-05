@@ -80,10 +80,13 @@ export function Wheel<T>({ data, keyExtractor, renderItem, itemHeight, gap = 8 }
       start.value = offset.value;
     })
     .onUpdate((e) => {
+      // The compiler linter treats Reanimated shared values as immutable; they are mutable by design.
+      // eslint-disable-next-line react-hooks/immutability
       offset.value = start.value - e.translationY / slot;
     })
     .onEnd((e) => {
       const fling = Math.max(-MAX_FLING, Math.min(MAX_FLING, (-e.velocityY * FLING) / slot));
+      // eslint-disable-next-line react-hooks/immutability
       offset.value = withTiming(Math.round(offset.value + fling), { duration: SETTLE_MS, easing: Easing.out(Easing.cubic) });
     });
 

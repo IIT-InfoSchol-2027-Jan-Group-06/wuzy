@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image, Pressable, SafeAreaView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Image, SafeAreaView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { GlassNavButton } from '@/components/GlassNavButton';
@@ -138,18 +138,18 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   cardOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(244, 196, 0, 0.08)',
     borderRadius: 24,
   },
   cardBorder: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 24,
   },
   cardBorderStrong: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 24,

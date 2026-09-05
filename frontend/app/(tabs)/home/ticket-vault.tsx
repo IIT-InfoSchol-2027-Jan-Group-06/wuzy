@@ -80,7 +80,7 @@ export default function TicketVaultScreen() {
     ? (
       <View
         style={[
-          StyleSheet.absoluteFillObject,
+          StyleSheet.absoluteFill,
           { backdropFilter: 'blur(22px)', WebkitBackdropFilter: 'blur(22px)', pointerEvents: 'none' } as any,
         ]}
       />
@@ -89,8 +89,7 @@ export default function TicketVaultScreen() {
       <BlurView
         intensity={45}
         tint="dark"
-        experimentalBlurMethod="dimezisBlurView"
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
       />
     );
 
@@ -111,7 +110,7 @@ export default function TicketVaultScreen() {
       <Image
         key={activeTicket.id}
         source={activeTicket.image}
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
         contentFit="cover"
         transition={300}
         blurRadius={20}
@@ -124,7 +123,7 @@ export default function TicketVaultScreen() {
       <LinearGradient
         colors={['rgba(10, 14, 20, 0.38)', 'rgba(8, 12, 18, 0.5)', 'rgba(5, 8, 14, 0.64)']}
         locations={[0, 0.5, 1]}
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
       />
 
       <SafeAreaView edges={['top', 'bottom']} className="flex-1">

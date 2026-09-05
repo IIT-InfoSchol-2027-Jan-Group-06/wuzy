@@ -62,7 +62,6 @@ export function FeaturedEventCard({
         borderRadius,
         overflow: 'hidden',
       }}
-      activeOpacity={0.9}
     >
       {/* Full-bleed background image */}
       <ImageBackground

@@ -36,7 +36,7 @@ export function TicketCard({ ticket, width, style }: TicketCardProps) {
       <View className="absolute inset-0 overflow-hidden rounded-[28px]">
         <Image
           source={ticket.image}
-          style={StyleSheet.absoluteFillObject}
+          style={StyleSheet.absoluteFill}
           contentFit="cover"
         />
 
@@ -48,14 +48,14 @@ export function TicketCard({ ticket, width, style }: TicketCardProps) {
             'rgba(6, 9, 14, 0.86)',
           ]}
           locations={[0, 0.45, 1]}
-          style={StyleSheet.absoluteFillObject}
+          style={StyleSheet.absoluteFill}
         />
       </View>
 
       {/* Outer Card Border */}
       <View
         style={[
-          StyleSheet.absoluteFillObject,
+          StyleSheet.absoluteFill,
           {
             borderRadius: 28,
             borderWidth: 1.5,

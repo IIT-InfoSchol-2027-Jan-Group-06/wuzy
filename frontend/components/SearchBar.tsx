@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, TextInput, View } from 'react-native';
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState } from 'react';
 
 import { wuzyColors, wuzyFonts } from '@/constants/wuzy-theme';
 
@@ -24,9 +24,12 @@ export function SearchBar({
   const [localValue, setLocalValue] = useState(value ?? '');
   const inputRef = useRef<TextInput>(null);
 
-  useEffect(() => {
+  // Adjust local state during render when the controlled value changes (React's documented pattern).
+  const [prevValue, setPrevValue] = useState(value ?? '');
+  if (value !== prevValue) {
+    setPrevValue(value);
     setLocalValue(value ?? '');
-  }, [value]);
+  }
 
   const handleClear = () => {
     setLocalValue('');

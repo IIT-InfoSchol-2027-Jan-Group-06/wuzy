@@ -22,8 +22,8 @@ export function PublishButton({ onPress }: PublishButtonProps) {
       accessibilityRole="button"
       className="items-center justify-center self-center overflow-hidden rounded-full active:opacity-80"
       style={{ height, width }}>
-      <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFillObject} />
-      <View style={StyleSheet.absoluteFillObject}>
+      <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
+      <View style={StyleSheet.absoluteFill}>
         <View
           className="absolute inset-0 rounded-full"
           style={{ backgroundColor: 'rgba(84, 82, 56, 0.35)' }}
@@ -33,13 +33,13 @@ export function PublishButton({ onPress }: PublishButtonProps) {
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           locations={[0, 0.5, 1]}
-          style={StyleSheet.absoluteFillObject}
+          style={StyleSheet.absoluteFill}
         />
         <LinearGradient
           colors={['rgba(255,255,255,0.25)', 'transparent']}
           start={{ x: 0.5, y: 0 }}
           end={{ x: 0.5, y: 1 }}
-          style={StyleSheet.absoluteFillObject}
+          style={StyleSheet.absoluteFill}
         />
         <View className="absolute inset-0 rounded-full border border-white/30" />
         <View

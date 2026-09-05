@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
@@ -43,8 +43,8 @@ export function PostCard({
   const cardWidth = width ?? screenWidth - 40;
   const cardHeight = height ?? Math.round(cardWidth * (418 / 335));
 
-  const heartScale = useRef(new Animated.Value(0)).current;
-  const heartOpacity = useRef(new Animated.Value(0)).current;
+  const [heartScale] = useState(() => new Animated.Value(0));
+  const [heartOpacity] = useState(() => new Animated.Value(0));
   const lastTapRef = useRef(0);
 
   const triggerHeart = () => {

@@ -90,7 +90,6 @@ export const profileDesignTokens = {
   blur: {
     intensity: 80,
     tint: 'dark',
-    method: 'dimezisBlurView',
   },
 
   gradient: {

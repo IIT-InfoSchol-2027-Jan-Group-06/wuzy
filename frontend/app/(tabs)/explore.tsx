@@ -129,8 +129,6 @@ export default function ExploreScreen() {
   const headerFontSize = Math.round(screenWidth * 0.065);
   const sectionTitleFontSize = Math.round(screenWidth * 0.04);
   const footerFontSize = Math.round(screenWidth * 0.025);
-  // Gap between upcoming event cards (adjust this value to change spacing)
-  const upcomingEventGap = Math.round(screenWidth * 0.035);
 
   const navigateToEvent = (eventId: string) => {
     router.push('/event-details');

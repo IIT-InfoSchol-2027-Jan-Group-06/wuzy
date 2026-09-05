@@ -1,9 +1,9 @@
+import { Image } from 'expo-image';
 import { useState } from 'react';
 import {
   Pressable,
   Text,
   View,
-  Image,
   TextInput,
   ScrollView,
   Switch,
@@ -16,11 +16,14 @@ import { GlassNavButton } from '@/components/GlassNavButton';
 import { wuzyFonts } from '@/constants/wuzy-theme';
 import { Ionicons } from '@expo/vector-icons';
 import { apiPost, uploadImage } from '@/lib/api';
+import { getPendingPhoto } from '@/lib/media';
 import { CURRENT_USER_ID } from '@/hooks/useFeed';
 
 export default function PostPreviewScreen() {
   const router = useRouter();
-  const { imageUri } = useLocalSearchParams<{ imageUri: string }>();
+  const params = useLocalSearchParams<{ imageUri?: string | string[] }>();
+  const paramImageUri = Array.isArray(params.imageUri) ? params.imageUri[0] : params.imageUri;
+  const imageUri = getPendingPhoto() ?? paramImageUri;
   const { width: screenWidth } = useWindowDimensions();
 
   const [caption, setCaption] = useState('');
@@ -88,9 +91,9 @@ export default function PostPreviewScreen() {
                 className="rounded-3xl overflow-hidden"
                 style={{ width: cardWidth, height: cardHeight }}>
                 <Image
-                  source={{ uri: imageUri }}
+                  source={imageUri}
                   style={{ width: '100%', height: '100%' }}
-                  resizeMode="cover"
+                  contentFit="cover"
                 />
               </View>
             </View>

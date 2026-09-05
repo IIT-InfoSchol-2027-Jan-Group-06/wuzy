@@ -1,4 +1,4 @@
-import { Pressable, Text, View, Image } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image as ExpoImage } from 'expo-image';
 import type { ImageSourcePropType } from 'react-native';
@@ -23,7 +23,7 @@ export function UpcomingEventCard({
   imageUri,
   onPress,
 }: UpcomingEventCardProps) {
-  const { screenWidth, fontSize, spacing } = useResponsive();
+  const { fontSize, spacing } = useResponsive();
 
   // Card dimensions (responsive ratios from design tokens)
   const cardHeight = spacing('lg') * 4.5; // ~155px on 375px
@@ -47,9 +47,6 @@ export function UpcomingEventCard({
   const dateDayFontSize = fontSize('title') * 0.7; // ~26px (was 0.6 -> ~22px)
   const dateMonthFontSize = fontSize('tiny'); // ~8px
   const dateMonthMarginTop = spacing('xs') * 0.05; // ~0.2px
-
-  // Badge right offset: positive = more right, negative = more left
-  const badgeRightOffset = spacing('md') * 0.9; // ~4px extra right push
 
   return (
     // Outer container: Pressable with active feedback

@@ -33,7 +33,6 @@ export function NavBar({ active = 'home', onItemPress }: NavBarProps) {
         <BlurView
           intensity={80}
           tint="dark"
-          experimentalBlurMethod="dimezisBlurView"
           style={StyleSheet.absoluteFill}
           pointerEvents="none"
         />

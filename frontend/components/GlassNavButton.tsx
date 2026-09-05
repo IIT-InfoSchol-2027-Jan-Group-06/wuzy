@@ -33,9 +33,9 @@ export function GlassNavButton({
       <BlurView
         intensity={40}
         tint="dark"
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
       />
-      <View style={StyleSheet.absoluteFillObject}>
+      <View style={StyleSheet.absoluteFill}>
         <View
           className="absolute inset-0 rounded-full"
           style={{
@@ -52,14 +52,14 @@ export function GlassNavButton({
           colors={['rgba(255,255,255,0.15)', 'rgba(255,255,255,0.03)', 'rgba(0,0,0,0.1)']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={StyleSheet.absoluteFillObject}
+          style={StyleSheet.absoluteFill}
           locations={[0, 0.5, 1]}
         />
         <LinearGradient
           colors={['rgba(255,255,255,0.25)', 'transparent']}
           start={{ x: 0.5, y: 0 }}
           end={{ x: 0.5, y: 1 }}
-          style={StyleSheet.absoluteFillObject}
+          style={StyleSheet.absoluteFill}
         />
         <View className="absolute inset-0 rounded-full border border-white/30" />
         <View className="absolute top-0 left-0 right-0 rounded-t-full border-t border-white/50" style={{ height: baseSize * 0.5 }} />

@@ -22,7 +22,6 @@ export function MessageRow({ item, onPress, showUnread = true }: MessageRowProps
   const timeSize = Math.round(14 * scale);
   const unreadDotSize = Math.round(10 * scale);
   const borderWidth = Math.max(1, Math.round(1 * scale));
-  const unreadDotRightOffset = Math.round(19 * scale); // Figma: 19px from row right edge
 
   return (
     <TouchableOpacity

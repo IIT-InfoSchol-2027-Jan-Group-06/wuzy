@@ -1,4 +1,4 @@
-import { Image, Pressable, Platform, ScrollView, Text, View, useWindowDimensions, StyleSheet } from 'react-native';
+import { Image, Pressable, ScrollView, Text, View, useWindowDimensions, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image as SvgImage } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -78,7 +78,7 @@ export default function EventDetailsScreen({ event }: EventDetailsScreenProps) {
               locations={[0, 0.3, 0.7, 1]}
               start={{ x: 0.5, y: 0 }}
               end={{ x: 0.5, y: 1 }}
-              style={StyleSheet.absoluteFillObject}
+              style={StyleSheet.absoluteFill}
             />
 
             {/* Like Button - absolutely positioned over cover image at specific coordinates */}
@@ -274,7 +274,7 @@ export default function EventDetailsScreen({ event }: EventDetailsScreenProps) {
                 className="flex-1 rounded-full overflow-hidden"
                 style={{ height: actionHeight }}
               >
-                <View style={StyleSheet.absoluteFillObject} className="bg-wuzy-yellow" />
+                <View style={StyleSheet.absoluteFill} className="bg-wuzy-yellow" />
                 <View className="flex-1 items-center justify-center relative z-10">
                   <Text
                     style={{

@@ -1,4 +1,4 @@
-﻿import { Tabs, useRouter, useSegments } from 'expo-router';
+import { Tabs, useRouter, useSegments } from 'expo-router';
 import { NavBar } from '@/components/NavBar';
 import type { NavBarItem } from '@/components/NavBar';
 

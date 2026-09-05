@@ -58,7 +58,7 @@ export function ToggleRow({ label, value, onValueChange }: ToggleRowProps) {
             colors={['rgba(255,255,255,0.35)', 'rgba(255,255,255,0.05)']}
             start={{ x: 0.5, y: 0 }}
             end={{ x: 0.5, y: 1 }}
-            style={StyleSheet.absoluteFillObject}
+            style={StyleSheet.absoluteFill}
           />
         </View>
       </Pressable>

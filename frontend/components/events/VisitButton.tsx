@@ -1,9 +1,9 @@
-import { Pressable, Text, View, useWindowDimensions } from 'react-native';
-import type { PressableProps } from 'react-native';
+import { Pressable, Text, useWindowDimensions } from 'react-native';
+import type { GestureResponderEvent, PressableProps } from 'react-native';
 
 export interface VisitButtonProps extends Omit<PressableProps, 'onPress' | 'style' | 'children'> {
   label?: string;
-  onPress?: () => void;
+  onPress?: (event: GestureResponderEvent) => void;
   className?: string;
 }
 

@@ -17,7 +17,7 @@ export function TicketVaultBackground({ ticket }: TicketVaultBackgroundProps) {
     ? (
         <View
           style={[
-            StyleSheet.absoluteFillObject,
+            StyleSheet.absoluteFill,
             { backdropFilter: 'blur(22px)', WebkitBackdropFilter: 'blur(22px)', pointerEvents: 'none' } as any,
           ]}
         />
@@ -26,17 +26,16 @@ export function TicketVaultBackground({ ticket }: TicketVaultBackgroundProps) {
         <BlurView
           intensity={45}
           tint="dark"
-          experimentalBlurMethod="dimezisBlurView"
-          style={StyleSheet.absoluteFillObject}
+          style={StyleSheet.absoluteFill}
         />
       );
 
   return (
-    <View style={StyleSheet.absoluteFillObject}>
+    <View style={StyleSheet.absoluteFill}>
       <Image
         key={ticket.id}
         source={ticket.image}
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
         contentFit="cover"
         transition={300}
         blurRadius={20}
@@ -45,7 +44,7 @@ export function TicketVaultBackground({ ticket }: TicketVaultBackgroundProps) {
       <LinearGradient
         colors={['rgba(10, 14, 20, 0.38)', 'rgba(8, 12, 18, 0.5)', 'rgba(5, 8, 14, 0.64)']}
         locations={[0, 0.5, 1]}
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
       />
     </View>
   );

@@ -4,7 +4,7 @@ import Animated, { Easing, interpolate, useAnimatedStyle, useSharedValue, withTi
 import { Ionicons } from '@expo/vector-icons';
 import { wuzyColors, wuzyFonts } from '@/constants/wuzy-theme';
 
-export function MessageBar() {
+export function MessageBar({ onSend }: { onSend?: (text: string) => void }) {
   const { width: screenWidth } = useWindowDimensions();
   const scale = screenWidth / 375;
 
@@ -55,7 +55,7 @@ export function MessageBar() {
         value={text}
         onChangeText={setText}
         placeholder="Message"
-        placeholderTextColor={wuzyColors.white}
+        placeholderTextColor={wuzyColors.gray}
         style={{
           flex: 1,
           minWidth: 0,
@@ -75,7 +75,11 @@ export function MessageBar() {
       </Animated.View>
       <Animated.View style={[{ alignItems: 'flex-end', overflow: 'hidden' }, sendStyle]}>
         <Pressable
-          onPress={() => setText('')}
+          onPress={() => {
+            const trimmed = text.trim();
+            if (trimmed) onSend?.(trimmed);
+            setText('');
+          }}
           accessibilityRole="button"
           accessibilityLabel="Send"
           style={{

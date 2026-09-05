@@ -1,12 +1,12 @@
 import React from 'react';
-import { FlatList, Keyboard, KeyboardAvoidingView, Platform, View, useWindowDimensions } from 'react-native';
+import { FlatList, KeyboardAvoidingView, Platform, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { ChatBubble } from '@/components/chat/ChatBubble';
 import { ChatHeader } from '@/components/chat/ChatHeader';
 import { DateChip } from '@/components/chat/DateChip';
 import { MessageBar } from '@/components/chat/MessageBar';
-import { chatMessages, chatThreads } from '@/constants/chat-data';
+import { chatMessages, chatThreads, type ThreadMessage } from '@/constants/chat-data';
 import { wuzyColors } from '@/constants/wuzy-theme';
 
 export default function ChatViewScreen() {
@@ -14,63 +14,49 @@ export default function ChatViewScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { width: screenWidth } = useWindowDimensions();
   const scale = screenWidth / 375;
-  const [keyboardShown, setKeyboardShown] = React.useState(false);
-
-  React.useEffect(() => {
-    // iOS will* events fire when the keyboard starts animating, so the bar
-    // moves with it instead of snapping after; Android only has did* events
-    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
-    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
-    const show = Keyboard.addListener(showEvent, () => setKeyboardShown(true));
-    const hide = Keyboard.addListener(hideEvent, () => setKeyboardShown(false));
-    return () => {
-      show.remove();
-      hide.remove();
-    };
-  }, []);
 
   const chat = chatMessages.find((msg) => msg.id === id);
   const thread = chatThreads[id ?? ''];
+  const [messages, setMessages] = React.useState<ThreadMessage[]>(thread?.messages ?? []);
 
   if (!chat || !thread) {
-    router.back();
-    return null;
+    return <Redirect href="/chat" />;
   }
+
+  const send = (text: string) => setMessages((prev) => [...prev, { text, out: true }]);
+
+  // Inverted list keeps the newest message pinned to the bottom, so a shrinking
+  // viewport (keyboard) never hides it. Data is reversed to match.
+  const reversed = [...messages].reverse();
 
   return (
     <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: wuzyColors.bg }}>
-      {/* enabled gate forces the padding back to 0 on hide, which Android's
-          KeyboardAvoidingView fails to do by itself under edge-to-edge */}
-      <KeyboardAvoidingView behavior="padding" enabled={keyboardShown} style={{ flex: 1 }}>
-        <View style={{ marginTop: Math.round(18 * scale), paddingBottom: Math.round(8 * scale), backgroundColor: wuzyColors.bg }}>
-          <ChatHeader
-            name={chat.name}
-            avatar={chat.avatar}
-            status="Online"
-            onBack={() => router.back()}
-          />
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+        <View style={{ marginTop: Math.round(18 * scale), paddingBottom: Math.round(8 * scale) }}>
+          <ChatHeader name={chat.name} avatar={chat.avatar} status="Online" onBack={() => router.back()} />
         </View>
 
         <FlatList
-          data={thread.messages}
+          data={reversed}
+          inverted
           keyExtractor={(_, index) => String(index)}
           showsVerticalScrollIndicator={false}
-          ListHeaderComponent={
+          keyboardShouldPersistTaps="handled"
+          ListFooterComponent={
             <View style={{ marginBottom: Math.round(6 * scale) }}>
               <DateChip label={thread.date} />
             </View>
           }
           contentContainerStyle={{
             paddingHorizontal: Math.round(20 * scale),
-            paddingTop: Math.round(22 * scale),
-            paddingBottom: Math.round(80 * scale),
+            paddingVertical: Math.round(12 * scale),
             gap: Math.round(12 * scale),
           }}
           renderItem={({ item }) => <ChatBubble text={item.text} outgoing={item.out} />}
         />
 
-        <View style={{ position: 'absolute', left: 0, right: 0, bottom: Math.round(12 * scale) }}>
-          <MessageBar />
+        <View style={{ paddingBottom: Math.round(12 * scale) }}>
+          <MessageBar onSend={send} />
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView as RNASafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -44,16 +44,12 @@ function ToggleRow({ icon, label, value, onValueChange, iconColor = wuzyColors.w
         <Ionicons name={icon} size={22} color={iconColor} />
         <Text style={{ fontFamily: wuzyFonts.medium, fontSize: 15, color: wuzyColors.white }}>{label}</Text>
       </View>
-      <TouchableOpacity
-        onPress={() => onValueChange(!value)}
-        accessibilityRole="switch"
-        accessibilityState={{ checked: value }}
-        className={`w-12 h-6 rounded-full flex-row items-center px-1 ${
-          value ? 'bg-[#F0CD6D] justify-end' : 'bg-[#3A3F47] justify-start'
-        }`}
-      >
-        <View className="w-4 h-4 rounded-full bg-white" />
-      </TouchableOpacity>
+      <Switch
+        value={value}
+        onValueChange={onValueChange}
+        trackColor={{ false: wuzyColors.surface, true: wuzyColors.yellowDim }}
+        thumbColor={value ? wuzyColors.yellow : wuzyColors.gray}
+      />
     </View>
   );
 }

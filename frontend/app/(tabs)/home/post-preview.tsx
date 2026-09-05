@@ -1,14 +1,16 @@
 import { Image } from 'expo-image';
 import { useState } from 'react';
 import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
-  Text,
-  View,
-  TextInput,
   ScrollView,
   Switch,
-  ActivityIndicator,
+  Text,
+  TextInput,
   useWindowDimensions,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -83,7 +85,8 @@ export default function PostPreviewScreen() {
           </Pressable>
         </View>
 
-        <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+        <ScrollView className="flex-1" showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           {/* Image Preview - PostCard size */}
           {imageUri && (
             <View className="px-5 mt-2">
@@ -169,6 +172,7 @@ export default function PostPreviewScreen() {
 
           <View className="h-10" />
         </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </View>
   );

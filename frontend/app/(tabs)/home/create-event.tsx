@@ -10,8 +10,8 @@ import { SelectRow } from '@/components/create-event/SelectRow';
 import { ToggleRow } from '@/components/create-event/ToggleRow';
 
 export default function CreateEventScreen() {
-  const [title, setTitle] = useState('Jungle run 2026');
-  const [description, setDescription] = useState('idk what this event is but okay');
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
   const [isPrivate, setIsPrivate] = useState(false);
   const [isPaid, setIsPaid] = useState(false);
 

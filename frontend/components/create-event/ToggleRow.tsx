@@ -1,5 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
 
 import { wuzyColors, wuzyFonts } from '@/constants/wuzy-theme';
 
@@ -18,6 +19,10 @@ export function ToggleRow({ label, value, onValueChange }: ToggleRowProps) {
   const trackHeight = Math.round(screenWidth * 0.085);
   const knobSize = Math.max(trackHeight - 6, 24);
   const travel = trackWidth - knobSize - 4;
+
+  const knobStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: withTiming(value ? travel : 0, { duration: 250 }) }],
+  }));
 
   return (
     <View className="w-full flex-row items-center justify-between py-[8px]">
@@ -43,24 +48,26 @@ export function ToggleRow({ label, value, onValueChange }: ToggleRowProps) {
           padding: 2,
           justifyContent: 'center',
         }}>
-        <View
-          style={{
-            width: knobSize,
-            height: knobSize,
-            borderRadius: knobSize / 2,
-            transform: [{ translateX: value ? travel : 0 }],
-            overflow: 'hidden',
-            borderWidth: 1,
-            borderColor: 'rgba(255, 255, 255, 0.4)',
-            backgroundColor: 'rgba(255, 255, 255, 0.18)',
-          }}>
+        <Animated.View
+          style={[
+            {
+              width: knobSize,
+              height: knobSize,
+              borderRadius: knobSize / 2,
+              overflow: 'hidden',
+              borderWidth: 1,
+              borderColor: 'rgba(255, 255, 255, 0.4)',
+              backgroundColor: 'rgba(255, 255, 255, 0.18)',
+            },
+            knobStyle,
+          ]}>
           <LinearGradient
             colors={['rgba(255,255,255,0.35)', 'rgba(255,255,255,0.05)']}
             start={{ x: 0.5, y: 0 }}
             end={{ x: 0.5, y: 1 }}
             style={StyleSheet.absoluteFill}
           />
-        </View>
+        </Animated.View>
       </Pressable>
     </View>
   );

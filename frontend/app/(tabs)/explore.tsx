@@ -161,6 +161,7 @@ export default function ExploreScreen() {
           style={{ flex: 1 }}
           contentContainerStyle={{ paddingBottom: Math.round(screenWidth * 0.37) }}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
           <View style={{ paddingHorizontal: horizontalPadding, paddingTop: topPadding }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>

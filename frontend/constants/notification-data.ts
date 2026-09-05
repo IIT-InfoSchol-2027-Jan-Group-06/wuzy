@@ -19,5 +19,8 @@ export const notifications: Notification[] = [
   { id: '6', avatar: require('@/assets/images/notif-avatar6.png'), label: 'New friend', name: 'marco silva', timestamp: '3 Aug', group: 'past', category: 'requests' },
   { id: '7', avatar: require('@/assets/images/notif-avatar7.png'), label: 'New friend', name: 'noah kim', timestamp: '1 Aug', group: 'past', category: 'requests' },
   { id: '8', avatar: require('@/assets/images/notif-avatar8.png'), label: 'New friend', name: 'omar ahmed', timestamp: '28 July', group: 'past', category: 'requests' },
+  { id: '10', avatar: require('@/assets/images/event1.png'), label: 'Starts in 2 hours', name: 'Taylor Swift Live', timestamp: '5m', group: 'new', category: 'events' },
+  { id: '11', avatar: require('@/assets/images/event2.png'), label: 'Tickets on sale', name: 'Formula 1 GP', timestamp: '1d', group: 'new', category: 'events' },
+  { id: '12', avatar: require('@/assets/images/event3.png'), label: 'You checked in', name: 'Jazz Night', timestamp: '5d', group: 'past', category: 'events' },
   { id: '9', avatar: require('@/assets/images/avatar4.png'), label: 'New friend', name: 'chloe martin', timestamp: '20 July', group: 'past', category: 'requests' },
 ];

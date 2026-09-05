@@ -1,4 +1,4 @@
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
 
@@ -7,6 +7,7 @@ import { GlassNavButton } from '@/components/GlassNavButton';
 import { useNavBarMetrics } from '@/components/NavBar';
 import { PostCard } from '@/components/postcard';
 import { Screen } from '@/components/Screen';
+import { TabHeader } from '@/components/TabHeader';
 import { wuzyColors, wuzyFonts, wuzyLayout } from '@/constants/wuzy-theme';
 import { useFeed } from '@/hooks/useFeed';
 import { useResponsive } from '@/hooks/useResponsive';
@@ -27,18 +28,10 @@ export default function HomeScreen() {
   return (
     <Screen overlay={<Fab onPress={() => router.push('/upload')} />}>
       {/* Fixed header that stays in place while the feed scrolls */}
-      <View className="flex-row items-center justify-between" style={{ paddingBottom: 8 }}>
-        <Text
-          className="text-wuzy-yellow"
-          style={{ fontFamily: wuzyFonts.display, fontSize: fontSize('display'), lineHeight: fontSize('display') }}>
-          Wuzy
-        </Text>
-        <GlassNavButton
-          icon="notifications-outline"
-          accessibilityLabel="Notifications"
-          onPress={() => router.push('/notifications')}
-        />
-      </View>
+      <TabHeader
+        title="Wuzy"
+        right={<GlassNavButton icon="notifications-outline" accessibilityLabel="Notifications" onPress={() => router.push('/notifications')} />}
+      />
 
       <ScrollView
         className="flex-1"

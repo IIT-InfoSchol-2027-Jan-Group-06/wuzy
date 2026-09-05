@@ -9,6 +9,7 @@ import { UpcomingEventCard } from '@/components/events/UpcomingEventCard';
 import { GlassNavButton } from '@/components/GlassNavButton';
 import { Screen } from '@/components/Screen';
 import { SearchBar } from '@/components/SearchBar';
+import { TabHeader } from '@/components/TabHeader';
 import { exploreCategories, featuredEvents, upcomingEvents } from '@/constants/event-data';
 import { wuzyColors, wuzyFonts, wuzyLayout } from '@/constants/wuzy-theme';
 import { useResponsive } from '@/hooks/useResponsive';
@@ -33,18 +34,16 @@ export default function ExploreScreen() {
   return (
     <Screen scroll style={{ gap: wuzyLayout.gap }}>
       <View style={{ gap: wuzyLayout.itemGap }}>
-        <View className="flex-row items-center justify-between">
-          <Text
-            className="text-wuzy-yellow"
-            style={{ fontFamily: wuzyFonts.display, fontSize: fontSize('display'), lineHeight: fontSize('display') }}>
-            Explore
-          </Text>
-          <GlassNavButton
-            accessibilityLabel="Tickets"
-            icon={<Image source={require('@/assets/icons/ticket.svg')} style={{ width: 22, height: 16 }} contentFit="contain" />}
-            onPress={() => router.push('/ticket-vault')}
-          />
-        </View>
+        <TabHeader
+          title="Explore"
+          right={
+            <GlassNavButton
+              accessibilityLabel="Tickets"
+              icon={<Image source={require('@/assets/icons/ticket.svg')} style={{ width: 22, height: 16 }} contentFit="contain" />}
+              onPress={() => router.push('/ticket-vault')}
+            />
+          }
+        />
         <SearchBar value={searchText} onChangeText={setSearchText} placeholder="Search events" />
         <CategoryFilter options={exploreCategories} selectedId={selectedCategory} onSelect={setSelectedCategory} />
       </View>

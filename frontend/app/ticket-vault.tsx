@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FlatList, NativeScrollEvent, NativeSyntheticEvent, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { FlatList, NativeScrollEvent, NativeSyntheticEvent, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -8,12 +8,13 @@ import { ScreenHeader } from '@/components/ScreenHeader';
 import { TicketCard } from '@/components/TicketCard';
 import { tickets, type Ticket } from '@/constants/ticket-data';
 import { wuzyLayout } from '@/constants/wuzy-theme';
+import { useResponsive } from '@/hooks/useResponsive';
 
 const CARD_GAP = 16;
 
 /** Blurred active-ticket art fills the whole screen, so this route composes the shell by hand instead of using Screen. */
 export default function TicketVaultScreen() {
-  const { width: screenWidth } = useWindowDimensions();
+  const { screenWidth } = useResponsive();
   const [activeIndex, setActiveIndex] = useState(0);
 
   const cardWidth = Math.round(screenWidth * 0.78);
@@ -34,7 +35,7 @@ export default function TicketVaultScreen() {
         style={StyleSheet.absoluteFill}
       />
 
-      <SafeAreaView edges={['top', 'bottom']} className="flex-1">
+      <SafeAreaView edges={['top', 'bottom']} className="flex-1 w-full self-center" style={{ maxWidth: wuzyLayout.maxWidth }}>
         <View style={{ paddingTop: wuzyLayout.top, paddingHorizontal: wuzyLayout.side }}>
           <ScreenHeader title="Tickets" />
         </View>

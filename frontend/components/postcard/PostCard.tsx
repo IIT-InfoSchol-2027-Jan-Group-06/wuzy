@@ -7,13 +7,13 @@ import {
   Pressable,
   StyleProp,
   Text,
-  useWindowDimensions,
   View,
   ViewStyle,
 } from 'react-native';
 
 import { assetUrl, ApiPost } from '@/lib/api';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
+import { useResponsive } from '@/hooks/useResponsive';
 import { Avatar, CardShell } from './shared';
 
 type PostCardProps = {
@@ -40,7 +40,7 @@ export function PostCard({
   disabled = false,
   style,
 }: PostCardProps) {
-  const { width: screenWidth } = useWindowDimensions();
+  const { screenWidth } = useResponsive();
   const cardWidth = width ?? screenWidth - 2 * wuzyLayout.side;
   const cardHeight = height ?? Math.round(cardWidth * (418 / 335));
 

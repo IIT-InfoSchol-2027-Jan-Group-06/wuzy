@@ -1,8 +1,9 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
 
 import { wuzyColors, wuzyFonts } from '@/constants/wuzy-theme';
+import { useResponsive } from '@/hooks/useResponsive';
 
 export interface ToggleRowProps {
   label: string;
@@ -12,7 +13,7 @@ export interface ToggleRowProps {
 
 /** Horizontal row: gold label left, custom switch with a yellow outline and glass knob. */
 export function ToggleRow({ label, value, onValueChange }: ToggleRowProps) {
-  const { width: screenWidth } = useWindowDimensions();
+  const { screenWidth } = useResponsive();
 
   const labelFontSize = Math.round(screenWidth * 0.04);
   const trackWidth = Math.round(screenWidth * 0.145);

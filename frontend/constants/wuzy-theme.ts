@@ -34,7 +34,11 @@ export const wuzyType = {
 } as const;
 
 // Fixed layout constants in px. top is added below the safe-area inset.
+// Sizes are computed from a design width clamped to [minWidth, maxWidth], and Screen
+// centers a maxWidth column on anything wider, so tablets and web get a phone layout.
 export const wuzyLayout = {
+  minWidth: 320,
+  maxWidth: 430,
   side: 32,
   top: 12,
   gap: 24,

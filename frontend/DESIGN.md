@@ -62,6 +62,9 @@ const { fontSize } = useResponsive();
 
 Other fixed values: cards radius 24, inputs and map radius 16, glass and nav buttons `50/375 * screenWidth`, chips px 16 py 8, motion 250ms, wheel settle 400ms.
 
+### Design width and wide screens
+`useResponsive().screenWidth` is the window width clamped to `[minWidth 320, maxWidth 430]`, so every ratio stops growing on tablets and web and stops shrinking on dense Android display-size settings. `Screen` centers a `maxWidth` column, so wide screens show a phone layout on the `bg` color instead of a stretched one. Always size from `useResponsive()`, never from `useWindowDimensions` directly.
+
 Full-bleed content inside a padded screen uses `marginHorizontal: -wuzyLayout.side` with `paddingHorizontal: wuzyLayout.side` on the scroll content, so the first item still aligns to the gutter (see `CategoryFilter`, the Today row on Explore).
 
 ---
@@ -73,6 +76,10 @@ Full-bleed content inside a padded screen uses `marginHorizontal: -wuzyLayout.si
 - `import { Screen } from '@/components/Screen';`
 - Props: `scroll` (renders a ScrollView whose bottom padding clears the NavBar on tab screens), `padded` (default true; false for full-bleed heroes), `style` (merged into the content container), `overlay` (floating controls rendered above the content, e.g. `Fab` or a floating header).
 - Tab screens get the top inset only; pushed screens get top and bottom. Screens that own their own list use `useNavBarMetrics().clearance` as the list's bottom padding.
+
+### TabHeader
+- `import { TabHeader } from '@/components/TabHeader';`
+- Header for the five tab roots: Bebas `display` title on the left, optional glass buttons in `right`. Always at least one GlassNavButton tall, so Wuzy, Explore, Awards, Messages, and Profile titles sit on the same baseline whether or not a button is present.
 
 ### ScreenHeader
 - `import { ScreenHeader } from '@/components/ScreenHeader';`
@@ -138,7 +145,9 @@ Full-bleed content inside a padded screen uses `marginHorizontal: -wuzyLayout.si
 
 ## Screens
 
-Tab roots (Home, Explore, Awards, Messages, Profile) open with a Bebas `display` title in the gutter and an optional `GlassNavButton` on the right. Pushed screens open with `ScreenHeader`.
+Tab roots (Home, Explore, Awards, Messages, Profile) open with `TabHeader`. Pushed screens open with `ScreenHeader`.
+
+- Profile: edge-to-edge hero photo (`screenWidth * 1.3` tall) with connect and settings glass buttons at the top right and the name, awards, and bio at its foot; then tags, two glass pill buttons, a Timeline title, and a full-bleed three-column grid.
 
 - Connections: `ScreenHeader`, `SearchBar`, count, then a `Wheel` of `ConnectionCard`s (slot 132, gap 12) filling the rest of the screen.
 - Ticket vault: blurred active-ticket art fills the screen behind a `ScreenHeader` and a snapping horizontal carousel (card 78% of width, gap 16).

@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.api.v1 import feed, posts, upload, users
+from app.api.v1 import auth, chat, feed, posts, upload, users
 from app.db.session import init_db
 
 
@@ -21,9 +21,11 @@ app = FastAPI(title="Wuzy API", lifespan=lifespan)
 # ponytail: open CORS for the Expo web dev server, tighten when there is a real origin
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
+app.include_router(auth.router, prefix="/auth", tags=["auth"])
 app.include_router(users.router, prefix="/users", tags=["users"])
 app.include_router(posts.router, prefix="/posts", tags=["posts"])
 app.include_router(feed.router, prefix="/feed", tags=["feed"])
+app.include_router(chat.router, prefix="/chat", tags=["chat"])
 app.include_router(upload.router, prefix="/upload", tags=["upload"])
 
 # Serve uploaded files from the storage directory

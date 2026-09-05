@@ -8,6 +8,9 @@ import bcrypt
 from sqlmodel import Session, select
 
 from app.db.session import engine
+from app.models.conversation import Conversation, ConversationMember
+from app.models.follow import Follow
+from app.models.message import Message
 from app.models.post import Post
 from app.models.user import User
 
@@ -38,6 +41,178 @@ def seed_media():
                 shutil.copy(image, target)
 
 
+# Demo accounts: (email, password, username, display_name, bio, hobbies, avatar)
+ACCOUNTS = [
+    (
+        "abhiruk@test.com",
+        "password123",
+        "abhiruk",
+        "Abhiruk Prashan",
+        "Full-stack dev by day, concert goer by night. I build things and break the dance floor.",
+        ["Tech", "Music", "Gaming"],
+        "avatar1.png",
+    ),
+    (
+        "ravidu@test.com",
+        "password123",
+        "ravidu",
+        "Ravidu Bandara",
+        "Fitness nut and runner. Always up for a beach day.",
+        ["Fitness", "Sports", "Travel"],
+        "avatar2.png",
+    ),
+    (
+        "sethuki@test.com",
+        "password123",
+        "sethuki",
+        "Sethuki Fernando",
+        "Designer who sketches between coffee breaks. Obsessed with typography and sunsets.",
+        ["Art", "Design", "Reading"],
+        "avatar3.png",
+    ),
+    (
+        "azma@test.com",
+        "password123",
+        "azma",
+        "Azma Nizar",
+        "Foodie and travel photographer. I collect stamps in my passport and recipes in my head.",
+        ["Food", "Photography", "Travel"],
+        "avatar4.png",
+    ),
+    (
+        "charuki@test.com",
+        "password123",
+        "charuki",
+        "Charuki Jayasuriya",
+        "Music lover, dancer, part-time DJ. Vibes over everything.",
+        ["Music", "Dance", "Movies"],
+        "avatar5.png",
+    ),
+]
+
+# Connections: every pair is mutual (each person follows the other).
+# Anything one partner posts shows up in the other's feed.
+CONNECTIONS = [
+    ("abhiruk", "ravidu"),
+    ("abhiruk", "charuki"),
+    ("abhiruk", "azma"),
+    ("ravidu", "sethuki"),
+    ("sethuki", "charuki"),
+    ("sethuki", "azma"),
+    ("charuki", "ravidu"),
+]
+
+# Posts per user: (media, caption, location, save_to_profile)
+POSTS = {
+    "abhiruk": [
+        ("post1.png", "Golden hour doesn't get better than this", "new york", True),
+        ("post3.png", "New setup, who dis", "colombo", True),
+        ("event1.png", "Front row for the live set", "colombo", True),
+        ("event5.png", "Going live in 10", "colombo", False),
+    ],
+    "ravidu": [
+        ("post2.png", "Morning run squad", "colombo", True),
+        ("event2.png", "Beach clean-up morning", "galle", True),
+        ("post4.png", "Post-gym refuel", "colombo", True),
+    ],
+    "sethuki": [
+        ("post4.png", "Sketching the skyline", "kandy", True),
+        ("event3.png", "Gallery opening night", "colombo", True),
+        ("event7.png", "Print making workshop", "colombo", True),
+    ],
+    "azma": [
+        ("event6.png", "Street food crawl part one", "colombo", True),
+        ("post1.png", "Market colours", "colombo", True),
+        ("event4.png", "Sunrise at the coast", "mirissa", True),
+    ],
+    "charuki": [
+        ("event3.png", "DJ set going off", "colombo", True),
+        ("post3.png", "Studio session", "colombo", True),
+        ("post2.png", "Grooving on the beach set", "mount lavinia", False),
+    ],
+}
+
+# Conversations: (first username, second username, [(sender, text), ...], last message read)
+CHATS = [
+    (
+        "abhiruk",
+        "ravidu",
+        [
+            ("ravidu", "You free this weekend?"),
+            ("abhiruk", "Saturday works, where we at?"),
+            ("ravidu", "Tennis at 7, courts at Gregory Park"),
+            ("abhiruk", "Count me in"),
+        ],
+    ),
+    (
+        "abhiruk",
+        "charuki",
+        [
+            ("charuki", "Did you see the lineup for the festival?"),
+            ("abhiruk", "Headliners are insane this year"),
+            ("charuki", "I already got my ticket, no excuses now 😄"),
+        ],
+    ),
+    (
+        "ravidu",
+        "sethuki",
+        [
+            ("sethuki", "Are you coming to the gallery opening?"),
+            ("ravidu", "Wouldn't miss it, is it the one on Marine Drive?"),
+            ("sethuki", "Yeah, prints and wine, my two loves"),
+            ("ravidu", "Haha I'm there"),
+        ],
+    ),
+    (
+        "sethuki",
+        "charuki",
+        [
+            ("charuki", "Can we shoot your new sketches for the poster tonight?"),
+            ("sethuki", "Studio is free after 7"),
+            ("charuki", "Perfect, bringing the camera"),
+            ("sethuki", "Bring snacks too, we work hard"),
+        ],
+    ),
+    (
+        "azma",
+        "sethuki",
+        [
+            ("azma", "That food market you posted yesterday looked unreal"),
+            ("sethuki", "Kay, the kottu stand is a must"),
+            ("azma", "I am going this weekend, want to join?"),
+            ("sethuki", "Say no more"),
+        ],
+    ),
+    (
+        "azma",
+        "charuki",
+        [
+            ("charuki", "New remix is out, tell me what you think"),
+            ("azma", "Playing it right now, that drop is fire"),
+            ("charuki", "You're the best first listener I have"),
+        ],
+    ),
+    (
+        "ravidu",
+        "azma",
+        [
+            ("azma", "Sunrise shoot at the coast on Sunday"),
+            ("ravidu", "I can do a 5K there after, perfect morning"),
+            ("azma", "Deal, bring sunscreen 😂"),
+        ],
+    ),
+    (
+        "abhiruk",
+        "azma",
+        [
+            ("azma", "Found the best street food spot in Pettah"),
+            ("abhiruk", "You have to send me the name right now"),
+            ("azma", "Chill bro, I'll take you there instead"),
+        ],
+    ),
+]
+
+
 def seed():
     seed_media()
     with Session(engine) as session:
@@ -45,70 +220,71 @@ def seed():
             print("Database already seeded, skipping...")
             return
 
-        users = [
-            User(
-                email="lana@example.com",
-                username="lana_rae",
-                hashed_password=hash_password("password123"),
-                avatar_url="/uploads/avatar/avatar1.png",
+        users = {
+            username: User(
+                email=email,
+                username=username,
+                hashed_password=hash_password(password),
+                display_name=display_name,
+                bio=bio,
+                hobbies=hobbies,
+                avatar_url=f"/uploads/avatar/{avatar}",
                 is_active=True,
-            ),
-            User(
-                email="runclub@example.com",
-                username="ny_run_club",
-                hashed_password=hash_password("password123"),
-                avatar_url="/uploads/avatar/avatar2.png",
-                is_active=True,
-            ),
-            User(
-                email="yash@example.com",
-                username="yash_silva",
-                hashed_password=hash_password("password123"),
-                avatar_url="/uploads/avatar/avatar3.png",
-                is_active=True,
-            ),
-            User(
-                email="raya@example.com",
-                username="raya_sing",
-                hashed_password=hash_password("password123"),
-                avatar_url="/uploads/avatar/avatar4.png",
-                is_active=True,
-            ),
-        ]
-
-        for user in users:
+            )
+            for email, password, username, display_name, bio, hobbies, avatar in ACCOUNTS
+        }
+        for user in users.values():
             session.add(user)
         session.commit()
-        for user in users:
+        for user in users.values():
             session.refresh(user)
 
-        # Post data: (author, media, caption, location, save_to_profile)
-        posts = [
-            (users[0], "post1.png", "Golden hour in the city", "new york", True),
-            (users[1], "post2.png", "Morning run squad", "new jersey", True),
-            (users[2], "post3.png", "New setup, who dis", "sri lanka", True),
-            (users[3], "post4.png", "Street food tonight", "mumbai", True),
-            (users[0], "post1.png", "Ephemeral city shot", "new york", False),
-            (users[1], "post2.png", "Leg day done right", "new jersey", False),
-            (users[2], "post3.png", "Late night coding", "sri lanka", False),
-            (users[3], "post4.png", "Warm leftovers", "mumbai", False),
-        ]
+        for first, second in CONNECTIONS:
+            session.add(Follow(follower_id=users[first].id, followed_id=users[second].id))
+            session.add(Follow(follower_id=users[second].id, followed_id=users[first].id))
 
-        for author, media, caption, location, save_to_profile in posts:
-            session.add(
-                Post(
-                    media_url=f"/uploads/post/{media}",
-                    caption=caption,
-                    location=location,
-                    save_to_profile=save_to_profile,
-                    user_id=author.id,
+        for author_name, posts in POSTS.items():
+            for media, caption, location, save_to_profile in posts:
+                session.add(
+                    Post(
+                        media_url=f"/uploads/post/{media}",
+                        caption=caption,
+                        location=location,
+                        save_to_profile=save_to_profile,
+                        user_id=users[author_name].id,
+                    )
                 )
+
+        for first, second, messages in CHATS:
+            conversation = Conversation()
+            session.add(conversation)
+            session.commit()
+            session.refresh(conversation)
+            session.add(
+                ConversationMember(conversation_id=conversation.id, user_id=users[first].id)
             )
+            session.add(
+                ConversationMember(conversation_id=conversation.id, user_id=users[second].id)
+            )
+            for index, (sender, text) in enumerate(messages):
+                # Everything but the newest last message is read, so every chat shows an unread dot
+                session.add(
+                    Message(
+                        conversation_id=conversation.id,
+                        sender_id=users[sender].id,
+                        text=text,
+                        is_read=index < len(messages) - 1,
+                    )
+                )
 
         session.commit()
+
+        post_count = session.exec(select(Post)).all().__len__()
+        message_count = session.exec(select(Message)).all().__len__()
         print("Demo data seeded successfully!")
-        print(f"Created users: {', '.join(u.username for u in users)}")
-        print(f"Created posts: {len(posts)}")
+        print(f"Created users: {', '.join(users)}")
+        print(f"Created posts: {post_count}, messages: {message_count}")
+        print("Demo logins (password123): abhiruk, ravidu, sethuki, azma, charuki @test.com")
         print("Backend URL base: http://localhost:8000")
 
 

@@ -1,12 +1,12 @@
 # AGENTS.md
 
-Wuzy: a social app. Expo (SDK 54) + React Native in `frontend/`. FastAPI backend in `backend/`, still early, work in progress.
+Wuzy: a social app. Expo (SDK 57) + React Native in `frontend/`. FastAPI backend in `backend/`, still early, work in progress.
 
 ## Stack
 
-Expo ~54, expo-router ~6, React 19.1, React Native 0.81, TypeScript, NativeWind 4 (Tailwind 3.4), Reanimated 4. Fonts: Bebas Neue and Poppins via `@expo-google-fonts`.
+Expo ~57, expo-router ~57, React 19.2, React Native 0.86, TypeScript, NativeWind 4 (Tailwind 3.4), Reanimated 4. Fonts: Bebas Neue and Poppins via `@expo-google-fonts`.
 
-Expo HAS CHANGED. Read the versioned docs at https://docs.expo.dev/versions/v54.0.0/ before writing Expo code. Do not trust training-data Expo patterns.
+Expo HAS CHANGED. Read the versioned docs at https://docs.expo.dev/versions/v57.0.0/ before writing Expo code. Do not trust training-data Expo patterns.
 
 ## Commands
 

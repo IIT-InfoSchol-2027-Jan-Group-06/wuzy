@@ -8,11 +8,9 @@ type ChatHeaderProps = {
   avatar: number;
   status: string;
   onBack: () => void;
-  onCall: () => void;
-  onVideoCall: () => void;
 };
 
-export function ChatHeader({ name, avatar, status, onBack, onCall, onVideoCall }: ChatHeaderProps) {
+export function ChatHeader({ name, avatar, status, onBack }: ChatHeaderProps) {
   const { width: screenWidth } = useWindowDimensions();
   const scale = screenWidth / 375;
 
@@ -61,8 +59,6 @@ export function ChatHeader({ name, avatar, status, onBack, onCall, onVideoCall }
           {status}
         </Text>
       </View>
-      <GlassNavButton icon="call-outline" onPress={onCall} />
-      <GlassNavButton icon="videocam-outline" onPress={onVideoCall} />
     </View>
   );
 }

@@ -48,8 +48,6 @@ export default function ChatViewScreen() {
             avatar={chat.avatar}
             status="Online"
             onBack={() => router.back()}
-            onCall={() => {}}
-            onVideoCall={() => {}}
           />
         </View>
 

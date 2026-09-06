@@ -157,6 +157,15 @@ Full-bleed content inside a padded screen uses `marginHorizontal: -wuzyLayout.si
 - ProfileGrid: full-bleed three-column photo grid of `ApiPost`s with loading and empty states. `onEmptyPress` turns the empty state into the owner's "share your first one" call to action; without it the empty state is a plain "No posts yet".
 - Used by Profile (tab, owner, has edit/connect/connections actions) and the pushed `profile/[id]` route (read-only viewer: floating `ScreenHeader` back button only, lists that user's permanent posts).
 
+### BadgeGrid (awards sticker board)
+- **When to Use**: The Awards screen's sticker board (`app/(tabs)/awards.tsx`)
+- **Import**: `import { BadgeGrid } from '@/components/awards/BadgeGrid';`
+- **Look**: The 15 badge PNGs (`assets/badges/img1-15.png`) in a clean 3-by-5 board inside a transparent yellow glass card: `bg-[#FFE783]/10`, `backdrop-blur` (a BlurView on native), `border border-white/10`, `rounded-3xl`, `p-5`
+- **Placement**: Flex-wrap flow, 5 cells per row with a 12px gutter, each cell centered; the badge image renders `contain` inside its cell, larger than the visible box
+- **Sticker feel**: Soft drop shadow behind every badge; no background cards or borders on individual items
+- **Crop**: The artwork is scaled 1.08x and nudged up inside an `overflow-hidden` box, clipping stray pixels on the exported PNG top edges; the 2nd and 9th badges render smaller to sit in line
+- **Asset rule**: Badge files must be transparent PNGs with no square background frame baked into the image
+
 ---
 
 ## Screens

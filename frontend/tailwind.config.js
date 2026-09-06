@@ -1,3 +1,6 @@
+// ponytail: requiring the .ts token file needs Node >= 22.18. After editing tokens run `npx expo start -c`.
+const { wuzyColors } = require('./constants/wuzy-theme.ts');
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: ['./app/**/*.{js,jsx,ts,tsx}', './components/**/*.{js,jsx,ts,tsx}'],
@@ -5,17 +8,7 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        wuzy: {
-          bg: '#000811',
-          yellow: '#FFE783',
-          yellowSoft: '#FFF5CA',
-          yellowDim: 'rgba(255, 231, 131, 0.2)',
-          gold: '#D7B424',
-          bronze: '#D6C169',
-          olive: '#928753',
-          gray: '#969696',
-          white: '#FFFFFF',
-        },
+        wuzy: wuzyColors,
       },
     },
   },

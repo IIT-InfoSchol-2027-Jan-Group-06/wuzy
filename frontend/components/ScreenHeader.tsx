@@ -1,25 +1,29 @@
-import { Text, View, useWindowDimensions } from 'react-native';
+import type { ReactNode } from 'react';
+import { Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { GlassNavButton } from '@/components/GlassNavButton';
 import { wuzyFonts } from '@/constants/wuzy-theme';
+import { useResponsive } from '@/hooks/useResponsive';
 
-/** Pushed-screen header: back button on the left, Bebas title centered against it. */
-export function ScreenHeader({ title }: { title: string }) {
+/** Pushed-screen header: back button left, Bebas title centered, optional action on the right. Relies on Screen for padding. */
+export function ScreenHeader({ title, right }: { title: string; right?: ReactNode }) {
   const router = useRouter();
-  const { width: screenWidth } = useWindowDimensions();
-  const backButtonSize = Math.round((42 / 375) * screenWidth);
+  const { screenWidth, fontSize } = useResponsive();
+  const slot = Math.round((50 / 375) * screenWidth);
 
   return (
-    <View className="flex-row items-center px-[32px] pt-[49px]">
-      <GlassNavButton icon="arrow-back" size={backButtonSize} onPress={() => router.back()} />
+    <View className="flex-row items-center">
+      <GlassNavButton icon="arrow-back" onPress={() => router.back()} />
       <Text
-        className="flex-1 text-center text-wuzy-yellow"
-        style={{ fontFamily: wuzyFonts.display, fontSize: Math.round(screenWidth * 0.061) }}>
+        className="flex-1 text-center uppercase text-wuzy-yellow"
+        style={{ fontFamily: wuzyFonts.display, fontSize: fontSize('title') }}>
         {title}
       </Text>
-      {/* spacer keeps the title centered against the back button */}
-      <View style={{ width: backButtonSize }} />
+      {/* the right slot is at least as wide as the back button so the title stays centered */}
+      <View className="items-end justify-center" style={{ minWidth: slot }}>
+        {right}
+      </View>
     </View>
   );
 }

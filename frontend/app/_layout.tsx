@@ -42,13 +42,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider value={DarkTheme}>
         <View style={{ flex: 1, backgroundColor: '#0A0F17' }}>
-          <Stack>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="event-details" options={{ headerShown: false }} />
-            <Stack.Screen name="connect" options={{ headerShown: false }} />
-            <Stack.Screen name="settings" options={{ headerShown: false }} />
-            <Stack.Screen name="ticket" options={{ headerShown: false }} />
-          </Stack>
+          <Stack screenOptions={{ headerShown: false }} />
           <StatusBar style="light" />
         </View>
       </ThemeProvider>

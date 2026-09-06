@@ -24,8 +24,8 @@ const NAV_ITEMS: { key: NavBarItem; label: string; icon: keyof typeof Ionicons.g
 export function useNavBarMetrics() {
   const { width } = useWindowDimensions();
   const { bottom: inset } = useSafeAreaInsets();
-  const barWidth = Math.min(Math.round(width * 0.72), 300);
-  const height = wuzyLayout.control;
+  const barWidth = Math.round(width * 0.72);
+  const height = Math.round(barWidth * (50 / 290));
   const bottom = Math.max(wuzyLayout.navBottom, inset + 12);
   return { barWidth, height, bottom, clearance: bottom + height + 16 };
 }
@@ -33,6 +33,10 @@ export function useNavBarMetrics() {
 export function NavBar({ active = 'home', onItemPress }: NavBarProps) {
   const { barWidth, height, bottom } = useNavBarMetrics();
   const iconSize = Math.round(height * 0.52);
+  const itemSize = Math.round(height * 0.8);
+  // Gap is relative to the bar, so icons keep the same spacing on any screen
+  // width; the same gap pads the two ends so the row sits evenly in the bar.
+  const gap = Math.max(4, Math.round(itemSize * 0.25));
 
   return (
     <View className="pointer-events-box-none absolute inset-x-0 items-center" style={{ bottom }}>
@@ -40,7 +44,7 @@ export function NavBar({ active = 'home', onItemPress }: NavBarProps) {
         className="overflow-hidden rounded-full border border-white/20 bg-[#F4C400]/10 shadow-lg shadow-black/40"
         style={{ width: barWidth, height }}>
         <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} pointerEvents="none" />
-        <View className="flex-1 flex-row items-center justify-between px-6">
+        <View className="flex-1 flex-row items-center justify-center" style={{ gap, paddingHorizontal: gap }}>
           {NAV_ITEMS.map((item) => (
             <Pressable
               key={item.key}
@@ -49,7 +53,7 @@ export function NavBar({ active = 'home', onItemPress }: NavBarProps) {
               accessibilityState={{ selected: item.key === active }}
               onPress={() => onItemPress?.(item.key)}
               className="items-center justify-center rounded-full active:scale-90"
-              style={{ width: height, height }}>
+              style={{ width: itemSize, height: itemSize }}>
               <Ionicons name={item.icon} size={iconSize} color="#ffffff" />
             </Pressable>
           ))}

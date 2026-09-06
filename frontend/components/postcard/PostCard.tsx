@@ -7,6 +7,7 @@ import {
   Pressable,
   StyleProp,
   Text,
+  useWindowDimensions,
   View,
   ViewStyle,
 } from 'react-native';
@@ -36,6 +37,9 @@ export function PostCard({
   style,
 }: PostCardProps) {
   const [liked, setLiked] = useState(false);
+  // Corner like heart: 40 on the 375 px reference, scaled with the screen.
+  const { width } = useWindowDimensions();
+  const likeIconSize = Math.round((40 / 375) * width);
   const [popScale] = useState(() => new Animated.Value(0));
   const [popOpacity] = useState(() => new Animated.Value(0));
   const [breakScale] = useState(() => new Animated.Value(0));
@@ -233,9 +237,9 @@ export function PostCard({
           className="absolute bottom-[21px] right-[21px]">
           <Ionicons
             name="heart"
-            size={24}
+            size={likeIconSize}
             color="#FFE783"
-            style={{ textShadowColor: 'rgba(0,0,0,0.5)', textShadowRadius: 6 }}
+            style={{ textShadowColor: 'rgba(0,0,0,0.5)', textShadowRadius: 8 }}
           />
         </Pressable>
       )}

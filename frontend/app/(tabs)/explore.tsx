@@ -31,7 +31,7 @@ export default function ExploreScreen() {
 
   return (
     <Screen scroll style={{ gap: wuzyLayout.gap }}>
-      <View style={{ gap: wuzyLayout.itemGap }}>
+      <View style={{ gap: wuzyLayout.gap }}>
         <TabHeader
           title="Explore"
           right={

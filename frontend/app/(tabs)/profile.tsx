@@ -96,9 +96,6 @@ export default function ProfileScreen() {
                   {lastName}
                 </Text>
               )}
-              <Text style={{ fontFamily: wuzyFonts.medium, fontSize: wuzyType.small, color: wuzyColors.yellowSoft, marginTop: 2 }}>
-                @{user.username}
-              </Text>
             </View>
             <View className="items-center" style={{ gap: 2 }}>
               <View className="flex-row items-center" style={{ gap: 4 }}>

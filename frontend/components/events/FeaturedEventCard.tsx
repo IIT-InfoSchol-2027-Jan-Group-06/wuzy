@@ -1,4 +1,4 @@
-import { ImageBackground, Pressable, Text, View } from 'react-native';
+import { ImageBackground, Pressable, Text, View, useWindowDimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
@@ -12,9 +12,10 @@ import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-th
 /** Tall poster card for the Today row: full-bleed image, tag and heart on top, details and price at the bottom. */
 export function FeaturedEventCard({ event, onVisit }: { event: FeaturedEvent; onVisit?: () => void }) {
   const [favorite, setFavorite] = useState(false);
+  const { width: screenWidth } = useWindowDimensions();
 
   return (
-    <Pressable onPress={onVisit} style={{ width: 300, aspectRatio: 0.75 / 1.05, borderRadius: 24, overflow: 'hidden' }}>
+    <Pressable onPress={onVisit} style={{ width: Math.round(screenWidth * 0.75), aspectRatio: 0.75 / 1.05, borderRadius: 24, overflow: 'hidden' }}>
       <ImageBackground source={event.imageUri} style={{ flex: 1 }} imageStyle={{ resizeMode: 'cover' }}>
         <LinearGradient
           colors={['transparent', 'rgba(10,15,23,0.7)', 'rgba(10,15,23,0.95)', 'rgba(10,15,23,0.99)']}

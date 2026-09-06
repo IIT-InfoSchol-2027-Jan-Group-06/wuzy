@@ -28,7 +28,7 @@ export const wuzyFonts = {
 
 // Font sizes in dp, on the Material 3 and iOS scales (body 16, secondary 14, caption 12). Never derived from the window width.
 export const wuzyType = {
-  hero: 44,
+  hero: 48,
   display: 36,
   title: 24,
   section: 20,

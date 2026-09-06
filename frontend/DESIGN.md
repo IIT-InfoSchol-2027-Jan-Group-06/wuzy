@@ -39,7 +39,7 @@ Sizes are dp constants on the Material 3 and iOS default scales (M3 body-large 1
 
 | Name | dp | Usage |
 |------|----|-------|
-| `hero` | 44 | Profile name only, two Bebas lines at 1.1 line height |
+| `hero` | 48 | Profile name only, two Bebas lines at 1.1 line height |
 | `display` | 36 | Tab-root titles (Wuzy, Explore, Messages, Awards), event hero title |
 | `title` | 24 | `ScreenHeader` titles, ticket card title, event date and time |
 | `section` | 20 | Section titles (Today, Timeline, Location), card titles, prices |

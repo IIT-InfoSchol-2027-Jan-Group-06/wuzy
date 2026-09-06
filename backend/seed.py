@@ -53,10 +53,10 @@ ACCOUNTS = [
         "avatar1.png",
     ),
     (
-        "ravidu@test.com",
+        "ravindu644@test.com",
         "password123",
-        "ravidu",
-        "Ravidu Bandara",
+        "ravindu644",
+        "Ravindu Deshan",
         "Fitness nut and runner. Always up for a beach day.",
         ["Fitness", "Sports", "Travel"],
         "avatar2.png",
@@ -65,7 +65,7 @@ ACCOUNTS = [
         "sethuki@test.com",
         "password123",
         "sethuki",
-        "Sethuki Fernando",
+        "Sethuki Karawita",
         "Designer who sketches between coffee breaks. Obsessed with typography and sunsets.",
         ["Art", "Design", "Reading"],
         "avatar3.png",
@@ -74,7 +74,7 @@ ACCOUNTS = [
         "azma@test.com",
         "password123",
         "azma",
-        "Azma Nizar",
+        "Azma Ashraf",
         "Foodie and travel photographer. I collect stamps in my passport and recipes in my head.",
         ["Food", "Photography", "Travel"],
         "avatar4.png",
@@ -83,7 +83,7 @@ ACCOUNTS = [
         "charuki@test.com",
         "password123",
         "charuki",
-        "Charuki Jayasuriya",
+        "Charuki Weheragoda",
         "Music lover, dancer, part-time DJ. Vibes over everything.",
         ["Music", "Dance", "Movies"],
         "avatar5.png",
@@ -93,13 +93,13 @@ ACCOUNTS = [
 # Connections: every pair is mutual (each person follows the other).
 # Anything one partner posts shows up in the other's feed.
 CONNECTIONS = [
-    ("abhiruk", "ravidu"),
+    ("abhiruk", "ravindu644"),
     ("abhiruk", "charuki"),
     ("abhiruk", "azma"),
-    ("ravidu", "sethuki"),
+    ("ravindu644", "sethuki"),
     ("sethuki", "charuki"),
     ("sethuki", "azma"),
-    ("charuki", "ravidu"),
+    ("charuki", "ravindu644"),
 ]
 
 # Posts per user: (media, caption, location, save_to_profile)
@@ -110,7 +110,7 @@ POSTS = {
         ("event1.png", "Front row for the live set", "colombo", True),
         ("event5.png", "Going live in 10", "colombo", False),
     ],
-    "ravidu": [
+    "ravindu644": [
         ("post2.png", "Morning run squad", "colombo", True),
         ("event2.png", "Beach clean-up morning", "galle", True),
         ("post4.png", "Post-gym refuel", "colombo", True),
@@ -136,11 +136,11 @@ POSTS = {
 CHATS = [
     (
         "abhiruk",
-        "ravidu",
+        "ravindu644",
         [
-            ("ravidu", "You free this weekend?"),
+            ("ravindu644", "You free this weekend?"),
             ("abhiruk", "Saturday works, where we at?"),
-            ("ravidu", "Tennis at 7, courts at Gregory Park"),
+            ("ravindu644", "Tennis at 7, courts at Gregory Park"),
             ("abhiruk", "Count me in"),
         ],
     ),
@@ -154,13 +154,13 @@ CHATS = [
         ],
     ),
     (
-        "ravidu",
+        "ravindu644",
         "sethuki",
         [
             ("sethuki", "Are you coming to the gallery opening?"),
-            ("ravidu", "Wouldn't miss it, is it the one on Marine Drive?"),
+            ("ravindu644", "Wouldn't miss it, is it the one on Marine Drive?"),
             ("sethuki", "Yeah, prints and wine, my two loves"),
-            ("ravidu", "Haha I'm there"),
+            ("ravindu644", "Haha I'm there"),
         ],
     ),
     (
@@ -193,11 +193,11 @@ CHATS = [
         ],
     ),
     (
-        "ravidu",
+        "ravindu644",
         "azma",
         [
             ("azma", "Sunrise shoot at the coast on Sunday"),
-            ("ravidu", "I can do a 5K there after, perfect morning"),
+            ("ravindu644", "I can do a 5K there after, perfect morning"),
             ("azma", "Deal, bring sunscreen 😂"),
         ],
     ),
@@ -284,7 +284,7 @@ def seed():
         print("Demo data seeded successfully!")
         print(f"Created users: {', '.join(users)}")
         print(f"Created posts: {post_count}, messages: {message_count}")
-        print("Demo logins (password123): abhiruk, ravidu, sethuki, azma, charuki @test.com")
+        print("Demo logins (password123): abhiruk, ravindu644, sethuki, azma, charuki @test.com")
         print("Backend URL base: http://localhost:8000")
 
 

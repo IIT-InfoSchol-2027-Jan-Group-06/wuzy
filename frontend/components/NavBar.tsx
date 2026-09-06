@@ -1,10 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { wuzyLayout } from '@/constants/wuzy-theme';
-import { useResponsive } from '@/hooks/useResponsive';
 
 export type NavBarItem = 'home' | 'events' | 'awards' | 'chat' | 'profile';
 
@@ -23,10 +22,10 @@ const NAV_ITEMS: { key: NavBarItem; label: string; icon: keyof typeof Ionicons.g
 
 /** NavBar geometry, shared with anything that must clear it (Fab, scroll padding). */
 export function useNavBarMetrics() {
-  const { screenWidth } = useResponsive();
+  const { width } = useWindowDimensions();
   const { bottom: inset } = useSafeAreaInsets();
-  const barWidth = Math.round(screenWidth * 0.72);
-  const height = Math.round(barWidth * (50 / 290));
+  const barWidth = Math.min(Math.round(width * 0.72), 300);
+  const height = wuzyLayout.control;
   const bottom = Math.max(wuzyLayout.navBottom, inset + 12);
   return { barWidth, height, bottom, clearance: bottom + height + 16 };
 }
@@ -50,7 +49,7 @@ export function NavBar({ active = 'home', onItemPress }: NavBarProps) {
               accessibilityState={{ selected: item.key === active }}
               onPress={() => onItemPress?.(item.key)}
               className="items-center justify-center rounded-full active:scale-90"
-              style={{ width: height * 0.8, height: height * 0.8 }}>
+              style={{ width: height, height }}>
               <Ionicons name={item.icon} size={iconSize} color="#ffffff" />
             </Pressable>
           ))}

@@ -1,11 +1,9 @@
 import { Pressable, Text } from 'react-native';
 
-import { wuzyFonts } from '@/constants/wuzy-theme';
-import { useResponsive } from '@/hooks/useResponsive';
+import { wuzyFonts, wuzyType } from '@/constants/wuzy-theme';
 
 /** The one pill shape for filters, tags, and labels. Selected = solid yellow, otherwise dim yellow fill. */
 export function Chip({ label, selected, onPress }: { label: string; selected?: boolean; onPress?: () => void }) {
-  const { fontSize } = useResponsive();
   return (
     <Pressable
       onPress={onPress}
@@ -17,7 +15,7 @@ export function Chip({ label, selected, onPress }: { label: string; selected?: b
       }`}>
       <Text
         className={selected ? 'text-wuzy-bg' : 'text-wuzy-yellow'}
-        style={{ fontFamily: wuzyFonts.semibold, fontSize: fontSize('small') }}>
+        style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.small }}>
         {label}
       </Text>
     </Pressable>

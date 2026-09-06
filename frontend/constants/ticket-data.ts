@@ -15,7 +15,7 @@ export interface Ticket {
 export const tickets: Ticket[] = [
   {
     id: '1',
-    image: require('@/assets/images/event1.png'),
+    image: require('@/assets/images/event1.jpg'),
     title: 'JUNGLE RUN',
     date: '19 JUN , 9AM',
     venue: 'TIME SQUARE',
@@ -26,7 +26,7 @@ export const tickets: Ticket[] = [
   },
   {
     id: '2',
-    image: require('@/assets/images/post2.png'),
+    image: require('@/assets/images/post2.jpg'),
     title: 'TAYLOR SWIFT LIVE',
     date: 'SAT, SEP 12 · 7:00 PM',
     venue: 'MADISON SQUARE GARDEN',
@@ -37,7 +37,7 @@ export const tickets: Ticket[] = [
   },
   {
     id: '3',
-    image: require('@/assets/images/event2.png'),
+    image: require('@/assets/images/event2.jpg'),
     title: 'FORMULA 1 GP',
     date: 'SUN, OCT 04 · 2:30 PM',
     venue: 'SILVERSTONE CIRCUIT',
@@ -48,7 +48,7 @@ export const tickets: Ticket[] = [
   },
   {
     id: '4',
-    image: require('@/assets/images/event-yeezus.png'),
+    image: require('@/assets/images/event-yeezus.jpg'),
     title: 'YEEZUS TOUR',
     date: 'FRI, NOV 20 · 9:00 PM',
     venue: 'UNITED CENTER',
@@ -59,7 +59,7 @@ export const tickets: Ticket[] = [
   },
   {
     id: '5',
-    image: require('@/assets/images/event4.png'),
+    image: require('@/assets/images/event4.jpg'),
     title: 'NBA FINALS GAME 7',
     date: 'WED, NOV 11 · 8:00 PM',
     venue: 'CRYPTO.COM ARENA',
@@ -70,7 +70,7 @@ export const tickets: Ticket[] = [
   },
   {
     id: '6',
-    image: require('@/assets/images/event-poster-c.png'),
+    image: require('@/assets/images/event-poster-c.jpg'),
     title: 'NEON HORIZON',
     date: 'SAT, OCT 03 · 9:00 PM',
     venue: 'BROOKLYN MIRAGE',

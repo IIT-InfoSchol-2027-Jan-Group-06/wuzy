@@ -11,12 +11,10 @@ import { Screen } from '@/components/Screen';
 import { SearchBar } from '@/components/SearchBar';
 import { TabHeader } from '@/components/TabHeader';
 import { exploreCategories, featuredEvents, upcomingEvents } from '@/constants/event-data';
-import { wuzyColors, wuzyFonts, wuzyLayout } from '@/constants/wuzy-theme';
-import { useResponsive } from '@/hooks/useResponsive';
+import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 
 export default function ExploreScreen() {
   const router = useRouter();
-  const { fontSize } = useResponsive();
   const [selectedCategory, setSelectedCategory] = useState<string | number>('all');
   const [searchText, setSearchText] = useState('');
 
@@ -29,7 +27,7 @@ export default function ExploreScreen() {
     (e) => inCategory(e.category) && (!q || [e.title, e.hostName].some((s) => s.toLowerCase().includes(q))),
   );
 
-  const sectionTitle = { fontFamily: wuzyFonts.semibold, fontSize: fontSize('section'), color: wuzyColors.yellow };
+  const sectionTitle = { fontFamily: wuzyFonts.semibold, fontSize: wuzyType.section, color: wuzyColors.yellow };
 
   return (
     <Screen scroll style={{ gap: wuzyLayout.gap }}>
@@ -71,7 +69,7 @@ export default function ExploreScreen() {
 
       <Text
         className="text-center"
-        style={{ fontFamily: wuzyFonts.body, fontSize: fontSize('small'), color: wuzyColors.gray, paddingVertical: wuzyLayout.gap }}>
+        style={{ fontFamily: wuzyFonts.body, fontSize: wuzyType.small, color: wuzyColors.gray, paddingVertical: wuzyLayout.gap }}>
         You are all caught up
       </Text>
     </Screen>

@@ -1,8 +1,7 @@
 import { Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { wuzyColors, wuzyFonts } from '@/constants/wuzy-theme';
-import { useResponsive } from '@/hooks/useResponsive';
+import { wuzyColors, wuzyFonts, wuzyType } from '@/constants/wuzy-theme';
 
 export interface SelectRowProps {
   label: string;
@@ -12,18 +11,12 @@ export interface SelectRowProps {
 
 /** Horizontal row: bold white label on the left, gold select link on the right. */
 export function SelectRow({ label, value, onPress }: SelectRowProps) {
-  const { screenWidth } = useResponsive();
-
-  const labelFontSize = Math.round(screenWidth * 0.04);
-  const linkFontSize = Math.round(screenWidth * 0.032);
-  const chevronSize = Math.round(screenWidth * 0.036);
-
   return (
     <Pressable onPress={onPress} className="w-full flex-row items-center justify-between py-[16px] active:opacity-75">
       <Text
         style={{
           fontFamily: wuzyFonts.semibold,
-          fontSize: labelFontSize,
+          fontSize: wuzyType.body,
           color: wuzyColors.yellow,
         }}>
         {label}
@@ -32,12 +25,12 @@ export function SelectRow({ label, value, onPress }: SelectRowProps) {
         <Text
           style={{
             fontFamily: wuzyFonts.medium,
-            fontSize: linkFontSize,
+            fontSize: wuzyType.small,
             color: wuzyColors.yellow,
           }}>
           {value ?? `select ${label.toLowerCase()}`}
         </Text>
-        <Ionicons name="chevron-forward" size={chevronSize} color={wuzyColors.yellow} />
+        <Ionicons name="chevron-forward" size={16} color={wuzyColors.yellow} />
       </View>
     </Pressable>
   );

@@ -6,9 +6,8 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
-import { wuzyColors, wuzyFonts, wuzyLayout } from '@/constants/wuzy-theme';
+import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 import { useAuth } from '@/context/auth';
-import { useResponsive } from '@/hooks/useResponsive';
 import { apiPost, uploadImage } from '@/lib/api';
 import { getPendingPhoto } from '@/lib/media';
 
@@ -18,15 +17,11 @@ export default function PostPreviewScreen() {
   const params = useLocalSearchParams<{ imageUri?: string | string[] }>();
   const paramImageUri = Array.isArray(params.imageUri) ? params.imageUri[0] : params.imageUri;
   const imageUri = getPendingPhoto() ?? paramImageUri;
-  const { screenWidth, fontSize } = useResponsive();
 
   const [caption, setCaption] = useState('');
   const [location, setLocation] = useState('');
   const [saveToGrid, setSaveToGrid] = useState(false);
   const [sharing, setSharing] = useState(false);
-
-  const cardWidth = screenWidth - 2 * wuzyLayout.side;
-  const cardHeight = Math.round(cardWidth * (418 / 335));
 
   const handlePost = async () => {
     if (!imageUri || sharing || !user) return;
@@ -56,12 +51,12 @@ export default function PostPreviewScreen() {
       {sharing ? (
         <ActivityIndicator size="small" color={wuzyColors.bg} />
       ) : (
-        <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: fontSize('small'), color: wuzyColors.bg }}>Share</Text>
+        <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.small, color: wuzyColors.bg }}>Share</Text>
       )}
     </Pressable>
   );
 
-  const rowText = { fontFamily: wuzyFonts.body, fontSize: fontSize('body'), color: wuzyColors.white };
+  const rowText = { fontFamily: wuzyFonts.body, fontSize: wuzyType.body, color: wuzyColors.white };
   const divider = { borderBottomWidth: 1, borderBottomColor: wuzyColors.glassBorder };
 
   return (
@@ -75,7 +70,7 @@ export default function PostPreviewScreen() {
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ paddingVertical: wuzyLayout.gap, gap: wuzyLayout.itemGap }}>
           {imageUri && (
-            <View style={{ width: cardWidth, height: cardHeight, borderRadius: 24, overflow: 'hidden' }}>
+            <View style={{ width: '100%', aspectRatio: 335 / 418, borderRadius: 24, overflow: 'hidden' }}>
               <Image source={imageUri} style={{ width: '100%', height: '100%' }} contentFit="cover" />
             </View>
           )}
@@ -86,7 +81,7 @@ export default function PostPreviewScreen() {
             </View>
             <TextInput
               className="flex-1 min-h-[80px]"
-              style={{ ...rowText, lineHeight: Math.round(fontSize('body') * 1.5), paddingTop: 8 }}
+              style={{ ...rowText, lineHeight: Math.round(wuzyType.body * 1.5), paddingTop: 8 }}
               placeholder="Write a caption"
               placeholderTextColor={wuzyColors.gray}
               multiline
@@ -117,8 +112,8 @@ export default function PostPreviewScreen() {
             <View className="flex-row items-center flex-1" style={{ gap: wuzyLayout.itemGap }}>
               <Ionicons name="grid-outline" size={22} color={wuzyColors.yellow} />
               <View className="flex-1">
-                <Text style={{ fontFamily: wuzyFonts.medium, fontSize: fontSize('body'), color: wuzyColors.white }}>Save to profile grid</Text>
-                <Text style={{ fontFamily: wuzyFonts.body, fontSize: fontSize('small'), color: wuzyColors.gray }}>Keep this photo on your profile</Text>
+                <Text style={{ fontFamily: wuzyFonts.medium, fontSize: wuzyType.body, color: wuzyColors.white }}>Save to profile grid</Text>
+                <Text style={{ fontFamily: wuzyFonts.body, fontSize: wuzyType.small, color: wuzyColors.gray }}>Keep this photo on your profile</Text>
               </View>
             </View>
             <Switch

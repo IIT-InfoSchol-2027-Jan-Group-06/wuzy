@@ -2,16 +2,12 @@ import React from 'react';
 import { Pressable, TextInput, View } from 'react-native';
 import Animated, { Easing, interpolate, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
-import { wuzyColors, wuzyFonts, wuzyType } from '@/constants/wuzy-theme';
-import { useResponsive } from '@/hooks/useResponsive';
+import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 
 export function MessageBar({ onSend }: { onSend?: (text: string) => void }) {
-  const { screenWidth } = useResponsive();
-  const scale = screenWidth / 375;
-
-  const iconSize = Math.round(20 * scale);
-  const gap = Math.round(12 * scale);
-  const sendSize = Math.round(36 * scale);
+  const iconSize = 20;
+  const gap = wuzyLayout.itemGap;
+  const sendSize = 32;
 
   const [text, setText] = React.useState('');
   const hasText = text.length > 0;
@@ -45,8 +41,8 @@ export function MessageBar({ onSend }: { onSend?: (text: string) => void }) {
         flexDirection: 'row',
         alignItems: 'center',
         gap,
-        height: Math.round(55 * scale),
-        paddingHorizontal: Math.round(18 * scale),
+        height: wuzyLayout.control,
+        paddingHorizontal: 16,
         backgroundColor: '#3B3A2D',
         borderRadius: 9999,
       }}>
@@ -61,7 +57,7 @@ export function MessageBar({ onSend }: { onSend?: (text: string) => void }) {
           minWidth: 0,
           alignSelf: 'stretch',
           textAlignVertical: 'center',
-          fontSize: Math.round(screenWidth * wuzyType.body),
+          fontSize: wuzyType.body,
           color: wuzyColors.white,
           fontFamily: wuzyFonts.bold,
           letterSpacing: 0.15,

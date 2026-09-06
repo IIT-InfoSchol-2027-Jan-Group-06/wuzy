@@ -8,13 +8,11 @@ import { useNavBarMetrics } from '@/components/NavBar';
 import { PostCard } from '@/components/postcard';
 import { Screen } from '@/components/Screen';
 import { TabHeader } from '@/components/TabHeader';
-import { wuzyColors, wuzyFonts, wuzyLayout } from '@/constants/wuzy-theme';
+import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 import { useFeed } from '@/hooks/useFeed';
-import { useResponsive } from '@/hooks/useResponsive';
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { fontSize } = useResponsive();
   const { clearance } = useNavBarMetrics();
   const { posts, loading, error, refresh } = useFeed();
 
@@ -36,16 +34,16 @@ export default function HomeScreen() {
       <ScrollView
         className="flex-1"
         style={{ marginHorizontal: -wuzyLayout.side }}
-        contentContainerStyle={{ paddingTop: wuzyLayout.gap, paddingBottom: clearance, gap: wuzyLayout.gap, alignItems: 'center' }}
+        contentContainerStyle={{ paddingTop: wuzyLayout.gap, paddingBottom: clearance, paddingHorizontal: wuzyLayout.side, gap: wuzyLayout.gap }}
         showsVerticalScrollIndicator={false}>
         {loading ? (
           <ActivityIndicator size="large" color={wuzyColors.yellow} style={{ marginTop: wuzyLayout.gap }} />
         ) : error ? (
-          <Pressable onPress={refresh} className="items-center" style={{ marginTop: wuzyLayout.gap, paddingHorizontal: wuzyLayout.side }}>
-            <Text className="text-center text-wuzy-gray" style={{ fontFamily: wuzyFonts.medium, fontSize: fontSize('body') }}>
+          <Pressable onPress={refresh} className="items-center" style={{ marginTop: wuzyLayout.gap }}>
+            <Text className="text-center text-wuzy-gray" style={{ fontFamily: wuzyFonts.medium, fontSize: wuzyType.body }}>
               {error}
             </Text>
-            <Text className="text-wuzy-yellow" style={{ marginTop: wuzyLayout.itemGap, fontFamily: wuzyFonts.semibold, fontSize: fontSize('body') }}>
+            <Text className="text-wuzy-yellow" style={{ marginTop: wuzyLayout.itemGap, fontFamily: wuzyFonts.semibold, fontSize: wuzyType.body }}>
               Tap to retry
             </Text>
           </Pressable>

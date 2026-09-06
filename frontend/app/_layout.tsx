@@ -39,7 +39,7 @@ function RootNavigator() {
         <Stack.Screen name="login" />
         <Stack.Protected guard={!!user}>
           <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="chat" />
+          <Stack.Screen name="chat/[id]" />
           <Stack.Screen name="notifications" />
           <Stack.Screen name="settings" />
           <Stack.Screen name="connect" />

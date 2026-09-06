@@ -3,14 +3,12 @@ import { Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { GlassNavButton } from '@/components/GlassNavButton';
-import { wuzyFonts } from '@/constants/wuzy-theme';
-import { useResponsive } from '@/hooks/useResponsive';
+import { wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 
 /** Pushed-screen header: back button left, Bebas title centered on the row, optional action on the right. Exactly one GlassNavButton tall. Relies on Screen for padding. */
 export function ScreenHeader({ title, right }: { title: string; right?: ReactNode }) {
   const router = useRouter();
-  const { screenWidth, fontSize } = useResponsive();
-  const height = Math.round((50 / 375) * screenWidth);
+  const height = wuzyLayout.glass;
 
   return (
     <View className="flex-row items-center justify-between" style={{ height }}>
@@ -21,8 +19,8 @@ export function ScreenHeader({ title, right }: { title: string; right?: ReactNod
           className="uppercase text-wuzy-yellow"
           style={{
             fontFamily: wuzyFonts.display,
-            fontSize: fontSize('title'),
-            lineHeight: Math.round(fontSize('title') * 1.05),
+            fontSize: wuzyType.title,
+            lineHeight: Math.round(wuzyType.title * 1.05),
             includeFontPadding: false,
           }}>
           {title}

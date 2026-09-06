@@ -2,8 +2,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
 
-import { wuzyColors, wuzyFonts } from '@/constants/wuzy-theme';
-import { useResponsive } from '@/hooks/useResponsive';
+import { wuzyColors, wuzyFonts, wuzyType } from '@/constants/wuzy-theme';
 
 export interface ToggleRowProps {
   label: string;
@@ -13,13 +12,11 @@ export interface ToggleRowProps {
 
 /** Horizontal row: gold label left, custom switch with a yellow outline and glass knob. */
 export function ToggleRow({ label, value, onValueChange }: ToggleRowProps) {
-  const { screenWidth } = useResponsive();
-
-  const labelFontSize = Math.round(screenWidth * 0.04);
-  const trackWidth = Math.round(screenWidth * 0.145);
-  const trackHeight = Math.round(screenWidth * 0.085);
-  const knobSize = Math.max(trackHeight - 6, 24);
-  const travel = trackWidth - knobSize - 4;
+  // Material 3 switch geometry. The track box includes its 1 border and 2 padding on each side.
+  const trackWidth = 52;
+  const trackHeight = 32;
+  const knobSize = 26;
+  const travel = trackWidth - knobSize - 6;
 
   const knobStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: withTiming(value ? travel : 0, { duration: 250 }) }],
@@ -30,7 +27,7 @@ export function ToggleRow({ label, value, onValueChange }: ToggleRowProps) {
       <Text
         style={{
           fontFamily: wuzyFonts.semibold,
-          fontSize: labelFontSize,
+          fontSize: wuzyType.body,
           color: wuzyColors.yellow,
         }}>
         {label}

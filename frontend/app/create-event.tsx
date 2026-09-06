@@ -22,7 +22,7 @@ export default function CreateEventScreen() {
 
       <View className="gap-[24px]">
         <EventCoverBanner
-          imageUri={require("@/assets/images/event-poster-c.png")}
+          imageUri={require("@/assets/images/event-poster-c.jpg")}
         />
 
         <View style={{ gap: wuzyLayout.itemGap }}>

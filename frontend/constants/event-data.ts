@@ -27,7 +27,7 @@ export interface EventDetails {
 export const mockEvent: EventDetails = {
   id: '1',
   title: 'THE LIFE OF A SHOWGIRL',
-  image: require('@/assets/images/event1.png'),
+  image: require('@/assets/images/event1.jpg'),
   // Placeholder art. Swap the file, keep the name.
   mapImage: require('@/assets/images/event-map.png'),
   description:
@@ -39,11 +39,11 @@ export const mockEvent: EventDetails = {
   latitude: 6.5244,
   longitude: 3.3792,
   attendees: [
-    { id: '1', name: 'Sarah J.', avatar: require('@/assets/images/avatar1.png') },
-    { id: '2', name: 'Mike T.', avatar: require('@/assets/images/avatar2.png') },
-    { id: '3', name: 'Emily R.', avatar: require('@/assets/images/avatar3.png') },
-    { id: '4', name: 'James K.', avatar: require('@/assets/images/avatar4.png') },
-    { id: '5', name: 'Lisa M.', avatar: require('@/assets/images/avatar5.png') },
+    { id: '1', name: 'Sarah J.', avatar: require('@/assets/images/avatar1.jpg') },
+    { id: '2', name: 'Mike T.', avatar: require('@/assets/images/avatar2.jpg') },
+    { id: '3', name: 'Emily R.', avatar: require('@/assets/images/avatar3.jpg') },
+    { id: '4', name: 'James K.', avatar: require('@/assets/images/avatar4.jpg') },
+    { id: '5', name: 'Lisa M.', avatar: require('@/assets/images/avatar5.jpg') },
   ],
   additionalAttendeesCount: 5,
   category: 'entertainment',

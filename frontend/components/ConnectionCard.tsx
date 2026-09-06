@@ -1,15 +1,13 @@
 import { Image, Text, View } from 'react-native';
 
 import { TagSection } from '@/components/TagSection';
-import { wuzyColors, wuzyFonts, wuzyLayout } from '@/constants/wuzy-theme';
+import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 import type { Connection } from '@/constants/connection-data';
-import { useResponsive } from '@/hooks/useResponsive';
 
 const AVATAR = 56;
 
 /** Connection card: name over username on the left, avatar with online dot on the right, interest tags below. Fills its parent's height. */
 export function ConnectionCard({ connection }: { connection: Connection }) {
-  const { fontSize } = useResponsive();
 
   return (
     <View
@@ -24,10 +22,10 @@ export function ConnectionCard({ connection }: { connection: Connection }) {
       }}>
       <View className="flex-row items-center justify-between" style={{ gap: wuzyLayout.itemGap }}>
         <View className="flex-1">
-          <Text numberOfLines={1} style={{ fontFamily: wuzyFonts.semibold, fontSize: fontSize('body'), color: wuzyColors.yellow }}>
+          <Text numberOfLines={1} style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.body, color: wuzyColors.yellow }}>
             {connection.name}
           </Text>
-          <Text numberOfLines={1} style={{ fontFamily: wuzyFonts.body, fontSize: fontSize('small'), color: wuzyColors.white }}>
+          <Text numberOfLines={1} style={{ fontFamily: wuzyFonts.body, fontSize: wuzyType.small, color: wuzyColors.white }}>
             {connection.username}
           </Text>
         </View>

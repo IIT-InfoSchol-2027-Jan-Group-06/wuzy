@@ -7,13 +7,11 @@ import { ScreenHeader } from '@/components/ScreenHeader';
 import { SearchBar } from '@/components/SearchBar';
 import { Wheel } from '@/components/Wheel';
 import { connections } from '@/constants/connection-data';
-import { wuzyColors, wuzyFonts, wuzyLayout } from '@/constants/wuzy-theme';
-import { useResponsive } from '@/hooks/useResponsive';
+import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 
 const CARD_HEIGHT = 132;
 
 export default function ConnectionsScreen() {
-  const { fontSize } = useResponsive();
   const [query, setQuery] = useState('');
 
   // Memoised so the wheel only resets when the results actually change.
@@ -33,7 +31,7 @@ export default function ConnectionsScreen() {
       <View style={{ gap: wuzyLayout.itemGap }}>
         <ScreenHeader title="Connections" />
         <SearchBar value={query} onChangeText={setQuery} placeholder="Search connections" />
-        <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: fontSize('body'), color: wuzyColors.gray }}>
+        <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.body, color: wuzyColors.gray }}>
           {filtered.length} connections
         </Text>
       </View>
@@ -41,7 +39,7 @@ export default function ConnectionsScreen() {
         {filtered.length === 0 ? (
           <Text
             className="text-center"
-            style={{ marginTop: wuzyLayout.gap, fontFamily: wuzyFonts.body, fontSize: fontSize('body'), color: wuzyColors.gray }}>
+            style={{ marginTop: wuzyLayout.gap, fontFamily: wuzyFonts.body, fontSize: wuzyType.body, color: wuzyColors.gray }}>
             No connections match your search
           </Text>
         ) : (

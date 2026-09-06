@@ -17,6 +17,8 @@ npm install
 npx expo start        # dev server
 npx expo start --android
 npm run lint
+# release APK, debug-signed, talks to the backend at EXPO_PUBLIC_API_URL
+EXPO_PUBLIC_API_URL=http://<lan-ip>:8000 sh -c 'npx expo prebuild --platform android --no-install && cd android && ./gradlew assembleRelease'
 ```
 
 No test suite exists. Do not add one unless asked.

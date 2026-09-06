@@ -4,8 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Platform, Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import type { ReactNode } from 'react';
 
-import { wuzyColors } from '@/constants/wuzy-theme';
-import { useResponsive } from '@/hooks/useResponsive';
+import { wuzyColors, wuzyLayout } from '@/constants/wuzy-theme';
 
 export interface GlassNavButtonProps {
   icon?: ReactNode | keyof typeof Ionicons.glyphMap;
@@ -27,9 +26,8 @@ export function GlassNavButton({
   children,
   accessibilityLabel,
 }: GlassNavButtonProps) {
-  const { screenWidth } = useResponsive();
-  const baseSize = size ?? Math.round((50 / 375) * screenWidth);
-  const resolvedIconSize = Math.round(baseSize * 0.48);
+  const baseSize = size ?? wuzyLayout.glass;
+  const resolvedIconSize = Math.round(baseSize * 0.5);
 
   return (
     <Pressable
@@ -61,8 +59,8 @@ export function GlassNavButton({
           style={StyleSheet.absoluteFill}
         />
         <View className="absolute inset-0 rounded-full border border-white/30" />
-        <View className="absolute top-0 left-0 right-0 rounded-t-full border-t border-white/50" style={{ height: baseSize * 0.5 }} />
-        <View className="absolute bottom-0 left-0 right-0 rounded-b-full border-b border-black/30" style={{ height: baseSize * 0.5 }} />
+        <View className="absolute top-0 left-0 right-0 rounded-t-full border-t border-white/50" style={{ height: '50%' }} />
+        <View className="absolute bottom-0 left-0 right-0 rounded-b-full border-b border-black/30" style={{ height: '50%' }} />
       </View>
       <View className="flex-1 items-center justify-center relative z-10">
         {children ??

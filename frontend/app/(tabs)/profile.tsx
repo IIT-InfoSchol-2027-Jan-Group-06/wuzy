@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Image, ImageBackground, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, ImageBackground, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -8,9 +9,8 @@ import { GlassNavButton } from '@/components/GlassNavButton';
 import { Screen } from '@/components/Screen';
 import { TagSection } from '@/components/TagSection';
 import { accountFor } from '@/constants/accounts';
-import { wuzyColors, wuzyFonts, wuzyLayout } from '@/constants/wuzy-theme';
+import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 import { useAuth } from '@/context/auth';
-import { useResponsive } from '@/hooks/useResponsive';
 import { apiGet, assetUrl, type ApiPost } from '@/lib/api';
 
 const GRID_GAP = 2;
@@ -18,7 +18,7 @@ const GRID_GAP = 2;
 export default function ProfileScreen() {
   const router = useRouter();
   const { user } = useAuth();
-  const { screenWidth, fontSize } = useResponsive();
+  const { width } = useWindowDimensions();
   const extra = accountFor(user?.username);
 
   const [photos, setPhotos] = useState<ApiPost[]>([]);
@@ -44,18 +44,27 @@ export default function ProfileScreen() {
 
   if (!user) return null;
 
-  const heroHeight = Math.round(screenWidth * 1.3);
-  const gridItemSize = Math.floor((screenWidth - GRID_GAP * 2) / 3);
+  // Yoga narrows an aspectRatio box when maxHeight clamps it, so the hero takes an explicit capped height.
+  const heroHeight = Math.min(Math.round(width * 1.3), 540);
+  const gridItemSize = Math.floor((width - GRID_GAP * 2) / 3);
   const [firstName, ...rest] = (user.display_name ?? user.username).split(' ');
   const lastName = rest.join(' ');
 
+  // The pre-token look: quiet dark glass with a faint yellow tint, not the highlighted GlassNavButton chrome.
   const pillButton = (label: string, onPress?: () => void) => (
-    <GlassNavButton
-      onPress={onPress ?? (() => {})}
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
       accessibilityLabel={label}
-      style={{ width: Math.round(screenWidth * 0.36), height: 44 }}>
-      <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: fontSize('small'), color: wuzyColors.white }}>{label}</Text>
-    </GlassNavButton>
+      className="rounded-full overflow-hidden"
+      style={{ flex: 1, maxWidth: 160, height: wuzyLayout.control }}>
+      <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
+      <View className="absolute inset-0 rounded-full" style={{ backgroundColor: 'rgba(244, 196, 0, 0.1)' }} />
+      <View className="absolute inset-0 rounded-full border border-white/20" />
+      <View className="flex-1 items-center justify-center">
+        <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.small, color: wuzyColors.white }}>{label}</Text>
+      </View>
+    </Pressable>
   );
 
   return (
@@ -78,30 +87,30 @@ export default function ProfileScreen() {
           <View className="flex-row items-start justify-between">
             <View>
               {firstName && (
-                <Text style={{ fontFamily: wuzyFonts.display, fontSize: fontSize('display'), lineHeight: Math.round(fontSize('display') * 1.05), color: wuzyColors.yellowSoft }}>
+                <Text style={{ fontFamily: wuzyFonts.display, fontSize: wuzyType.hero, lineHeight: Math.round(wuzyType.hero * 1.1), color: wuzyColors.yellowSoft }}>
                   {firstName}
                 </Text>
               )}
               {lastName && (
-                <Text style={{ fontFamily: wuzyFonts.display, fontSize: fontSize('display'), lineHeight: Math.round(fontSize('display') * 1.05), color: wuzyColors.yellowSoft }}>
+                <Text style={{ fontFamily: wuzyFonts.display, fontSize: wuzyType.hero, lineHeight: Math.round(wuzyType.hero * 1.1), color: wuzyColors.yellowSoft }}>
                   {lastName}
                 </Text>
               )}
-              <Text style={{ fontFamily: wuzyFonts.medium, fontSize: fontSize('small'), color: wuzyColors.yellowSoft, marginTop: 2 }}>
+              <Text style={{ fontFamily: wuzyFonts.medium, fontSize: wuzyType.small, color: wuzyColors.yellowSoft, marginTop: 2 }}>
                 @{user.username}
               </Text>
             </View>
             <View className="items-center" style={{ gap: 2 }}>
               <View className="flex-row items-center" style={{ gap: 4 }}>
                 {Array.from({ length: extra.awardsCount }, (_, i) => (
-                  <Ionicons key={i} name="medal" size={fontSize('body')} color={wuzyColors.yellowSoft} />
+                  <Ionicons key={i} name="medal" size={wuzyType.body} color={wuzyColors.yellowSoft} />
                 ))}
               </View>
-              <Text style={{ fontFamily: wuzyFonts.body, fontSize: fontSize('caption'), color: wuzyColors.gray }}>awards</Text>
+              <Text style={{ fontFamily: wuzyFonts.body, fontSize: wuzyType.caption, color: wuzyColors.gray }}>awards</Text>
             </View>
           </View>
           {user.bio && (
-            <Text style={{ fontFamily: wuzyFonts.body, fontSize: fontSize('body'), lineHeight: Math.round(fontSize('body') * 1.5), color: wuzyColors.white }}>
+            <Text style={{ fontFamily: wuzyFonts.body, fontSize: wuzyType.body, lineHeight: Math.round(wuzyType.body * 1.5), color: wuzyColors.white }}>
               {user.bio}
             </Text>
           )}
@@ -116,7 +125,7 @@ export default function ProfileScreen() {
           {pillButton('Connections', () => router.push('/connections'))}
         </View>
 
-        <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: fontSize('section'), color: wuzyColors.yellow }}>Timeline</Text>
+        <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.section, color: wuzyColors.yellow, textAlign: 'center' }}>Timeline</Text>
       </View>
 
       {loadingPosts ? (
@@ -133,7 +142,7 @@ export default function ProfileScreen() {
           ))}
           {photos.length === 0 && (
             <Pressable onPress={() => router.push('/upload')} className="items-center self-center" style={{ paddingVertical: wuzyLayout.gap }}>
-              <Text style={{ fontFamily: wuzyFonts.medium, fontSize: fontSize('body'), color: wuzyColors.gray }}>
+              <Text style={{ fontFamily: wuzyFonts.medium, fontSize: wuzyType.body, color: wuzyColors.gray }}>
                 No posts yet, share your first one
               </Text>
             </Pressable>

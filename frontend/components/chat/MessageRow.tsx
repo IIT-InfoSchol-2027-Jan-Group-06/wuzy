@@ -1,8 +1,7 @@
 import React from 'react';
 import { Image, ImageSourcePropType, Pressable, Text, View } from 'react-native';
 
-import { wuzyColors, wuzyFonts, wuzyLayout } from '@/constants/wuzy-theme';
-import { useResponsive } from '@/hooks/useResponsive';
+import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 
 const AVATAR = 48;
 
@@ -17,7 +16,6 @@ export interface MessageRowItem {
 
 /** One thread in the chat list: ringed avatar, name over preview, time and unread dot on the right. */
 export function MessageRow({ item, onPress }: { item: MessageRowItem; onPress?: () => void }) {
-  const { fontSize } = useResponsive();
 
   return (
     <Pressable
@@ -37,15 +35,15 @@ export function MessageRow({ item, onPress }: { item: MessageRowItem; onPress?: 
         <Image source={item.avatar} style={{ width: '100%', height: '100%', borderRadius: AVATAR / 2 }} />
       </View>
       <View className="flex-1">
-        <Text numberOfLines={1} style={{ fontFamily: wuzyFonts.semibold, fontSize: fontSize('body'), color: wuzyColors.white }}>
+        <Text numberOfLines={1} style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.body, color: wuzyColors.white }}>
           {item.name}
         </Text>
-        <Text numberOfLines={1} style={{ fontFamily: wuzyFonts.body, fontSize: fontSize('small'), color: wuzyColors.gray }}>
+        <Text numberOfLines={1} style={{ fontFamily: wuzyFonts.body, fontSize: wuzyType.small, color: wuzyColors.gray }}>
           {item.preview}
         </Text>
       </View>
       <View className="items-end" style={{ gap: 6 }}>
-        <Text style={{ fontFamily: wuzyFonts.medium, fontSize: fontSize('caption'), color: wuzyColors.gray }}>{item.time}</Text>
+        <Text style={{ fontFamily: wuzyFonts.medium, fontSize: wuzyType.caption, color: wuzyColors.gray }}>{item.time}</Text>
         {item.unread && <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: wuzyColors.yellow }} />}
       </View>
     </Pressable>

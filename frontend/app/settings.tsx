@@ -5,9 +5,8 @@ import { useRouter } from 'expo-router';
 
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
-import { wuzyColors, wuzyFonts, wuzyLayout } from '@/constants/wuzy-theme';
+import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 import { useAuth } from '@/context/auth';
-import { useResponsive } from '@/hooks/useResponsive';
 
 function SettingRow({
   icon,
@@ -20,7 +19,6 @@ function SettingRow({
   onPress?: () => void;
   showChevron?: boolean;
 }) {
-  const { fontSize } = useResponsive();
   return (
     <Pressable
       onPress={onPress}
@@ -29,7 +27,7 @@ function SettingRow({
       android_ripple={{ color: 'rgba(255,255,255,0.08)' }}>
       <View className="flex-row items-center" style={{ gap: wuzyLayout.itemGap }}>
         <Ionicons name={icon} size={22} color={wuzyColors.white} />
-        <Text style={{ fontFamily: wuzyFonts.medium, fontSize: fontSize('body'), color: wuzyColors.white }}>{label}</Text>
+        <Text style={{ fontFamily: wuzyFonts.medium, fontSize: wuzyType.body, color: wuzyColors.white }}>{label}</Text>
       </View>
       {showChevron && <Ionicons name="chevron-forward" size={18} color={wuzyColors.gray} />}
     </Pressable>
@@ -47,12 +45,11 @@ function ToggleRow({
   value: boolean;
   onValueChange: (value: boolean) => void;
 }) {
-  const { fontSize } = useResponsive();
   return (
     <View className="flex-row items-center justify-between py-[12px]">
       <View className="flex-row items-center" style={{ gap: wuzyLayout.itemGap }}>
         <Ionicons name={icon} size={22} color={wuzyColors.white} />
-        <Text style={{ fontFamily: wuzyFonts.medium, fontSize: fontSize('body'), color: wuzyColors.white }}>{label}</Text>
+        <Text style={{ fontFamily: wuzyFonts.medium, fontSize: wuzyType.body, color: wuzyColors.white }}>{label}</Text>
       </View>
       <Switch
         value={value}
@@ -65,10 +62,9 @@ function ToggleRow({
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  const { fontSize } = useResponsive();
   return (
     <View>
-      <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: fontSize('small'), color: wuzyColors.yellow }}>{title}</Text>
+      <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.small, color: wuzyColors.yellow }}>{title}</Text>
       {children}
     </View>
   );

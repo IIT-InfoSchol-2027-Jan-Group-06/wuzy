@@ -5,16 +5,14 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { Screen } from '@/components/Screen';
 import { accounts } from '@/constants/accounts';
-import { wuzyColors, wuzyFonts, wuzyLayout } from '@/constants/wuzy-theme';
+import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 import { useAuth } from '@/context/auth';
-import { useResponsive } from '@/hooks/useResponsive';
 
 const AVATAR = 56;
 
 export default function LoginScreen() {
   const router = useRouter();
   const { login } = useAuth();
-  const { fontSize } = useResponsive();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -50,7 +48,7 @@ export default function LoginScreen() {
     borderWidth: 1,
     borderColor: wuzyColors.surfaceBorder,
     borderRadius: 16,
-    height: 52,
+    height: wuzyLayout.control,
     paddingHorizontal: 16,
   };
 
@@ -63,8 +61,8 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ flexGrow: 1, gap: wuzyLayout.gap }}>
           <View className="items-center" style={{ marginTop: wuzyLayout.gap * 2, gap: 4 }}>
-            <Text style={{ fontFamily: wuzyFonts.display, fontSize: fontSize('display') * 2, color: wuzyColors.yellow }}>WUZY</Text>
-            <Text style={{ fontFamily: wuzyFonts.body, fontSize: fontSize('body'), color: wuzyColors.gray }}>log in to your social circle</Text>
+            <Text style={{ fontFamily: wuzyFonts.display, fontSize: wuzyType.display * 2, color: wuzyColors.yellow }}>WUZY</Text>
+            <Text style={{ fontFamily: wuzyFonts.body, fontSize: wuzyType.body, color: wuzyColors.gray }}>log in to your social circle</Text>
           </View>
 
           <View style={{ gap: wuzyLayout.itemGap }}>
@@ -72,7 +70,7 @@ export default function LoginScreen() {
               <Ionicons name="mail-outline" size={20} color={wuzyColors.gray} />
               <TextInput
                 className="flex-1"
-                style={{ fontFamily: wuzyFonts.body, fontSize: fontSize('body'), color: wuzyColors.white, paddingVertical: 0 }}
+                style={{ fontFamily: wuzyFonts.body, fontSize: wuzyType.body, color: wuzyColors.white, paddingVertical: 0 }}
                 placeholder="Email"
                 placeholderTextColor={wuzyColors.gray}
                 autoCapitalize="none"
@@ -87,7 +85,7 @@ export default function LoginScreen() {
               <Ionicons name="lock-closed-outline" size={20} color={wuzyColors.gray} />
               <TextInput
                 className="flex-1"
-                style={{ fontFamily: wuzyFonts.body, fontSize: fontSize('body'), color: wuzyColors.white, paddingVertical: 0 }}
+                style={{ fontFamily: wuzyFonts.body, fontSize: wuzyType.body, color: wuzyColors.white, paddingVertical: 0 }}
                 placeholder="Password"
                 placeholderTextColor={wuzyColors.gray}
                 secureTextEntry
@@ -99,7 +97,7 @@ export default function LoginScreen() {
             </View>
 
             {error && (
-              <Text style={{ fontFamily: wuzyFonts.medium, fontSize: fontSize('small'), color: wuzyColors.yellow }}>{error}</Text>
+              <Text style={{ fontFamily: wuzyFonts.medium, fontSize: wuzyType.small, color: wuzyColors.yellow }}>{error}</Text>
             )}
 
             <Pressable
@@ -107,18 +105,18 @@ export default function LoginScreen() {
               disabled={busy}
               accessibilityRole="button"
               className="items-center justify-center rounded-full active:opacity-80"
-              style={{ height: 52, backgroundColor: busy ? wuzyColors.yellowDim : wuzyColors.yellow }}>
+              style={{ height: wuzyLayout.control, backgroundColor: busy ? wuzyColors.yellowDim : wuzyColors.yellow }}>
               {busy ? (
                 <ActivityIndicator size="small" color={wuzyColors.bg} />
               ) : (
-                <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: fontSize('body'), color: wuzyColors.bg }}>Log in</Text>
+                <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.body, color: wuzyColors.bg }}>Log in</Text>
               )}
             </Pressable>
           </View>
 
           <View style={{ gap: wuzyLayout.itemGap }}>
-            <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: fontSize('section'), color: wuzyColors.yellow }}>Test accounts</Text>
-            <Text style={{ fontFamily: wuzyFonts.body, fontSize: fontSize('small'), color: wuzyColors.gray }}>
+            <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.section, color: wuzyColors.yellow }}>Test accounts</Text>
+            <Text style={{ fontFamily: wuzyFonts.body, fontSize: wuzyType.small, color: wuzyColors.gray }}>
               Tap an account to fill its credentials, then log in.
             </Text>
             <ScrollView
@@ -130,7 +128,7 @@ export default function LoginScreen() {
                   <View style={{ width: AVATAR, height: AVATAR, borderRadius: AVATAR / 2, borderWidth: 1, borderColor: wuzyColors.yellow, padding: 2 }}>
                     <Image source={a.avatar} style={{ width: '100%', height: '100%', borderRadius: AVATAR / 2 }} />
                   </View>
-                  <Text style={{ fontFamily: wuzyFonts.medium, fontSize: fontSize('caption'), color: wuzyColors.white }}>{a.username}</Text>
+                  <Text style={{ fontFamily: wuzyFonts.medium, fontSize: wuzyType.caption, color: wuzyColors.white }}>{a.username}</Text>
                 </Pressable>
               ))}
             </ScrollView>

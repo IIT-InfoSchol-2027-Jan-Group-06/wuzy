@@ -2,8 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Pressable, TextInput, View } from 'react-native';
 import { useState } from 'react';
 
-import { wuzyColors, wuzyFonts } from '@/constants/wuzy-theme';
-import { useResponsive } from '@/hooks/useResponsive';
+import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 
 export interface SearchBarProps {
   value: string;
@@ -14,7 +13,6 @@ export interface SearchBarProps {
 }
 
 export function SearchBar({ value, onChangeText, placeholder = 'Search', onSearchSubmit, onClear }: SearchBarProps) {
-  const { fontSize } = useResponsive();
   const [localValue, setLocalValue] = useState(value ?? '');
 
   // Adjust local state during render when the controlled value changes (React's documented pattern).
@@ -34,7 +32,7 @@ export function SearchBar({ value, onChangeText, placeholder = 'Search', onSearc
     <View
       collapsable={false}
       className="w-full flex-row items-center rounded-full px-[16px]"
-      style={{ backgroundColor: wuzyColors.yellowDim, height: 44 }}>
+      style={{ backgroundColor: wuzyColors.yellowDim, height: wuzyLayout.control }}>
       <Ionicons name="search-outline" size={18} color={wuzyColors.gray} style={{ marginRight: 8 }} />
       <TextInput
         value={localValue}
@@ -45,7 +43,7 @@ export function SearchBar({ value, onChangeText, placeholder = 'Search', onSearc
         onSubmitEditing={onSearchSubmit}
         placeholder={placeholder}
         placeholderTextColor={wuzyColors.gray}
-        style={{ flex: 1, fontFamily: wuzyFonts.body, fontSize: fontSize('body'), color: wuzyColors.white, paddingVertical: 0 }}
+        style={{ flex: 1, fontFamily: wuzyFonts.body, fontSize: wuzyType.body, color: wuzyColors.white, paddingVertical: 0 }}
         returnKeyType="search"
         autoCorrect={false}
         autoCapitalize="none"

@@ -1,7 +1,6 @@
 import { Text, TextInput, View } from 'react-native';
 
-import { wuzyColors, wuzyFonts } from '@/constants/wuzy-theme';
-import { useResponsive } from '@/hooks/useResponsive';
+import { wuzyColors, wuzyFonts, wuzyType } from '@/constants/wuzy-theme';
 
 export interface LabeledInputProps {
   label: string;
@@ -21,19 +20,12 @@ export function LabeledInput({
   multiline = false,
   autoCapitalize = 'sentences',
 }: LabeledInputProps) {
-  const { screenWidth } = useResponsive();
-
-  const labelFontSize = Math.round(screenWidth * 0.028);
-  const inputFontSize = Math.round(screenWidth * 0.034);
-  const singleLineHeight = Math.round(screenWidth * 0.055);
-  const multilineHeight = Math.round(screenWidth * 0.26);
-
   return (
     <View style={{ backgroundColor: '#2B2D24', borderRadius: 16, padding: 16, gap: 8 }}>
       <Text
         style={{
           fontFamily: wuzyFonts.bold,
-          fontSize: labelFontSize,
+          fontSize: wuzyType.small,
           color: '#CCBB73',
         }}>
         {label}
@@ -50,10 +42,10 @@ export function LabeledInput({
         underlineColorAndroid="transparent"
         style={{
           fontFamily: wuzyFonts.body,
-          fontSize: inputFontSize,
+          fontSize: wuzyType.body,
           color: '#FFFFFF',
           padding: 0,
-          minHeight: multiline ? multilineHeight : singleLineHeight,
+          minHeight: multiline ? 108 : 24,
         }}
       />
     </View>

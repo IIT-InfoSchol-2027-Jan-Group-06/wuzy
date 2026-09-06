@@ -1,4 +1,4 @@
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { Image as SvgImage } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useState } from 'react';
@@ -8,21 +8,22 @@ import { GlassNavButton } from '@/components/GlassNavButton';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { mockEvent } from '@/constants/event-data';
-import { wuzyColors, wuzyFonts, wuzyLayout } from '@/constants/wuzy-theme';
-import { useResponsive } from '@/hooks/useResponsive';
+import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 
 const AVATAR = 36;
 const AVATAR_OVERLAP = 12;
-const ACTION_HEIGHT = 50;
+const ACTION_HEIGHT = wuzyLayout.control;
 
 export default function EventDetailsScreen() {
   const router = useRouter();
-  const { screenWidth, fontSize } = useResponsive();
+  const { width } = useWindowDimensions();
   const [isLiked, setIsLiked] = useState(false);
   const [showMore, setShowMore] = useState(false);
 
   const e = mockEvent;
-  const heroHeight = Math.round(screenWidth * 0.95);
+  // Explicit capped heights: Yoga narrows an aspectRatio box when maxHeight clamps it.
+  const heroHeight = Math.min(Math.round(width * 0.95), 400);
+  const mapHeight = Math.min(Math.round((width - 2 * wuzyLayout.side) * 0.6), 260);
   const description = showMore || e.description.length <= 180 ? e.description : `${e.description.slice(0, 180).trimEnd()}...`;
 
   const avatarStyle = (index: number) => ({
@@ -56,7 +57,7 @@ export default function EventDetailsScreen() {
         <View className="absolute flex-row items-end justify-between" style={{ bottom: 0, left: wuzyLayout.side, right: wuzyLayout.side, gap: wuzyLayout.itemGap }}>
           <Text
             className="flex-1 text-wuzy-yellow"
-            style={{ fontFamily: wuzyFonts.display, fontSize: fontSize('display'), lineHeight: Math.round(fontSize('display') * 1.05) }}>
+            style={{ fontFamily: wuzyFonts.display, fontSize: wuzyType.display, lineHeight: Math.round(wuzyType.display * 1.05) }}>
             {e.title}
           </Text>
           <GlassNavButton
@@ -69,12 +70,12 @@ export default function EventDetailsScreen() {
 
       <View style={{ paddingHorizontal: wuzyLayout.side, paddingTop: wuzyLayout.gap, gap: wuzyLayout.gap }}>
         <View style={{ gap: wuzyLayout.itemGap }}>
-          <Text style={{ fontFamily: wuzyFonts.body, fontSize: fontSize('body'), lineHeight: Math.round(fontSize('body') * 1.5), color: wuzyColors.white }}>
+          <Text style={{ fontFamily: wuzyFonts.body, fontSize: wuzyType.body, lineHeight: Math.round(wuzyType.body * 1.5), color: wuzyColors.white }}>
             {description}
           </Text>
           {e.description.length > 180 && (
             <Pressable onPress={() => setShowMore((v) => !v)} accessibilityRole="button">
-              <Text className="text-wuzy-yellow" style={{ fontFamily: wuzyFonts.semibold, fontSize: fontSize('body') }}>
+              <Text className="text-wuzy-yellow" style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.body }}>
                 {showMore ? 'Show less' : 'Show more'}
               </Text>
             </Pressable>
@@ -89,29 +90,29 @@ export default function EventDetailsScreen() {
               ))}
               {e.attendees.length > 3 && (
                 <View className="items-center justify-center" style={[avatarStyle(3), { backgroundColor: wuzyColors.yellowDim }]}>
-                  <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: fontSize('caption'), color: wuzyColors.yellow }}>
+                  <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.caption, color: wuzyColors.yellow }}>
                     +{e.attendees.length - 3}
                   </Text>
                 </View>
               )}
             </View>
             <View>
-              <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: fontSize('small'), color: wuzyColors.yellow }}>{e.venue}</Text>
-              <Text style={{ fontFamily: wuzyFonts.body, fontSize: fontSize('small'), color: wuzyColors.yellowSoft }}>{e.location}</Text>
+              <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.small, color: wuzyColors.yellow }}>{e.venue}</Text>
+              <Text style={{ fontFamily: wuzyFonts.body, fontSize: wuzyType.small, color: wuzyColors.yellowSoft }}>{e.location}</Text>
             </View>
           </View>
           <View className="items-end">
-            <Text style={{ fontFamily: wuzyFonts.display, fontSize: fontSize('title'), color: wuzyColors.white }}>{e.date}</Text>
-            <Text style={{ fontFamily: wuzyFonts.display, fontSize: fontSize('title'), color: wuzyColors.white }}>{e.time}</Text>
+            <Text style={{ fontFamily: wuzyFonts.display, fontSize: wuzyType.title, color: wuzyColors.white }}>{e.date}</Text>
+            <Text style={{ fontFamily: wuzyFonts.display, fontSize: wuzyType.title, color: wuzyColors.white }}>{e.time}</Text>
           </View>
         </View>
 
         <View style={{ gap: wuzyLayout.itemGap }}>
-          <Text className="text-wuzy-yellow" style={{ fontFamily: wuzyFonts.semibold, fontSize: fontSize('section') }}>
+          <Text className="text-wuzy-yellow" style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.section }}>
             Location
           </Text>
           <View style={{ borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: wuzyColors.glassBorder }}>
-            <Image source={e.mapImage} style={{ width: '100%', height: Math.round(screenWidth * 0.6) }} resizeMode="cover" />
+            <Image source={e.mapImage} style={{ width: '100%', height: mapHeight }} resizeMode="cover" />
           </View>
         </View>
 
@@ -129,7 +130,7 @@ export default function EventDetailsScreen() {
             accessibilityRole="button"
             className="flex-1 items-center justify-center rounded-full active:opacity-80"
             style={{ height: ACTION_HEIGHT, backgroundColor: wuzyColors.yellow }}>
-            <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: fontSize('body'), color: wuzyColors.bg }}>Buy ticket</Text>
+            <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.body, color: wuzyColors.bg }}>Buy ticket</Text>
           </Pressable>
         </View>
       </View>

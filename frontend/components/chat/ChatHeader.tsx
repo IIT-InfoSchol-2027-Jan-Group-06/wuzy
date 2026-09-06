@@ -2,8 +2,7 @@ import React from 'react';
 import { Image, Text, View } from 'react-native';
 
 import { GlassNavButton } from '@/components/GlassNavButton';
-import { wuzyColors, wuzyFonts, wuzyLayout } from '@/constants/wuzy-theme';
-import { useResponsive } from '@/hooks/useResponsive';
+import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 
 const AVATAR = 44;
 
@@ -16,7 +15,6 @@ type ChatHeaderProps = {
 
 /** Thread header: back button, ringed avatar, name over status. Relies on Screen for padding. */
 export function ChatHeader({ name, avatar, status, onBack }: ChatHeaderProps) {
-  const { fontSize } = useResponsive();
 
   return (
     <View className="flex-row items-center" style={{ gap: wuzyLayout.itemGap }}>
@@ -33,10 +31,10 @@ export function ChatHeader({ name, avatar, status, onBack }: ChatHeaderProps) {
         <Image source={avatar} style={{ width: '100%', height: '100%', borderRadius: AVATAR / 2 }} />
       </View>
       <View className="flex-1">
-        <Text numberOfLines={1} style={{ fontFamily: wuzyFonts.medium, fontSize: fontSize('body'), color: wuzyColors.white }}>
+        <Text numberOfLines={1} style={{ fontFamily: wuzyFonts.medium, fontSize: wuzyType.body, color: wuzyColors.white }}>
           {name}
         </Text>
-        <Text style={{ fontFamily: wuzyFonts.body, fontSize: fontSize('caption'), color: wuzyColors.yellowSoft }}>{status}</Text>
+        <Text style={{ fontFamily: wuzyFonts.body, fontSize: wuzyType.caption, color: wuzyColors.yellowSoft }}>{status}</Text>
       </View>
     </View>
   );

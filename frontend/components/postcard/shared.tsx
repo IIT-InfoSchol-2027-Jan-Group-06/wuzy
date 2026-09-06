@@ -26,23 +26,19 @@ export function Avatar({
 
 /** Rounded container that handles press feedback and clipping. */
 export function CardShell({
-  width = 300,
-  height = 295,
   radius = 24,
   onPress,
   disabled = false,
   style,
   children,
 }: {
-  width?: number;
-  height?: number;
   radius?: number;
   onPress?: () => void;
   disabled?: boolean;
   style?: StyleProp<ViewStyle>;
   children?: ReactNode;
 }) {
-  const outerStyle = [{ width, height, borderRadius: radius }, style];
+  const outerStyle = [{ borderRadius: radius }, style];
 
   if (onPress) {
     return (

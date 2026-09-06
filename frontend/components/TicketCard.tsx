@@ -6,7 +6,7 @@ import Svg, { Line } from 'react-native-svg';
 
 import { QrCode } from '@/components/QrCode';
 import type { Ticket } from '@/constants/ticket-data';
-import { wuzyColors, wuzyFonts } from '@/constants/wuzy-theme';
+import { wuzyColors, wuzyFonts, wuzyType } from '@/constants/wuzy-theme';
 
 const RADIUS = 24;
 const NOTCH = 13;
@@ -17,7 +17,7 @@ export interface TicketCardProps {
   style?: StyleProp<ViewStyle>;
 }
 
-/** Ticket silhouette: rounded card, side notches, dashed divider, dark photo backdrop, QR below. Type scales with the card width. */
+/** Ticket silhouette: rounded card, side notches, dashed divider, dark photo backdrop, QR below. Geometry follows the width prop, type is the token scale. */
 export function TicketCard({ ticket, width, style }: TicketCardProps) {
   const height = Math.round(width * 1.58);
   const notchY = Math.round(height * 0.36);
@@ -65,13 +65,13 @@ export function TicketCard({ ticket, width, style }: TicketCardProps) {
           <Text
             className="text-white text-center uppercase"
             numberOfLines={1}
-            style={{ fontFamily: wuzyFonts.bold, fontSize: Math.round(width * 0.09), lineHeight: Math.round(width * 0.1), letterSpacing: 2 }}>
+            style={{ fontFamily: wuzyFonts.bold, fontSize: wuzyType.title, lineHeight: Math.round(wuzyType.title * 1.1), letterSpacing: 2 }}>
             {ticket.title}
           </Text>
           <Text
             className="mt-[8px] text-white/90 text-center uppercase"
             numberOfLines={1}
-            style={{ fontFamily: wuzyFonts.medium, fontSize: Math.round(width * 0.042), letterSpacing: 1.2 }}>
+            style={{ fontFamily: wuzyFonts.medium, fontSize: wuzyType.small, letterSpacing: 1.2 }}>
             {subtitleText}
           </Text>
         </View>
@@ -81,7 +81,7 @@ export function TicketCard({ ticket, width, style }: TicketCardProps) {
           {ticket.code ? (
             <Text
               className="mt-[12px] text-center"
-              style={{ fontFamily: wuzyFonts.semibold, fontSize: Math.round(width * 0.038), letterSpacing: 2, color: wuzyColors.yellow, opacity: 0.85 }}>
+              style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.small, letterSpacing: 2, color: wuzyColors.yellow, opacity: 0.85 }}>
               {ticket.code}
             </Text>
           ) : null}

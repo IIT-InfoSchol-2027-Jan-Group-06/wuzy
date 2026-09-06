@@ -12,14 +12,11 @@ import {
 } from 'react-native';
 
 import { assetUrl, ApiPost } from '@/lib/api';
-import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
-import { useResponsive } from '@/hooks/useResponsive';
+import { wuzyFonts, wuzyType } from '@/constants/wuzy-theme';
 import { Avatar, CardShell } from './shared';
 
 type PostCardProps = {
   post: ApiPost;
-  width?: number;
-  height?: number;
   disabled?: boolean;
   style?: StyleProp<ViewStyle>;
 };
@@ -28,22 +25,16 @@ type PostCardProps = {
  * A single, self-contained post card.
  *
  * Combines the cover image and author info (avatar + name + location) into one
- * component using NativeWind utility classes. The card fills the screen width
- * inside the 32px gutters, keeping the height proportional to its width.
+ * component using NativeWind utility classes. The card fills its parent's width
+ * at a 335:418 aspect ratio.
  * Double-tapping toggles a like: a heart pops in, or a broken heart shakes and falls
  * on unlike. A small yellow heart in the corner marks a liked post and unlikes on tap.
  */
 export function PostCard({
   post,
-  width,
-  height,
   disabled = false,
   style,
 }: PostCardProps) {
-  const { screenWidth } = useResponsive();
-  const cardWidth = width ?? screenWidth - 2 * wuzyLayout.side;
-  const cardHeight = height ?? Math.round(cardWidth * (418 / 335));
-
   const [liked, setLiked] = useState(false);
   const [popScale] = useState(() => new Animated.Value(0));
   const [popOpacity] = useState(() => new Animated.Value(0));
@@ -173,7 +164,7 @@ export function PostCard({
   };
 
   return (
-    <CardShell width={cardWidth} height={cardHeight} disabled={disabled} style={style}>
+    <CardShell disabled={disabled} style={[{ width: '100%', aspectRatio: 335 / 418 }, style]}>
       <Image source={{ uri: assetUrl(post.media_url) }} className="absolute inset-0 h-full w-full" resizeMode="cover" />
 
       <LinearGradient
@@ -188,7 +179,7 @@ export function PostCard({
         style={{ opacity: popOpacity, transform: [{ scale: popScale }] }}>
         <Ionicons
           name="heart"
-          size={Math.round(cardWidth * 0.3)}
+          size={96}
           color="white"
           style={{ textShadowColor: 'rgba(0,0,0,0.35)', textShadowRadius: 12 }}
         />
@@ -206,7 +197,7 @@ export function PostCard({
         }}>
         <Ionicons
           name="heart-dislike"
-          size={Math.round(cardWidth * 0.3)}
+          size={96}
           color="white"
           style={{ textShadowColor: 'rgba(0,0,0,0.35)', textShadowRadius: 12 }}
         />
@@ -215,10 +206,10 @@ export function PostCard({
       <View className="absolute left-[21px] top-[19px] flex-row items-center">
         <Avatar source={{ uri: assetUrl(post.user?.avatar_url ?? '') }} size={35} />
         <View className="ml-[12px]">
-          <Text className="text-white" style={{ fontFamily: wuzyFonts.medium, fontSize: Math.round(screenWidth * wuzyType.body) }}>
+          <Text className="text-white" style={{ fontFamily: wuzyFonts.medium, fontSize: wuzyType.body }}>
             {post.user?.username ?? 'Unknown'}
           </Text>
-          <Text className="text-white" style={{ fontFamily: wuzyFonts.medium, fontSize: Math.round(screenWidth * wuzyType.small) }}>
+          <Text className="-mt-[5px] text-white" style={{ fontFamily: wuzyFonts.medium, fontSize: wuzyType.small }}>
             {post.location ?? ''}
           </Text>
         </View>
@@ -242,7 +233,7 @@ export function PostCard({
           className="absolute bottom-[21px] right-[21px]">
           <Ionicons
             name="heart"
-            size={Math.round(cardWidth * 0.075)}
+            size={24}
             color="#FFE783"
             style={{ textShadowColor: 'rgba(0,0,0,0.5)', textShadowRadius: 6 }}
           />

@@ -1,20 +1,17 @@
 import React from 'react';
 import { Text, View } from 'react-native';
 
-import { wuzyColors, wuzyFonts } from '@/constants/wuzy-theme';
-import { useResponsive } from '@/hooks/useResponsive';
+import { wuzyColors, wuzyFonts, wuzyType } from '@/constants/wuzy-theme';
 
 const RADIUS = 16;
 const NICK = 2;
 
 export function ChatBubble({ text, outgoing }: { text: string; outgoing: boolean }) {
-  const { screenWidth, fontSize } = useResponsive();
-
   return (
     <View
       style={{
         alignSelf: outgoing ? 'flex-end' : 'flex-start',
-        maxWidth: Math.round(screenWidth * 0.75),
+        maxWidth: '75%',
         paddingVertical: 12,
         paddingHorizontal: 16,
         borderTopLeftRadius: outgoing ? RADIUS : NICK,
@@ -38,8 +35,8 @@ export function ChatBubble({ text, outgoing }: { text: string; outgoing: boolean
       <Text
         style={{
           fontFamily: wuzyFonts.body,
-          fontSize: fontSize('body'),
-          lineHeight: Math.round(fontSize('body') * 1.5),
+          fontSize: wuzyType.body,
+          lineHeight: Math.round(wuzyType.body * 1.5),
           color: outgoing ? wuzyColors.bg : wuzyColors.white,
         }}>
         {text}

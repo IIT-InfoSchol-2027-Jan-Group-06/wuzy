@@ -10,19 +10,17 @@ import { Screen } from '@/components/Screen';
 import { SearchBar } from '@/components/SearchBar';
 import { TabHeader } from '@/components/TabHeader';
 import { MessageRow } from '@/components/chat/MessageRow';
-import { wuzyColors, wuzyFonts, wuzyLayout } from '@/constants/wuzy-theme';
+import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 import { useConversations } from '@/hooks/useConversations';
-import { useResponsive } from '@/hooks/useResponsive';
 import { assetUrl, relativeTime } from '@/lib/api';
 
-const defaultAvatar = require('@/assets/images/avatar1.png');
+const defaultAvatar = require('@/assets/images/avatar1.jpg');
 
 const CATEGORIES = ['All', 'Unread'];
 const categoryOptions = CATEGORIES.map((c) => ({ id: c, label: c }));
 
 export default function ChatScreen() {
   const router = useRouter();
-  const { fontSize } = useResponsive();
   const { clearance } = useNavBarMetrics();
   const { conversations, loading, error, refresh } = useConversations();
   const [active, setActive] = React.useState<string | number>('All');
@@ -61,10 +59,10 @@ export default function ChatScreen() {
         <ActivityIndicator size="large" color={wuzyColors.yellow} style={{ marginTop: wuzyLayout.gap }} />
       ) : error ? (
         <Pressable onPress={refresh} className="items-center" style={{ marginTop: wuzyLayout.gap, paddingHorizontal: wuzyLayout.side }}>
-          <Text className="text-center text-wuzy-gray" style={{ fontFamily: wuzyFonts.medium, fontSize: fontSize('body') }}>
+          <Text className="text-center text-wuzy-gray" style={{ fontFamily: wuzyFonts.medium, fontSize: wuzyType.body }}>
             {error}
           </Text>
-          <Text className="text-wuzy-yellow" style={{ marginTop: wuzyLayout.itemGap, fontFamily: wuzyFonts.semibold, fontSize: fontSize('body') }}>
+          <Text className="text-wuzy-yellow" style={{ marginTop: wuzyLayout.itemGap, fontFamily: wuzyFonts.semibold, fontSize: wuzyType.body }}>
             Tap to retry
           </Text>
         </Pressable>
@@ -78,7 +76,7 @@ export default function ChatScreen() {
           renderItem={({ item }) => <MessageRow item={item} onPress={() => router.push(`/chat/${item.id}`)} />}
           ListEmptyComponent={
             <View className="items-center" style={{ paddingTop: wuzyLayout.gap }}>
-              <Text style={{ fontFamily: wuzyFonts.medium, fontSize: fontSize('body'), color: wuzyColors.gray }}>
+              <Text style={{ fontFamily: wuzyFonts.medium, fontSize: wuzyType.body, color: wuzyColors.gray }}>
                 {searchQuery ? 'Nothing matches your search' : 'No conversations yet'}
               </Text>
             </View>

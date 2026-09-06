@@ -12,7 +12,7 @@ import { wuzyColors, wuzyLayout } from '@/constants/wuzy-theme';
 import { useAuth } from '@/context/auth';
 import { apiGet, apiPost, assetUrl, type ApiMessage } from '@/lib/api';
 
-const defaultAvatar = require('@/assets/images/avatar1.png');
+const defaultAvatar = require('@/assets/images/avatar1.jpg');
 
 export default function ChatViewScreen() {
   const router = useRouter();

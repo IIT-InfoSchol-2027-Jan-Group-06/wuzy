@@ -6,8 +6,7 @@ import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { UserRow } from '@/components/UserRow';
 import { notifications, type Notification } from '@/constants/notification-data';
-import { wuzyFonts, wuzyLayout } from '@/constants/wuzy-theme';
-import { useResponsive } from '@/hooks/useResponsive';
+import { wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 
 const categories = [
   { id: 'all', label: 'All' },
@@ -21,7 +20,6 @@ const groups: { key: Notification['group']; title: string }[] = [
 ];
 
 export default function NotificationsScreen() {
-  const { fontSize } = useResponsive();
   const [selectedCategory, setSelectedCategory] = useState<string | number>('all');
 
   const visible =
@@ -39,7 +37,7 @@ export default function NotificationsScreen() {
         if (items.length === 0) return null;
         return (
           <View key={key} style={{ gap: wuzyLayout.itemGap }}>
-            <Text className="text-wuzy-yellow" style={{ fontFamily: wuzyFonts.semibold, fontSize: fontSize('section') }}>
+            <Text className="text-wuzy-yellow" style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.section }}>
               {title}
             </Text>
             {items.map((n) => (

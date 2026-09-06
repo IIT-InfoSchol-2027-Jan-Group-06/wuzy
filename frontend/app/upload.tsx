@@ -8,8 +8,7 @@ import { useState, useRef, useCallback, useImperativeHandle, forwardRef } from '
 import { Chip } from '@/components/Chip';
 import { GlassNavButton } from '@/components/GlassNavButton';
 import { Screen } from '@/components/Screen';
-import { wuzyColors, wuzyFonts, wuzyLayout } from '@/constants/wuzy-theme';
-import { useResponsive } from '@/hooks/useResponsive';
+import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 import { setPendingPhoto } from '@/lib/media';
 
 type CameraComponentRef = {
@@ -53,15 +52,13 @@ CameraComponent.displayName = 'CameraComponent';
 
 export default function UploadScreen() {
   const router = useRouter();
-  const { screenWidth, fontSize } = useResponsive();
   const cameraRef = useRef<CameraComponentRef>(null);
   const [cameraType, setCameraType] = useState<CameraType>('back');
   const [hasPermission, requestCameraPermission] = useCameraPermissions();
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
 
-  const viewportWidth = screenWidth - 2 * wuzyLayout.side;
-  const viewport = { width: viewportWidth, height: Math.round(viewportWidth * (418 / 335)), borderRadius: 24, overflow: 'hidden' as const };
+  const viewport = { width: '100%' as const, maxWidth: 400, aspectRatio: 335 / 418, borderRadius: 24, overflow: 'hidden' as const };
 
   const flipCamera = () => {
     setCameraType((prev) => (prev === 'back' ? 'front' : 'back'));
@@ -98,10 +95,10 @@ export default function UploadScreen() {
       <Screen>
         <GlassNavButton icon="arrow-back" onPress={() => router.back()} />
         <View className="flex-1 items-center justify-center" style={{ gap: wuzyLayout.itemGap }}>
-          <Text className="text-wuzy-yellow text-center" style={{ fontFamily: wuzyFonts.display, fontSize: fontSize('title') }}>
+          <Text className="text-wuzy-yellow text-center" style={{ fontFamily: wuzyFonts.display, fontSize: wuzyType.title }}>
             Camera access needed
           </Text>
-          <Text className="text-center text-wuzy-gray" style={{ fontFamily: wuzyFonts.body, fontSize: fontSize('body') }}>
+          <Text className="text-center text-wuzy-gray" style={{ fontFamily: wuzyFonts.body, fontSize: wuzyType.body }}>
             Allow camera access to take photos for your posts.
           </Text>
           <View style={{ marginTop: wuzyLayout.itemGap }}>

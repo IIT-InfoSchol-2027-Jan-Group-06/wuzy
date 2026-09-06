@@ -9,10 +9,11 @@ import { getToken, setToken } from '@/lib/auth-token';
  * When running via the Expo dev server, hostUri is the machine that serves
  * the JS bundle (e.g. "192.168.1.10:8081"). We reuse its host with the
  * backend port so emulators and physical devices on the same network reach
- * the FastAPI server automatically.
+ * the FastAPI server automatically. Release builds have no dev server, so
+ * they take EXPO_PUBLIC_API_URL, inlined at bundle time.
  */
 const devHost = Constants.expoConfig?.hostUri?.split(':')[0] ?? 'localhost';
-export const API_URL = `http://${devHost}:8000`;
+export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? `http://${devHost}:8000`;
 
 const API_HEADERS = {
   'Content-Type': 'application/json',

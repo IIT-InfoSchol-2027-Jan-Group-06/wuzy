@@ -13,6 +13,9 @@ export const wuzyColors = {
   online: '#22C55E',
   glassFill: 'rgba(84, 82, 56, 0.35)',
   glassBorder: 'rgba(255, 255, 255, 0.15)',
+  badgeText: '#F3D5E0',
+  badgeFill: 'rgba(61, 51, 58, 0.8)',
+  badgeBorder: 'rgba(140, 98, 114, 0.4)',
 };
 
 export const wuzyFonts = {
@@ -23,21 +26,24 @@ export const wuzyFonts = {
   bold: 'Poppins_700Bold',
 };
 
-// Font sizes are screenWidth * ratio, see useResponsive().fontSize.
+// Font sizes in dp, on the Material 3 and iOS scales (body 16, secondary 14, caption 12). Never derived from the window width.
 export const wuzyType = {
-  display: 0.1,
-  title: 0.061,
-  section: 0.045,
-  body: 0.037,
-  small: 0.03,
-  caption: 0.025,
+  hero: 44,
+  display: 36,
+  title: 24,
+  section: 20,
+  body: 16,
+  small: 14,
+  caption: 12,
 } as const;
 
-// Fixed layout constants in px. top is added below the safe-area inset.
+// Layout constants in dp. top is added below the safe-area inset.
 export const wuzyLayout = {
   side: 32,
-  top: 12,
+  top: 24,
   gap: 24,
   itemGap: 12,
   navBottom: 32,
+  control: 44,
+  glass: 50,
 } as const;

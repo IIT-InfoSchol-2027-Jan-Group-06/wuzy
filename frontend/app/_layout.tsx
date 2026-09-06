@@ -47,6 +47,7 @@ function RootNavigator() {
           <Stack.Screen name="create-event" />
           <Stack.Screen name="event-details" />
           <Stack.Screen name="post-preview" />
+          <Stack.Screen name="profile/[id]" />
           <Stack.Screen name="ticket" />
           <Stack.Screen name="ticket-vault" />
           <Stack.Screen name="upload" />

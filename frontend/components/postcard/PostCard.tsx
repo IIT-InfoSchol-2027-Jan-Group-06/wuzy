@@ -19,6 +19,7 @@ import { Avatar, CardShell } from './shared';
 type PostCardProps = {
   post: ApiPost;
   disabled?: boolean;
+  onUserPress?: () => void;
   style?: StyleProp<ViewStyle>;
 };
 
@@ -34,6 +35,7 @@ type PostCardProps = {
 export function PostCard({
   post,
   disabled = false,
+  onUserPress,
   style,
 }: PostCardProps) {
   const [liked, setLiked] = useState(false);
@@ -207,24 +209,29 @@ export function PostCard({
         />
       </Animated.View>
 
-      <View className="absolute left-[21px] top-[19px] flex-row items-center">
-        <Avatar source={{ uri: assetUrl(post.user?.avatar_url ?? '') }} size={35} />
-        <View className="ml-[12px]">
-          <Text className="text-white" style={{ fontFamily: wuzyFonts.medium, fontSize: wuzyType.body }}>
-            {post.user?.username ?? 'Unknown'}
-          </Text>
-          <Text className="-mt-[5px] text-white" style={{ fontFamily: wuzyFonts.medium, fontSize: wuzyType.small }}>
-            {post.location ?? ''}
-          </Text>
-        </View>
-      </View>
-
       <Pressable
         onPress={handlePress}
         disabled={disabled}
         accessibilityLabel={`Like post by ${post.user?.username ?? 'Unknown'}`}
         className="absolute inset-0"
       />
+
+      {/* Author sits above the like overlay so avatar and name taps open the profile. */}
+      <View className="absolute left-[21px] top-[19px] flex-row items-center">
+        <Pressable onPress={onUserPress} disabled={disabled} hitSlop={8}>
+          <Avatar source={{ uri: assetUrl(post.user?.avatar_url ?? '') }} size={35} />
+        </Pressable>
+        <View className="ml-[12px]">
+          <Pressable onPress={onUserPress} disabled={disabled} hitSlop={8}>
+            <Text className="text-white" style={{ fontFamily: wuzyFonts.medium, fontSize: wuzyType.body }}>
+              {post.user?.username ?? 'Unknown'}
+            </Text>
+          </Pressable>
+          <Text className="-mt-[5px] text-white" style={{ fontFamily: wuzyFonts.medium, fontSize: wuzyType.small }}>
+            {post.location ?? ''}
+          </Text>
+        </View>
+      </View>
 
       {liked && (
         <Pressable

@@ -35,6 +35,7 @@ export default function ChatScreen() {
   const q = searchQuery.trim().toLowerCase();
   const items = conversations.map((c) => ({
     id: String(c.id),
+    userId: c.other?.id,
     name: c.other?.display_name ?? c.other?.username ?? 'Chat',
     preview: c.preview ?? '',
     time: relativeTime(c.last_message_at),
@@ -73,7 +74,13 @@ export default function ChatScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ paddingTop: wuzyLayout.gap, paddingBottom: clearance, gap: wuzyLayout.itemGap }}
-          renderItem={({ item }) => <MessageRow item={item} onPress={() => router.push(`/chat/${item.id}`)} />}
+          renderItem={({ item }) => (
+            <MessageRow
+              item={item}
+              onPress={() => router.push(`/chat/${item.id}`)}
+              onUserPress={item.userId ? () => router.push(`/profile/${item.userId}`) : undefined}
+            />
+          )}
           ListEmptyComponent={
             <View className="items-center" style={{ paddingTop: wuzyLayout.gap }}>
               <Text style={{ fontFamily: wuzyFonts.medium, fontSize: wuzyType.body, color: wuzyColors.gray }}>

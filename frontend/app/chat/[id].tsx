@@ -22,6 +22,7 @@ export default function ChatViewScreen() {
   const [messages, setMessages] = React.useState<ApiMessage[]>([]);
   const [chatName, setChatName] = React.useState('Chat');
   const [avatar, setAvatar] = React.useState(defaultAvatar);
+  const [otherUserId, setOtherUserId] = React.useState<number | null>(null);
   const [loading, setLoading] = React.useState(true);
 
   const load = useCallback(async () => {
@@ -33,6 +34,7 @@ export default function ChatViewScreen() {
       if (other) {
         setChatName(other.display_name ?? other.username);
         setAvatar(other.avatar_url ? { uri: assetUrl(other.avatar_url) } : defaultAvatar);
+        setOtherUserId(other.id);
       }
     } catch {
       router.back();
@@ -79,7 +81,13 @@ export default function ChatViewScreen() {
   return (
     <Screen>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <ChatHeader name={chatName} avatar={avatar} status="Online" onBack={() => router.back()} />
+        <ChatHeader
+          name={chatName}
+          avatar={avatar}
+          status="Online"
+          onBack={() => router.back()}
+          onUserPress={otherUserId ? () => router.push(`/profile/${otherUserId}`) : undefined}
+        />
 
         <FlatList
           data={reversed}

@@ -27,7 +27,7 @@ export default function NotificationsScreen() {
 
   return (
     <Screen scroll style={{ gap: wuzyLayout.gap }}>
-      <View style={{ gap: wuzyLayout.itemGap }}>
+      <View style={{ gap: wuzyLayout.gap }}>
         <ScreenHeader title="Notifications" />
         <CategoryFilter options={categories} selectedId={selectedCategory} onSelect={setSelectedCategory} />
       </View>

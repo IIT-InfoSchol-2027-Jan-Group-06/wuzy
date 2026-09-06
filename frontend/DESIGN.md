@@ -152,6 +152,11 @@ Full-bleed content inside a padded screen uses `marginHorizontal: -wuzyLayout.si
 ### QrCode
 - `value`, `size`, `color`, `card`. Card mode is a white rounded container; `card={false}` renders bare modules over dark images.
 
+### ProfileHero and ProfileGrid
+- ProfileHero: full-width background photo (explicit capped height, same rule as the profile hero) fading to `bg`, with Bebas `hero` name, awards medals, and `body` bio at its foot. `actions` render at the top right (owner only: Connect and Settings glass buttons).
+- ProfileGrid: full-bleed three-column photo grid of `ApiPost`s with loading and empty states. `onEmptyPress` turns the empty state into the owner's "share your first one" call to action; without it the empty state is a plain "No posts yet".
+- Used by Profile (tab, owner, has edit/connect/connections actions) and the pushed `profile/[id]` route (read-only viewer: floating `ScreenHeader` back button only, lists that user's permanent posts).
+
 ---
 
 ## Screens

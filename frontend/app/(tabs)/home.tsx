@@ -90,7 +90,13 @@ export default function HomeScreen() {
             </Text>
           </Pressable>
         ) : (
-          posts.map((post) => <PostCard key={post.id} post={post} />)
+          posts.map((post) => (
+            <PostCard
+              key={post.id}
+              post={post}
+              onUserPress={() => post.user?.id && router.push(`/profile/${post.user.id}`)}
+            />
+          ))
         )}
       </Animated.ScrollView>
     </Screen>

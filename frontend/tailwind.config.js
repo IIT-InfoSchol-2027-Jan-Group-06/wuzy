@@ -17,13 +17,6 @@ module.exports = {
           white: '#FFFFFF',
         },
       },
-      fontFamily: {
-        display: ['BebasNeue', 'sans-serif'],
-        body: ['Poppins', 'sans-serif'],
-      },
-      borderRadius: {
-        card: '31px',
-      },
     },
   },
   plugins: [],

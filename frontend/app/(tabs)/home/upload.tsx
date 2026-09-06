@@ -121,7 +121,7 @@ export default function UploadScreen() {
         <Text className="text-wuzy-yellow text-center" style={{ fontFamily: wuzyFonts.display, fontSize: 28 }}>
           Camera Permission Required
         </Text>
-        <Text className="text-gray text-center mt-4" style={{ fontFamily: wuzyFonts.body, fontSize: 16 }}>
+        <Text className="text-wuzy-gray text-center mt-4" style={{ fontFamily: wuzyFonts.body, fontSize: 16 }}>
           Please enable camera access in settings to take photos.
         </Text>
         <Pressable

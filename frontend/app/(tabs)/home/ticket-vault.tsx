@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import {
   FlatList,
   NativeScrollEvent,
@@ -22,7 +22,6 @@ import { wuzyColors, wuzyFonts } from '@/constants/wuzy-theme';
 
 export default function TicketVaultScreen() {
   const router = useRouter();
-  const flatListRef = useRef<FlatList>(null);
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -36,15 +35,6 @@ export default function TicketVaultScreen() {
   const backButtonSize = Math.round((42 / 375) * screenWidth);
 
   const activeTicket = tickets[activeIndex] ?? tickets[0];
-
-  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const offsetX = event.nativeEvent.contentOffset.x;
-    const itemTotalWidth = cardWidth + cardGap;
-    const index = Math.round(offsetX / itemTotalWidth);
-    if (index >= 0 && index < tickets.length && index !== activeIndex) {
-      setActiveIndex(index);
-    }
-  };
 
   const handleMomentumScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const offsetX = event.nativeEvent.contentOffset.x;
@@ -156,7 +146,6 @@ export default function TicketVaultScreen() {
         {/* Central Element: Horizontal Carousel with Centered Active Card */}
         <View className="flex-1 justify-center py-[6px]">
           <FlatList
-            ref={flatListRef}
             data={tickets}
             keyExtractor={(item: Ticket) => item.id}
             horizontal
@@ -168,9 +157,7 @@ export default function TicketVaultScreen() {
               alignItems: 'center',
             }}
             ItemSeparatorComponent={() => <View style={{ width: cardGap }} />}
-            onScroll={handleScroll}
             onMomentumScrollEnd={handleMomentumScrollEnd}
-            scrollEventThrottle={16}
             getItemLayout={(_, index) => ({
               length: cardWidth + cardGap,
               offset: (cardWidth + cardGap) * index,

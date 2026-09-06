@@ -6,15 +6,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
 import { wuzyFonts } from '@/constants/wuzy-theme';
-import { mockUserProfile, type UserProfile } from '@/constants/profile-data';
+import { mockUserProfile } from '@/constants/profile-data';
 import { TagSection } from '@/components/TagSection';
 import { GlassNavButton } from '@/components/GlassNavButton';
 
-type ProfileScreenProps = {
-  user?: UserProfile | null;
-};
-
-export default function ProfileScreen({ user }: ProfileScreenProps) {
+export default function ProfileScreen() {
   const router = useRouter();
   const { width: screenWidth } = useWindowDimensions();
   const gridItemSize = (screenWidth - 4) / 3;
@@ -22,7 +18,7 @@ export default function ProfileScreen({ user }: ProfileScreenProps) {
   const btnHeight = Math.round(screenWidth * 0.092);
   const fontSize = Math.round(screenWidth * 0.022);
 
-  const u = user ?? mockUserProfile;
+  const u = mockUserProfile;
 
   const glassButton = (label: string, onPress?: () => void) => (
     <Pressable className="rounded-full overflow-hidden" style={{ width: btnWidth, height: btnHeight }} onPress={onPress}>

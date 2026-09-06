@@ -1,6 +1,6 @@
 import { Text, TextInput, View, useWindowDimensions } from 'react-native';
 
-import { wuzyFonts } from '@/constants/wuzy-theme';
+import { wuzyColors, wuzyFonts } from '@/constants/wuzy-theme';
 
 export interface LabeledInputProps {
   label: string;
@@ -41,7 +41,7 @@ export function LabeledInput({
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor="#FFFFFF"
+        placeholderTextColor={wuzyColors.gray}
         multiline={multiline}
         autoCapitalize={autoCapitalize}
         textAlignVertical={multiline ? 'top' : 'center'}

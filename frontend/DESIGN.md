@@ -76,7 +76,7 @@ Font sizes scale with screen width (`screenWidth * ratio`):
 ### ChatHeader
 - **When to Use**: Top bar of an open chat (`app/(tabs)/chat/[id].tsx`)
 - **Import**: `import { ChatHeader } from '@/components/chat/ChatHeader';`
-- **Layout**: Floating `GlassNavButton` back button, avatar with soft yellow ring (`rgba(255,231,131,0.35)`), name (Poppins Medium, white) over status (Poppins Regular 12, `rgba(255,231,131,0.8)`) sitting flat with no pill behind them, then floating `GlassNavButton` call (`call-outline`) and video call (`videocam-outline`) buttons
+- **Layout**: Floating `GlassNavButton` back button, avatar with soft yellow ring (`rgba(255,231,131,0.35)`), name (Poppins Medium, white) over status (Poppins Regular 12, `rgba(255,231,131,0.8)`) sitting flat with no pill behind them
 
 ### ChatBubble
 - **When to Use**: A single message inside a chat thread

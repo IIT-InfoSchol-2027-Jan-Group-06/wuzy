@@ -1,6 +1,7 @@
-import { Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { Text, TextInput, View } from 'react-native';
 
 import { wuzyColors, wuzyFonts } from '@/constants/wuzy-theme';
+import { useResponsive } from '@/hooks/useResponsive';
 
 export interface LabeledInputProps {
   label: string;
@@ -20,7 +21,7 @@ export function LabeledInput({
   multiline = false,
   autoCapitalize = 'sentences',
 }: LabeledInputProps) {
-  const { width: screenWidth } = useWindowDimensions();
+  const { screenWidth } = useResponsive();
 
   const labelFontSize = Math.round(screenWidth * 0.028);
   const inputFontSize = Math.round(screenWidth * 0.034);

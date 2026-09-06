@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
-import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { wuzyLayout } from '@/constants/wuzy-theme';
+import { useResponsive } from '@/hooks/useResponsive';
 
 export type NavBarItem = 'home' | 'events' | 'awards' | 'chat' | 'profile';
 
@@ -22,9 +23,9 @@ const NAV_ITEMS: { key: NavBarItem; label: string; icon: keyof typeof Ionicons.g
 
 /** NavBar geometry, shared with anything that must clear it (Fab, scroll padding). */
 export function useNavBarMetrics() {
-  const { width } = useWindowDimensions();
+  const { screenWidth } = useResponsive();
   const { bottom: inset } = useSafeAreaInsets();
-  const barWidth = Math.round(width * 0.72);
+  const barWidth = Math.round(screenWidth * 0.72);
   const height = Math.round(barWidth * (50 / 290));
   const bottom = Math.max(wuzyLayout.navBottom, inset + 12);
   return { barWidth, height, bottom, clearance: bottom + height + 16 };

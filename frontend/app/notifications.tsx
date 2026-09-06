@@ -29,9 +29,10 @@ export default function NotificationsScreen() {
 
   return (
     <Screen scroll style={{ gap: wuzyLayout.gap }}>
-      <ScreenHeader title="Notifications" />
-
-      <CategoryFilter options={categories} selectedId={selectedCategory} onSelect={setSelectedCategory} />
+      <View style={{ gap: wuzyLayout.itemGap }}>
+        <ScreenHeader title="Notifications" />
+        <CategoryFilter options={categories} selectedId={selectedCategory} onSelect={setSelectedCategory} />
+      </View>
 
       {groups.map(({ key, title }) => {
         const items = visible.filter((n) => n.group === key);

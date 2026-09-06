@@ -1,7 +1,8 @@
-import { Pressable, Text, View, useWindowDimensions } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { wuzyColors, wuzyFonts } from '@/constants/wuzy-theme';
+import { useResponsive } from '@/hooks/useResponsive';
 
 export interface SelectRowProps {
   label: string;
@@ -11,7 +12,7 @@ export interface SelectRowProps {
 
 /** Horizontal row: bold white label on the left, gold select link on the right. */
 export function SelectRow({ label, value, onPress }: SelectRowProps) {
-  const { width: screenWidth } = useWindowDimensions();
+  const { screenWidth } = useResponsive();
 
   const labelFontSize = Math.round(screenWidth * 0.04);
   const linkFontSize = Math.round(screenWidth * 0.032);

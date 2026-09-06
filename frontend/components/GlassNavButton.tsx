@@ -1,10 +1,11 @@
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { Platform, Pressable, StyleSheet, View, useWindowDimensions, type StyleProp, type ViewStyle } from 'react-native';
+import { Platform, Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import type { ReactNode } from 'react';
 
 import { wuzyColors } from '@/constants/wuzy-theme';
+import { useResponsive } from '@/hooks/useResponsive';
 
 export interface GlassNavButtonProps {
   icon?: ReactNode | keyof typeof Ionicons.glyphMap;
@@ -26,7 +27,7 @@ export function GlassNavButton({
   children,
   accessibilityLabel,
 }: GlassNavButtonProps) {
-  const { width: screenWidth } = useWindowDimensions();
+  const { screenWidth } = useResponsive();
   const baseSize = size ?? Math.round((50 / 375) * screenWidth);
   const resolvedIconSize = Math.round(baseSize * 0.48);
 

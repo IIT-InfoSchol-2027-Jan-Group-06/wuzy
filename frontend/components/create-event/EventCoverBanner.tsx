@@ -1,9 +1,10 @@
-import { Pressable, Text, View, useWindowDimensions } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import type { ImageSourcePropType } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 
 import { wuzyColors, wuzyFonts } from '@/constants/wuzy-theme';
+import { useResponsive } from '@/hooks/useResponsive';
 
 export interface EventCoverBannerProps {
   imageUri?: ImageSourcePropType;
@@ -12,7 +13,7 @@ export interface EventCoverBannerProps {
 
 /** Rounded cover preview: shows an image when provided, otherwise a placeholder slot. */
 export function EventCoverBanner({ imageUri, onPress }: EventCoverBannerProps) {
-  const { width: screenWidth } = useWindowDimensions();
+  const { screenWidth } = useResponsive();
 
   const height = Math.round(screenWidth * 0.42);
   const radius = Math.round(screenWidth * 0.04);

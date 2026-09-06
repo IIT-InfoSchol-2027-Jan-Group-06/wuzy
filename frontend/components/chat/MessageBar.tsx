@@ -1,11 +1,12 @@
 import React from 'react';
-import { Pressable, TextInput, View, useWindowDimensions } from 'react-native';
+import { Pressable, TextInput, View } from 'react-native';
 import Animated, { Easing, interpolate, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { wuzyColors, wuzyFonts, wuzyType } from '@/constants/wuzy-theme';
+import { useResponsive } from '@/hooks/useResponsive';
 
 export function MessageBar({ onSend }: { onSend?: (text: string) => void }) {
-  const { width: screenWidth } = useWindowDimensions();
+  const { screenWidth } = useResponsive();
   const scale = screenWidth / 375;
 
   const iconSize = Math.round(20 * scale);

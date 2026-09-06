@@ -1,5 +1,5 @@
 import React from 'react';
-import { FlatList, Text, View } from 'react-native';
+import { FlatList, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { CategoryFilter } from '@/components/CategoryFilter';
@@ -7,16 +7,15 @@ import { Fab } from '@/components/Fab';
 import { useNavBarMetrics } from '@/components/NavBar';
 import { Screen } from '@/components/Screen';
 import { SearchBar } from '@/components/SearchBar';
+import { TabHeader } from '@/components/TabHeader';
 import { MessageRow } from '@/components/chat/MessageRow';
 import { chatMessages, CATEGORIES } from '@/constants/chat-data';
-import { wuzyFonts, wuzyLayout } from '@/constants/wuzy-theme';
-import { useResponsive } from '@/hooks/useResponsive';
+import { wuzyLayout } from '@/constants/wuzy-theme';
 
 const categoryOptions = CATEGORIES.map((c) => ({ id: c, label: c }));
 
 export default function ChatScreen() {
   const router = useRouter();
-  const { fontSize } = useResponsive();
   const { clearance } = useNavBarMetrics();
   const [active, setActive] = React.useState<string | number>('All');
   const [searchQuery, setSearchQuery] = React.useState('');
@@ -32,11 +31,7 @@ export default function ChatScreen() {
   return (
     <Screen overlay={<Fab onPress={() => {}} />}>
       <View style={{ gap: wuzyLayout.itemGap }}>
-        <Text
-          className="text-wuzy-yellow"
-          style={{ fontFamily: wuzyFonts.display, fontSize: fontSize('display'), lineHeight: fontSize('display') }}>
-          Messages
-        </Text>
+        <TabHeader title="Messages" />
         <SearchBar value={searchQuery} onChangeText={setSearchQuery} placeholder="Search messages" />
         <CategoryFilter options={categoryOptions} selectedId={active} onSelect={setActive} />
       </View>

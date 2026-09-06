@@ -93,7 +93,7 @@ ACCOUNTS = [
 # Connections: every pair is mutual (each person follows the other).
 # Anything one partner posts shows up in the other's feed.
 CONNECTIONS = [
-    ("abhiruk", "ravindu644"),
+    ("abhiruk", "sethuki"),
     ("abhiruk", "charuki"),
     ("abhiruk", "azma"),
     ("ravindu644", "sethuki"),
@@ -121,7 +121,7 @@ POSTS = {
         ("event7.png", "Print making workshop", "colombo", True),
     ],
     "azma": [
-        ("event6.png", "Street food crawl part one", "colombo", True),
+        ("post1,jpeg", "Market colours", "colombo", True),
         ("post1.png", "Market colours", "colombo", True),
         ("event4.png", "Sunrise at the coast", "mirissa", True),
     ],

@@ -9,7 +9,11 @@ if TYPE_CHECKING:
 
 
 class Message(SQLModel, table=True):
-    """A single chat message in a conversation."""
+    """A single chat message in a conversation.
+
+    is_read is indexed so the unread count query (WHERE is_read = False)
+    stays fast even as message volume grows.
+    """
 
     __tablename__ = "message"
 

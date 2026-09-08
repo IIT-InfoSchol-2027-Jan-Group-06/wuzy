@@ -1,7 +1,11 @@
 """Post CRUD endpoints.
 
-POST /posts          - Create an ephemeral or permanent post
+POST /posts               - Create an ephemeral or permanent post
 POST /posts/{id}/pin-to-profile - Promote an ephemeral post to permanent
+
+The save_to_profile flag is what drives the feed's core behavior:
+ephemeral posts vanish from a viewer's feed after they see them,
+permanent posts stick around on the author's profile grid forever.
 """
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -25,6 +29,8 @@ def create_post(
 
     - save_to_profile=False  -> ephemeral (one-time view, hides after viewed)
     - save_to_profile=True   -> permanent (stays on author's profile grid)
+
+    The post is immediately visible in followers' discover feeds on next fetch.
     """
     post = Post(
         media_url=payload.media_url,
@@ -47,7 +53,10 @@ def pin_to_profile(
 ):
     """Promote an existing ephemeral post to a permanent profile post.
 
-    Only the original author can pin their own post.
+    Only the original author can pin their own post. This is a one-way
+    operation: once pinned, the post stays on the profile permanently.
+    The post will also stop being filtered out by the view-tracking system
+    since the discover query always includes permanent posts.
     """
     post = session.get(Post, post_id)
     if not post:

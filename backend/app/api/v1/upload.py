@@ -1,6 +1,11 @@
 """Upload endpoint for user media.
 
 POST /upload/<kind>  - Upload a file (kind in: post, avatar), returns the URL
+
+Files are stored on disk under storage/<kind>/ with a sanitized, unique name
+to avoid collisions and path traversal. The returned URL is a server-relative
+path (e.g. /uploads/post/photo-abc123.png) that the frontend resolves via
+assetUrl() to a full HTTP URL.
 """
 
 import re
@@ -15,11 +20,16 @@ router = APIRouter()
 
 ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "gif", "webp", "heic"}
 STORAGE_ROOT = Path("storage")
+# Strip anything that is not alphanumeric, dot, underscore, or hyphen.
 SAFE_NAME = re.compile(r"[^a-zA-Z0-9_.-]")
 
 
 def _extension(filename: str) -> str:
-    """Return the file extension, lowercased, without the dot."""
+    """Return the file extension, lowercased, without the dot.
+
+    Rejects files with no extension or with an unsupported type so bad
+    uploads fail early before hitting disk.
+    """
     parts = filename.rsplit(".", 1)
     if len(parts) != 2:
         raise HTTPException(status_code=400, detail="File must have an extension")
@@ -35,7 +45,13 @@ def upload_file(
     file: UploadFile,
     current_user_id: int = Depends(get_current_user_id),
 ):
-    """Store an uploaded file on the server and return its public URL."""
+    """Store an uploaded file on the server and return its public URL.
+
+    The filename is sanitized and a UUID suffix is appended so two users
+    uploading "photo.jpg" do not overwrite each other. The kind parameter
+    restricts uploads to known directories (post or avatar) to prevent
+    writing to arbitrary paths.
+    """
     if kind not in ("post", "avatar"):
         raise HTTPException(status_code=404, detail="Unknown upload kind")
 

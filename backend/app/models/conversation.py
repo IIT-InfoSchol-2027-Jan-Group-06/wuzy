@@ -9,7 +9,11 @@ if TYPE_CHECKING:
 
 
 class Conversation(SQLModel, table=True):
-    """A chat between two or more users. 1:1 DMs for now; the shape allows groups later."""
+    """A chat between two or more users. 1:1 DMs for now; the shape allows groups later.
+
+    Members are linked through the conversation_member join table so the
+    many-to-many relationship stays explicit and queryable.
+    """
 
     __tablename__ = "conversation"
 
@@ -20,6 +24,7 @@ class Conversation(SQLModel, table=True):
         back_populates="conversations",
         sa_relationship_kwargs={"secondary": "conversation_member"},
     )
+    # Ordered by time so the chat UI can grab the latest message without extra sorting.
     messages: list["Message"] = Relationship(
         back_populates="conversation",
         sa_relationship_kwargs={"order_by": "[Message.created_at, Message.id]"},
@@ -27,7 +32,11 @@ class Conversation(SQLModel, table=True):
 
 
 class ConversationMember(SQLModel, table=True):
-    """Join row: which users are in which conversation."""
+    """Join row: which users are in which conversation.
+
+    Uses a composite primary key (conversation_id, user_id) so a user cannot
+    be added to the same conversation twice.
+    """
 
     __tablename__ = "conversation_member"
 

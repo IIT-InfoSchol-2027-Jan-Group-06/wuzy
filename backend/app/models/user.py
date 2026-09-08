@@ -12,7 +12,13 @@ if TYPE_CHECKING:
 
 
 class User(SQLModel, table=True):
-    """A Wuzy account. Identity and profile live on the same row."""
+    """A Wuzy account. Identity and profile live on the same row.
+
+    We keep email/username unique so login and @handles are globally distinct.
+    Hobbies are stored as a JSON array because Postgres JSON columns are
+    flexible for small lists and avoids a separate join table for a field
+    that is only ever read in bulk on the profile page.
+    """
 
     id: int | None = Field(default=None, primary_key=True)
     email: str = Field(unique=True, index=True)
@@ -25,6 +31,8 @@ class User(SQLModel, table=True):
     is_active: bool = Field(default=True)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
+    # Each relationship uses explicit foreign_keys because SQLAlchemy cannot
+    # disambiguate multiple FK paths to the same target table (User) without help.
     posts: list["Post"] = Relationship(back_populates="user")
     follows: list["Follow"] = Relationship(
         back_populates="follower",
@@ -36,10 +44,12 @@ class User(SQLModel, table=True):
     )
     conversations: list["Conversation"] = Relationship(
         back_populates="members",
+        # Many-to-many: resolved through the conversation_member join table.
         sa_relationship_kwargs={"secondary": "conversation_member"},
     )
     sent_messages: list["Message"] = Relationship(back_populates="sender")
 
     @property
     def following_ids(self) -> list[int]:
+        """Handy shortcut for feed queries that need the set of followed user IDs."""
         return [f.followed_id for f in self.follows]

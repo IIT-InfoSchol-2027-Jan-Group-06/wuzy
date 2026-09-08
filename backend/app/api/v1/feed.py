@@ -1,8 +1,17 @@
 """Feed endpoints.
 
 GET  /feed/discover              - Ephemeral posts the user hasn't viewed + public permanent posts
-POST /posts/{post_id}/view       - Record that the user viewed a post (204)
+POST /feed/{post_id}/view        - Record that the user viewed a post (204)
 GET  /feed/profile/{user_id}     - Permanent profile posts for a user
+
+The discover feed is the heart of the app. It mixes two kinds of posts:
+  1. Ephemeral (save_to_profile=False): visible until the current user views
+     them, then they vanish. This creates the "Instants" effect.
+  2. Permanent (save_to_profile=True): always visible, like a normal Instagram
+     post on someone's profile grid.
+
+Both kinds are restricted to posts from people the current user follows
+(or their own posts).
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Response
@@ -26,14 +35,16 @@ def discover_feed(
 ):
     """Return posts the current user can discover.
 
-    Only posts from people the current user follows (and the user's own posts)
-    are included:
-    - Ephemeral posts (save_to_profile=False) the user has NOT viewed yet
-    - Permanent profile posts (save_to_profile=True)
+    The query has two branches combined with OR:
+      - Ephemeral posts NOT in the user's post_view rows (unseen)
+      - All permanent posts (always shown regardless of views)
 
-    Ephemeral posts disappear from this feed once the user views them.
+    Both branches are scoped to authors the user follows plus themselves.
+    selectinload eagerly loads the author object to avoid N+1 queries on
+    the frontend side.
     """
-    # IDs of users whose posts are visible: self + everyone this user follows
+    # Build the set of author IDs whose posts are eligible:
+    # the current user + everyone they follow.
     followed_ids = [
         f.followed_id
         for f in session.exec(
@@ -42,7 +53,8 @@ def discover_feed(
     ]
     author_ids = {current_user_id, *followed_ids}
 
-    # IDs of posts this user has already viewed
+    # Fetch all post IDs this user has already viewed. Ephemeral posts in
+    # this set will be excluded from the results.
     viewed_post_ids = [
         pv.post_id
         for pv in session.exec(
@@ -50,12 +62,11 @@ def discover_feed(
         ).all()
     ]
 
-    # Query: (ephemeral AND not yet viewed by this user) OR permanent,
-    # restricted to the visible authors
+    # Build the filter: (ephemeral AND unviewed) OR permanent.
     if viewed_post_ids:
         ephemeral_unviewed = (Post.save_to_profile == False) & ~col(Post.id).in_(viewed_post_ids)  # noqa: E712
     else:
-        # No views yet: all ephemeral posts are eligible
+        # No views yet: every ephemeral post is eligible.
         ephemeral_unviewed = Post.save_to_profile == False  # noqa: E712
 
     permanent = Post.save_to_profile == True  # noqa: E712
@@ -78,13 +89,15 @@ def record_view(
 ):
     """Record that the current user viewed a post.
 
-    Idempotent: viewing the same post twice is a no-op.
+    The frontend calls this when a post card scrolls into view. For ephemeral
+    posts, this causes the post to disappear from the user's discover feed
+    on next fetch. Idempotent: duplicate calls are safe no-ops.
     """
     post = session.get(Post, post_id)
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
 
-    # Check if view already recorded
+    # Check if view already recorded to keep the endpoint idempotent.
     existing = session.exec(
         select(PostView).where(
             PostView.user_id == current_user_id,
@@ -107,7 +120,8 @@ def profile_feed(
 ):
     """Return all permanent profile posts for a given user, newest first.
 
-    Only posts where save_to_profile=True are included.
+    Only posts where save_to_profile=True are included. Ephemeral posts
+    never appear on a profile grid, even if the author views them.
     """
     posts = session.exec(
         select(Post)

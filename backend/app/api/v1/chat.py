@@ -3,6 +3,10 @@
 GET  /conversations                        - current user's conversations, newest activity first
 GET  /conversations/{id}/messages          - one thread, marks incoming messages as read
 POST /conversations/{id}/messages          - send a message
+
+All chat endpoints verify membership via _load_conversation before
+allowing access. A user who is not part of the conversation gets a 404
+(not a 403) to avoid leaking the existence of private threads.
 """
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -19,7 +23,12 @@ router = APIRouter()
 
 
 def _load_conversation(conversation_id: int, user_id: int, session: Session) -> Conversation:
-    """Return a conversation the user belongs to, else 404."""
+    """Return a conversation the user belongs to, else 404.
+
+    Checks both that the conversation exists and that the user is a member.
+    Uses 404 for both failures so non-members cannot confirm a conversation
+    exists by trial and error.
+    """
     conversation = session.exec(
         select(Conversation)
         .options(selectinload(Conversation.members))
@@ -40,7 +49,12 @@ def list_conversations(
     session: Session = Depends(get_session),
 ):
     """Return every conversation the user is in, with the other party's profile,
-    the last message preview, and the unread count."""
+    the last message preview, and the unread count.
+
+    Results are sorted by most-recent activity first. The unread count only
+    counts messages sent by the other party (not the user's own unread
+    outgoing messages, which do not make sense to display as unread).
+    """
     membership = session.exec(
         select(ConversationMember).where(ConversationMember.user_id == current_user_id)
     ).all()
@@ -82,8 +96,14 @@ def get_messages(
     current_user_id: int = Depends(get_current_user_id),
     session: Session = Depends(get_session),
 ):
-    """Return the full thread, oldest first, and mark the other party's messages as read."""
+    """Return the full thread, oldest first, and mark the other party's messages as read.
+
+    This is a side-effecting GET: every unread message from the other user
+    is flipped to is_read=True before the response is built. The commit is
+    conditional so we do not touch the DB when there is nothing to update.
+    """
     conversation = _load_conversation(conversation_id, current_user_id, session)
+    # Mark unread messages from the other party as read in one batch.
     messages = session.exec(
         select(Message)
         .options(selectinload(Message.sender))
@@ -109,7 +129,12 @@ def send_message(
     current_user_id: int = Depends(get_current_user_id),
     session: Session = Depends(get_session),
 ):
-    """Append a message to a conversation the user is in."""
+    """Append a message to a conversation the user is in.
+
+    Empty or whitespace-only messages are rejected with 422. The sender is
+    derived from the JWT, not the request body, so clients cannot impersonate
+    another user.
+    """
     conversation = _load_conversation(conversation_id, current_user_id, session)
     text = payload.text.strip()
     if not text:

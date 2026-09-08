@@ -2,7 +2,7 @@
 
 GET  /awards                    - Dashboard: all badges, all tasks, ready count
 POST /tasks/{task_id}/progress  - Bump a task's progress by one (e.g. each share)
-POST /tasks/{id}/claim          - Claim a completed task and unlock its badge
+POST /tasks/{task_id}/claim     - Claim a completed task and unlock its badge
 """
 
 from fastapi import APIRouter, Depends, HTTPException

@@ -40,6 +40,7 @@ app.include_router(groups.router, prefix="/groups", tags=["groups"])
 app.include_router(upload.router, prefix="/upload", tags=["upload"])
 app.include_router(awards.router, prefix="/awards", tags=["awards"])
 app.include_router(ws.router, prefix="/ws", tags=["ws"])
+app.include_router(awards.router, prefix="/awards", tags=["awards"])
 
 # Serve uploaded files from the storage directory so /uploads/* URLs resolve.
 storage_dir = Path("storage")

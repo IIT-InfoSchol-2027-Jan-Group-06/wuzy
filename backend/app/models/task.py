@@ -5,10 +5,10 @@ class Task(SQLModel, table=True):
     """A progress-tracked task on the Awards & Badges board.
 
     progress_unit uses a small vocabulary so the frontend can pick the right
-    label: "completed", "friends", "shared".
+    label: "completed", "mins", "friends", "shared".
     status drives the UI action button: CLAIMABLE shows a claim button,
     IN_PROGRESS shows progress, CLAIMED shows a checkmark.
-    action_type tells the frontend what the button does: CLAIM, ADD, SHARE.
+    action_type tells the frontend what the button does: CLAIM, GO, ADD, SHARE.
     """
 
     __tablename__ = "task"

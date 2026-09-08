@@ -8,10 +8,12 @@ import bcrypt
 from sqlmodel import Session, select
 
 from app.db.session import engine
+from app.models.badge import Badge
 from app.models.conversation import Conversation, ConversationMember
 from app.models.follow import Follow
 from app.models.group import Group, GroupMember
 from app.models.post import Post
+from app.models.task import Task
 from app.models.user import User
 
 STORAGE_ROOT = Path("storage")
@@ -135,6 +137,21 @@ POSTS = {
 # Connections: every pair is a DM thread. Messages themselves are ephemeral
 # (WebSocket/Redis only), so threads carry membership but no stored content.
 
+BADGES = [
+    ("Raver", "/uploads/avatar/avatar1.png", True),
+    ("Event Host", "/uploads/avatar/avatar2.png", False),
+    ("Social Butterfly", "/uploads/avatar/avatar3.png", False),
+    ("Ticket Master", "/uploads/avatar/avatar4.png", False),
+]
+
+TASKS = [
+    ("Attend 3 Live Events", 3, 3, "completed", "CLAIMABLE", "CLAIM", "/uploads/avatar/avatar1.png"),
+    ("Host an Event", 18, 30, "mins", "IN_PROGRESS", "GO", "/uploads/avatar/avatar2.png"),
+    ("Connect with 10 Ravers", 7, 10, "friends", "IN_PROGRESS", "ADD", "/uploads/avatar/avatar3.png"),
+    ("Share an Event Ticket", 0, 1, "shared", "IN_PROGRESS", "SHARE", "/uploads/avatar/avatar4.png"),
+]
+
+
 def seed():
     seed_media()
     with Session(engine) as session:
@@ -199,14 +216,33 @@ def seed():
                 GroupMember(group_id=group.id, user_id=users[member_name].id)
             )
 
+        for name, image_url, is_unlocked in BADGES:
+            session.add(Badge(name=name, image_url=image_url, is_unlocked=is_unlocked))
+
+        for title, current, target, unit, status, action, badge_url in TASKS:
+            session.add(
+                Task(
+                    title=title,
+                    current_progress=current,
+                    target_progress=target,
+                    progress_unit=unit,
+                    status=status,
+                    action_type=action,
+                    badge_image_url=badge_url,
+                )
+            )
+
         session.commit()
 
         post_count = session.exec(select(Post)).all().__len__()
         conversation_count = session.exec(select(Conversation)).all().__len__()
         group_count = session.exec(select(Group)).all().__len__()
+        badge_count = session.exec(select(Badge)).all().__len__()
+        task_count = session.exec(select(Task)).all().__len__()
         print("Demo data seeded successfully!")
         print(f"Created users: {', '.join(users)}")
         print(f"Created posts: {post_count}, conversations: {conversation_count}, groups: {group_count}")
+        print(f"Created badges: {badge_count}, tasks: {task_count}")
         print("Demo logins (password123): abhiruk, ravindu644, sethuki, azma, charuki @test.com")
         print("Backend URL base: http://localhost:8000")
 

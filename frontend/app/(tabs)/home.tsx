@@ -1,6 +1,6 @@
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import Animated, { useAnimatedScrollHandler, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 import { Fab } from '@/components/Fab';
@@ -11,11 +11,15 @@ import { Screen } from '@/components/Screen';
 import { TabHeader } from '@/components/TabHeader';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 import { useFeed } from '@/hooks/useFeed';
+import { recordView } from '@/lib/api';
+
+const viewabilityConfig = { itemVisiblePercentThreshold: 50 };
 
 export default function HomeScreen() {
   const router = useRouter();
   const { clearance } = useNavBarMetrics();
-  const { posts, loading, error, refresh } = useFeed();
+  const { posts, loading, error, refresh, removePost } = useFeed();
+  const recordedRef = useRef(new Set<number>());
 
   // Header hides on a downward scroll and slides back in on the first upward
   // nudge, no matter how far down the feed is.
@@ -35,10 +39,24 @@ export default function HomeScreen() {
     }
   });
 
+  const onViewableItemsChanged = useCallback(
+    ({ viewableItems }: { viewableItems: { item: (typeof posts)[number]; key: string | null }[] }) => {
+      for (const { item } of viewableItems) {
+        if (!item.save_to_profile && !recordedRef.current.has(item.id)) {
+          recordedRef.current.add(item.id);
+          recordView(item.id);
+          removePost(item.id);
+        }
+      }
+    },
+    [removePost],
+  );
+
   // Refetch whenever the home screen regains focus (e.g. after sharing a post)
   useFocusEffect(
     useCallback(() => {
       refresh();
+      recordedRef.current.clear();
     }, [refresh]),
   );
 
@@ -66,10 +84,16 @@ export default function HomeScreen() {
         </Animated.View>
       </View>
 
-      <Animated.ScrollView
-        className="flex-1"
+      <Animated.FlatList
+        data={posts}
+        keyExtractor={(item) => String(item.id)}
+        renderItem={({ item }) => (
+          <PostCard post={item} onUserPress={() => item.user?.id && router.push(`/profile/${item.user.id}`)} />
+        )}
         onScroll={onScroll}
         scrollEventThrottle={16}
+        viewabilityConfig={viewabilityConfig}
+        onViewableItemsChanged={onViewableItemsChanged}
         style={{ marginHorizontal: -wuzyLayout.side }}
         contentContainerStyle={{
           paddingTop: wuzyLayout.glass + wuzyLayout.gap,
@@ -77,28 +101,29 @@ export default function HomeScreen() {
           paddingHorizontal: wuzyLayout.side,
           gap: wuzyLayout.gap,
         }}
-        showsVerticalScrollIndicator={false}>
-        {loading ? (
-          <ActivityIndicator size="large" color={wuzyColors.yellow} style={{ marginTop: wuzyLayout.gap }} />
-        ) : error ? (
-          <Pressable onPress={refresh} className="items-center" style={{ marginTop: wuzyLayout.gap }}>
-            <Text className="text-center text-wuzy-gray" style={{ fontFamily: wuzyFonts.medium, fontSize: wuzyType.body }}>
-              {error}
+        showsVerticalScrollIndicator={false}
+        ListEmptyComponent={
+          !loading && !error ? (
+            <Text className="text-center text-wuzy-gray" style={{ fontFamily: wuzyFonts.medium, fontSize: wuzyType.body, marginTop: wuzyLayout.gap }}>
+              Nothing to see here yet
             </Text>
-            <Text className="text-wuzy-yellow" style={{ marginTop: wuzyLayout.itemGap, fontFamily: wuzyFonts.semibold, fontSize: wuzyType.body }}>
-              Tap to retry
-            </Text>
-          </Pressable>
-        ) : (
-          posts.map((post) => (
-            <PostCard
-              key={post.id}
-              post={post}
-              onUserPress={() => post.user?.id && router.push(`/profile/${post.user.id}`)}
-            />
-          ))
-        )}
-      </Animated.ScrollView>
+          ) : null
+        }
+        ListHeaderComponent={
+          loading ? (
+            <ActivityIndicator size="large" color={wuzyColors.yellow} style={{ marginTop: wuzyLayout.gap }} />
+          ) : error ? (
+            <Pressable onPress={refresh} className="items-center" style={{ marginTop: wuzyLayout.gap }}>
+              <Text className="text-center text-wuzy-gray" style={{ fontFamily: wuzyFonts.medium, fontSize: wuzyType.body }}>
+                {error}
+              </Text>
+              <Text className="text-wuzy-yellow" style={{ marginTop: wuzyLayout.itemGap, fontFamily: wuzyFonts.semibold, fontSize: wuzyType.body }}>
+                Tap to retry
+              </Text>
+            </Pressable>
+          ) : null
+        }
+      />
     </Screen>
   );
 }

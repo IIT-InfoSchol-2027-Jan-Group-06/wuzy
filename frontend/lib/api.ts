@@ -46,6 +46,23 @@ export async function apiPost<T>(path: string, body: unknown): Promise<T> {
   return handleResponse<T>(res, path);
 }
 
+/** Fire-and-forget POST that returns 204 with no body (e.g. view recording). */
+export async function apiPostNoContent(path: string, body?: unknown): Promise<void> {
+  const res = await fetch(`${API_URL}${path}`, {
+    method: 'POST',
+    headers: { ...API_HEADERS, ...(await authHeaders()) },
+    body: body != null ? JSON.stringify(body) : undefined,
+  });
+  if (!res.ok) {
+    throw new Error(`Request failed: ${res.status}`);
+  }
+}
+
+/** Record that the current user viewed a post. Idempotent. */
+export function recordView(postId: number): Promise<void> {
+  return apiPostNoContent(`/feed/${postId}/view`);
+}
+
 export interface AuthSession {
   access_token: string;
   token_type: string;

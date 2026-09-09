@@ -10,6 +10,7 @@ from sqlmodel import Session, select
 from app.db.session import engine
 from app.models.conversation import Conversation, ConversationMember
 from app.models.follow import Follow
+from app.models.group import Group, GroupMember
 from app.models.post import Post
 from app.models.user import User
 
@@ -188,13 +189,24 @@ def seed():
                 ConversationMember(conversation_id=conversation.id, user_id=users[second].id)
             )
 
+        # Demo group with several members, giving every account a group chat to test.
+        group = Group(name="Weekend Squad", created_by=users["abhiruk"].id)
+        session.add(group)
+        session.commit()
+        session.refresh(group)
+        for member_name in ("abhiruk", "sethuki", "charuki", "azma"):
+            session.add(
+                GroupMember(group_id=group.id, user_id=users[member_name].id)
+            )
+
         session.commit()
 
         post_count = session.exec(select(Post)).all().__len__()
         conversation_count = session.exec(select(Conversation)).all().__len__()
+        group_count = session.exec(select(Group)).all().__len__()
         print("Demo data seeded successfully!")
         print(f"Created users: {', '.join(users)}")
-        print(f"Created posts: {post_count}, conversations: {conversation_count}")
+        print(f"Created posts: {post_count}, conversations: {conversation_count}, groups: {group_count}")
         print("Demo logins (password123): abhiruk, ravindu644, sethuki, azma, charuki @test.com")
         print("Backend URL base: http://localhost:8000")
 

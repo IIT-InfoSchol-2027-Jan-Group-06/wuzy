@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image, Pressable, Text, View } from 'react-native';
+import { Image, type ImageSourcePropType, Pressable, Text, View } from 'react-native';
 
 import { GlassNavButton } from '@/components/GlassNavButton';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
@@ -8,7 +8,7 @@ const AVATAR = 44;
 
 type ChatHeaderProps = {
   name: string;
-  avatar: number;
+  avatar: ImageSourcePropType;
   status: string;
   onBack: () => void;
   onUserPress?: () => void;

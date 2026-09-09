@@ -1,7 +1,6 @@
-import React from 'react';
 import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { ChatBubble } from '@/components/chat/ChatBubble';
 import { ChatHeader } from '@/components/chat/ChatHeader';
@@ -11,7 +10,8 @@ import { Screen } from '@/components/Screen';
 import { wuzyColors, wuzyLayout } from '@/constants/wuzy-theme';
 import { useAuth } from '@/context/auth';
 import { apiGet, assetUrl, type ApiUser } from '@/lib/api';
-import { getMessages, saveMessage } from '@/lib/chat-db';
+import { markThreadActive } from '@/lib/chat-activity';
+import { getMessages, saveMessage, type ThreadKind } from '@/lib/chat-db';
 import { connectChat, type ChatMessage, type ChatSocket } from '@/lib/ws';
 
 const defaultAvatar = require('@/assets/images/avatar1.jpg');
@@ -19,48 +19,68 @@ const defaultAvatar = require('@/assets/images/avatar1.jpg');
 export default function ChatViewScreen() {
   const router = useRouter();
   const { user } = useAuth();
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const conversationId = Number(id);
+  const { id, kind } = useLocalSearchParams<{ id: string; kind?: string }>();
+  const isGroup = kind === 'group';
+  const threadId = Number(id);
+  const threadKind: ThreadKind = isGroup ? 'group' : 'dm';
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [chatName, setChatName] = useState('Chat');
   const [avatar, setAvatar] = useState(defaultAvatar);
   const [otherUserId, setOtherUserId] = useState<number | null>(null);
+  const [memberCount, setMemberCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const socketRef = useRef<ChatSocket | null>(null);
 
   useEffect(() => {
-    if (!user || !Number.isFinite(conversationId)) return;
+    if (!user || !Number.isFinite(threadId)) return;
 
     let active = true;
     (async () => {
       // Load the thread's locally-cached history first, then connect live.
-      const history = (await getMessages(user.id, conversationId)).map((m) => ({
-        ...m,
+      const history = (await getMessages(user.id, threadKind, threadId)).map((m) => ({
         type: 'message' as const,
+        from: m.from,
+        from_name: m.from_name,
+        to: undefined,
+        conversation_id: m.kind === 'dm' ? m.thread_id : undefined,
+        group_id: m.kind === 'group' ? m.thread_id : undefined,
+        text: m.text,
+        created_at: m.created_at,
       }));
       if (!active) return;
       setMessages(history);
 
-      // Resolve who the other party is. Messages are ephemeral on the server;
-      // the thread shows the local cache plus anything that arrives live.
-      let other: ApiUser | null = null;
-      try {
-        other = await apiGet<ApiUser>(`/chat/conversations/${conversationId}/peer`);
-      } catch {
-        router.back();
-        return;
+      // Resolve the header from the right source: a 1:1 peer or the group.
+      if (isGroup) {
+        try {
+          const group = await apiGet<{ id: number; name: string; members: ApiUser[] }>(
+            `/groups/${threadId}`,
+          );
+          if (!active) return;
+          setChatName(group.name);
+          setMemberCount(group.members.length);
+          const firstAvatar = group.members.find((m) => m.id !== user.id)?.avatar_url;
+          setAvatar(firstAvatar ? { uri: assetUrl(firstAvatar) } : defaultAvatar);
+        } catch {
+          router.back();
+          return;
+        }
+      } else {
+        try {
+          const other = await apiGet<ApiUser>(`/chat/conversations/${threadId}/peer`);
+          if (!active) return;
+          setChatName(other.display_name ?? other.username);
+          setAvatar(other.avatar_url ? { uri: assetUrl(other.avatar_url) } : defaultAvatar);
+          setOtherUserId(other.id);
+        } catch {
+          router.back();
+          return;
+        }
       }
-      if (!active) return;
 
-      if (other) {
-        setChatName(other.display_name ?? other.username);
-        setAvatar(other.avatar_url ? { uri: assetUrl(other.avatar_url) } : defaultAvatar);
-        setOtherUserId(other.id);
-      }
-
-      const socket = await connectChat(user.id, conversationId, (m) => {
-        saveMessage(user.id, m);
+      const socket = await connectChat(user.id, { kind: threadKind, id: threadId }, (m) => {
+        saveMessage(user.id, threadKind, m);
         setMessages((prev) => [...prev, m]);
       });
       socketRef.current = socket;
@@ -72,24 +92,27 @@ export default function ChatViewScreen() {
       socketRef.current?.close();
       socketRef.current = null;
     };
-  }, [user, conversationId, router]);
+  }, [user, threadId, threadKind, router, isGroup]);
 
   const send = useCallback(
     (text: string) => {
-      if (!user || !otherUserId) return;
+      if (!user) return;
       const optimistic: ChatMessage = {
         type: 'message',
         from: user.id,
-        to: otherUserId,
-        conversation_id: conversationId,
+        from_name: user.display_name ?? user.username,
+        conversation_id: isGroup ? undefined : threadId,
+        group_id: isGroup ? threadId : undefined,
         text,
         created_at: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, optimistic]);
-      saveMessage(user.id, optimistic);
-      socketRef.current?.send(otherUserId, text);
+      saveMessage(user.id, threadKind, optimistic);
+      if (isGroup) socketRef.current?.sendGroup(text);
+      else if (otherUserId) socketRef.current?.sendDm(otherUserId, text);
+      markThreadActive({ kind: threadKind, id: threadId });
     },
-    [user, otherUserId, conversationId],
+    [user, isGroup, threadId, threadKind, otherUserId],
   );
 
   if (loading) {
@@ -112,9 +135,9 @@ export default function ChatViewScreen() {
         <ChatHeader
           name={chatName}
           avatar={avatar}
-          status="Online"
+          status={isGroup ? `${memberCount} members` : 'Online'}
           onBack={() => router.back()}
-          onUserPress={otherUserId ? () => router.push(`/profile/${otherUserId}`) : undefined}
+          onUserPress={!isGroup && otherUserId ? () => router.push(`/profile/${otherUserId}`) : undefined}
         />
 
         <FlatList
@@ -132,7 +155,11 @@ export default function ChatViewScreen() {
           }
           contentContainerStyle={{ paddingVertical: wuzyLayout.gap, gap: wuzyLayout.itemGap }}
           renderItem={({ item }) => (
-            <ChatBubble text={item.text} outgoing={item.from === user?.id} />
+            <ChatBubble
+              text={item.text}
+              outgoing={item.from === user?.id}
+              name={isGroup && item.from !== user?.id ? item.from_name ?? undefined : undefined}
+            />
           )}
         />
 

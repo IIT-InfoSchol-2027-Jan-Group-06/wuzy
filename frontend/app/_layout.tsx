@@ -45,6 +45,7 @@ function RootNavigator() {
           <Stack.Screen name="connect" />
           <Stack.Screen name="connections" />
           <Stack.Screen name="create-event" />
+          <Stack.Screen name="new-group" />
           <Stack.Screen name="event-details" />
           <Stack.Screen name="post-preview" />
           <Stack.Screen name="profile/[id]" />

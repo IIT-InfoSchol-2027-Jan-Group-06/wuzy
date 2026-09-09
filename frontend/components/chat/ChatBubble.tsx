@@ -6,7 +6,16 @@ import { wuzyColors, wuzyFonts, wuzyType } from '@/constants/wuzy-theme';
 const RADIUS = 16;
 const NICK = 2;
 
-export function ChatBubble({ text, outgoing }: { text: string; outgoing: boolean }) {
+export function ChatBubble({
+  text,
+  outgoing,
+  name,
+}: {
+  text: string;
+  outgoing: boolean;
+  /** Sender name, shown above incoming group messages. */
+  name?: string;
+}) {
   return (
     <View
       style={{
@@ -32,6 +41,17 @@ export function ChatBubble({ text, outgoing }: { text: string; outgoing: boolean
               borderColor: wuzyColors.glassBorder,
             }),
       }}>
+      {name && !outgoing ? (
+        <Text
+          style={{
+            fontFamily: wuzyFonts.semibold,
+            fontSize: wuzyType.small,
+            color: wuzyColors.yellow,
+            marginBottom: 4,
+          }}>
+          {name}
+        </Text>
+      ) : null}
       <Text
         style={{
           fontFamily: wuzyFonts.body,

@@ -7,6 +7,7 @@ from sqlmodel import Field, Relationship, SQLModel
 if TYPE_CHECKING:
     from app.models.conversation import Conversation
     from app.models.follow import Follow
+    from app.models.group import Group
     from app.models.post import Post
 
 
@@ -45,6 +46,10 @@ class User(SQLModel, table=True):
         back_populates="members",
         # Many-to-many: resolved through the conversation_member join table.
         sa_relationship_kwargs={"secondary": "conversation_member"},
+    )
+    groups: list["Group"] = Relationship(
+        back_populates="members",
+        sa_relationship_kwargs={"secondary": "group_member"},
     )
 
     @property

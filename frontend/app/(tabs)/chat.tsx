@@ -100,7 +100,7 @@ export default function ChatScreen() {
   // DM threads come from the conversations list.
   for (const c of conversations) {
     const local = summaries[`dm-${c.id}`];
-    const preview = c.preview ?? local?.text ?? '';
+    const preview = c.preview ?? local?.text ?? 'No messages yet';
     const at = c.last_message_at ?? local?.at ?? null;
     items.push({
       key: `dm-${c.id}`,
@@ -116,7 +116,6 @@ export default function ChatScreen() {
   }
 
   // Newest activity on top, so a just-messaged chat rises to the top.
-  items = items.filter((i) => i.atMs != null || i.time);
   items.sort((a, b) => (b.atMs ?? -Infinity) - (a.atMs ?? -Infinity));
 
   const q = searchQuery.trim().toLowerCase();

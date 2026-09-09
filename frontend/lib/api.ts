@@ -141,16 +141,6 @@ export interface ApiConversation {
   last_message_at: string | null;
 }
 
-export interface ApiMessage {
-  id: number;
-  conversation_id: number;
-  sender_id: number;
-  text: string;
-  is_read: boolean;
-  created_at: string;
-  sender: ApiUser | null;
-}
-
 /** Compact "ago" label: 5m, 2h, 1d, 12 Aug. Empty for missing timestamps. */
 export function relativeTime(iso: string | null | undefined): string {
   if (!iso) return '';

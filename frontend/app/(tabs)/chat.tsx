@@ -11,8 +11,10 @@ import { SearchBar } from '@/components/SearchBar';
 import { TabHeader } from '@/components/TabHeader';
 import { MessageRow } from '@/components/chat/MessageRow';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
+import { useAuth } from '@/context/auth';
 import { useConversations } from '@/hooks/useConversations';
 import { assetUrl, relativeTime } from '@/lib/api';
+import { getConversationSummaries } from '@/lib/chat-db';
 
 const defaultAvatar = require('@/assets/images/avatar1.jpg');
 
@@ -21,27 +23,45 @@ const categoryOptions = CATEGORIES.map((c) => ({ id: c, label: c }));
 
 export default function ChatScreen() {
   const router = useRouter();
+  const { user } = useAuth();
   const { clearance } = useNavBarMetrics();
   const { conversations, loading, error, refresh } = useConversations();
   const [active, setActive] = React.useState<string | number>('All');
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [previews, setPreviews] = React.useState<Record<number, { text: string; at: string }>>({});
+
+  const loadPreviews = useCallback(async () => {
+    if (!user) return;
+    const rows = await getConversationSummaries(user.id);
+    const map: Record<number, { text: string; at: string }> = {};
+    for (const row of rows) {
+      map[row.conversation_id] = { text: row.text, at: row.created_at };
+    }
+    setPreviews(map);
+  }, [user]);
 
   useFocusEffect(
     useCallback(() => {
       refresh();
-    }, [refresh]),
+      loadPreviews();
+    }, [refresh, loadPreviews]),
   );
 
   const q = searchQuery.trim().toLowerCase();
-  const items = conversations.map((c) => ({
-    id: String(c.id),
-    userId: c.other?.id,
-    name: c.other?.display_name ?? c.other?.username ?? 'Chat',
-    preview: c.preview ?? '',
-    time: relativeTime(c.last_message_at),
-    avatar: c.other?.avatar_url ? { uri: assetUrl(c.other.avatar_url) } : defaultAvatar,
-    unread: c.unread > 0,
-  }));
+  const items = conversations.map((c) => {
+    const local = previews[c.id];
+    const preview = c.preview ?? local?.text ?? '';
+    const at = c.last_message_at ?? local?.at ?? null;
+    return {
+      id: String(c.id),
+      userId: c.other?.id,
+      name: c.other?.display_name ?? c.other?.username ?? 'Chat',
+      preview,
+      time: relativeTime(at),
+      avatar: c.other?.avatar_url ? { uri: assetUrl(c.other.avatar_url) } : defaultAvatar,
+      unread: c.unread > 0,
+    };
+  });
 
   const filtered = items.filter((item) => {
     if (active === 'Unread' && !item.unread) return false;

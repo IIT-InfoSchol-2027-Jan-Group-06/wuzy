@@ -1,7 +1,7 @@
 import React from 'react';
 import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, View } from 'react-native';
-import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { ChatBubble } from '@/components/chat/ChatBubble';
 import { ChatHeader } from '@/components/chat/ChatHeader';
@@ -10,7 +10,9 @@ import { Chip } from '@/components/Chip';
 import { Screen } from '@/components/Screen';
 import { wuzyColors, wuzyLayout } from '@/constants/wuzy-theme';
 import { useAuth } from '@/context/auth';
-import { apiGet, apiPost, assetUrl, type ApiMessage } from '@/lib/api';
+import { apiGet, assetUrl, type ApiUser } from '@/lib/api';
+import { getMessages, saveMessage } from '@/lib/chat-db';
+import { connectChat, type ChatMessage, type ChatSocket } from '@/lib/ws';
 
 const defaultAvatar = require('@/assets/images/avatar1.jpg');
 
@@ -18,48 +20,76 @@ export default function ChatViewScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const conversationId = Number(id);
 
-  const [messages, setMessages] = React.useState<ApiMessage[]>([]);
-  const [chatName, setChatName] = React.useState('Chat');
-  const [avatar, setAvatar] = React.useState(defaultAvatar);
-  const [otherUserId, setOtherUserId] = React.useState<number | null>(null);
-  const [loading, setLoading] = React.useState(true);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [chatName, setChatName] = useState('Chat');
+  const [avatar, setAvatar] = useState(defaultAvatar);
+  const [otherUserId, setOtherUserId] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+  const socketRef = useRef<ChatSocket | null>(null);
 
-  const load = useCallback(async () => {
-    if (!user || !id) return;
-    try {
-      const data = await apiGet<ApiMessage[]>(`/chat/conversations/${id}/messages`);
-      setMessages(data);
-      const other = data.find((m) => m.sender_id !== user.id)?.sender;
+  useEffect(() => {
+    if (!user || !Number.isFinite(conversationId)) return;
+
+    let active = true;
+    (async () => {
+      // Load the thread's locally-cached history first, then connect live.
+      const history = (await getMessages(user.id, conversationId)).map((m) => ({
+        ...m,
+        type: 'message' as const,
+      }));
+      if (!active) return;
+      setMessages(history);
+
+      // Resolve who the other party is. Messages are ephemeral on the server;
+      // the thread shows the local cache plus anything that arrives live.
+      let other: ApiUser | null = null;
+      try {
+        other = await apiGet<ApiUser>(`/chat/conversations/${conversationId}/peer`);
+      } catch {
+        router.back();
+        return;
+      }
+      if (!active) return;
+
       if (other) {
         setChatName(other.display_name ?? other.username);
         setAvatar(other.avatar_url ? { uri: assetUrl(other.avatar_url) } : defaultAvatar);
         setOtherUserId(other.id);
       }
-    } catch {
-      router.back();
-    } finally {
-      setLoading(false);
-    }
-  }, [id, user, router]);
 
-  useFocusEffect(
-    useCallback(() => {
-      load();
-    }, [load]),
-  );
+      const socket = await connectChat(user.id, conversationId, (m) => {
+        saveMessage(user.id, m);
+        setMessages((prev) => [...prev, m]);
+      });
+      socketRef.current = socket;
+      setLoading(false);
+    })();
+
+    return () => {
+      active = false;
+      socketRef.current?.close();
+      socketRef.current = null;
+    };
+  }, [user, conversationId, router]);
 
   const send = useCallback(
-    async (text: string) => {
-      if (!user) return;
-      try {
-        const sent = await apiPost<ApiMessage>(`/chat/conversations/${id}/messages`, { text });
-        setMessages((prev) => [...prev, sent]);
-      } catch {
-        // Keep the text where it is by not touching state; user can retry.
-      }
+    (text: string) => {
+      if (!user || !otherUserId) return;
+      const optimistic: ChatMessage = {
+        type: 'message',
+        from: user.id,
+        to: otherUserId,
+        conversation_id: conversationId,
+        text,
+        created_at: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, optimistic]);
+      saveMessage(user.id, optimistic);
+      socketRef.current?.send(otherUserId, text);
     },
-    [user, id],
+    [user, otherUserId, conversationId],
   );
 
   if (loading) {
@@ -70,8 +100,6 @@ export default function ChatViewScreen() {
     );
   }
 
-  // Inverted list keeps the newest message pinned to the bottom, so a shrinking
-  // viewport (keyboard) never hides it. Data is reversed to match.
   const reversed = [...messages].reverse();
   const date = messages[0]?.created_at ?? null;
   const dateLabel = date
@@ -92,7 +120,7 @@ export default function ChatViewScreen() {
         <FlatList
           data={reversed}
           inverted
-          keyExtractor={(item) => String(item.id)}
+          keyExtractor={(item, index) => `${item.created_at}-${index}`}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           ListFooterComponent={
@@ -103,7 +131,9 @@ export default function ChatViewScreen() {
             ) : null
           }
           contentContainerStyle={{ paddingVertical: wuzyLayout.gap, gap: wuzyLayout.itemGap }}
-          renderItem={({ item }) => <ChatBubble text={item.text} outgoing={item.sender_id === user?.id} />}
+          renderItem={({ item }) => (
+            <ChatBubble text={item.text} outgoing={item.from === user?.id} />
+          )}
         />
 
         <View style={{ paddingBottom: wuzyLayout.itemGap }}>

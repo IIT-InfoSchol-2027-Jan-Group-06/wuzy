@@ -10,7 +10,6 @@ from sqlmodel import Session, select
 from app.db.session import engine
 from app.models.conversation import Conversation, ConversationMember
 from app.models.follow import Follow
-from app.models.message import Message
 from app.models.post import Post
 from app.models.user import User
 
@@ -132,86 +131,8 @@ POSTS = {
     ],
 }
 
-# Conversations: (first username, second username, [(sender, text), ...], last message read)
-CHATS = [
-    (
-        "abhiruk",
-        "ravindu644",
-        [
-            ("ravindu644", "You free this weekend?"),
-            ("abhiruk", "Saturday works, where we at?"),
-            ("ravindu644", "Tennis at 7, courts at Gregory Park"),
-            ("abhiruk", "Count me in"),
-        ],
-    ),
-    (
-        "abhiruk",
-        "charuki",
-        [
-            ("charuki", "Did you see the lineup for the festival?"),
-            ("abhiruk", "Headliners are insane this year"),
-            ("charuki", "I already got my ticket, no excuses now 😄"),
-        ],
-    ),
-    (
-        "ravindu644",
-        "sethuki",
-        [
-            ("sethuki", "Are you coming to the gallery opening?"),
-            ("ravindu644", "Wouldn't miss it, is it the one on Marine Drive?"),
-            ("sethuki", "Yeah, prints and wine, my two loves"),
-            ("ravindu644", "Haha I'm there"),
-        ],
-    ),
-    (
-        "sethuki",
-        "charuki",
-        [
-            ("charuki", "Can we shoot your new sketches for the poster tonight?"),
-            ("sethuki", "Studio is free after 7"),
-            ("charuki", "Perfect, bringing the camera"),
-            ("sethuki", "Bring snacks too, we work hard"),
-        ],
-    ),
-    (
-        "azma",
-        "sethuki",
-        [
-            ("azma", "That food market you posted yesterday looked unreal"),
-            ("sethuki", "Kay, the kottu stand is a must"),
-            ("azma", "I am going this weekend, want to join?"),
-            ("sethuki", "Say no more"),
-        ],
-    ),
-    (
-        "azma",
-        "charuki",
-        [
-            ("charuki", "New remix is out, tell me what you think"),
-            ("azma", "Playing it right now, that drop is fire"),
-            ("charuki", "You're the best first listener I have"),
-        ],
-    ),
-    (
-        "ravindu644",
-        "azma",
-        [
-            ("azma", "Sunrise shoot at the coast on Sunday"),
-            ("ravindu644", "I can do a 5K there after, perfect morning"),
-            ("azma", "Deal, bring sunscreen 😂"),
-        ],
-    ),
-    (
-        "abhiruk",
-        "azma",
-        [
-            ("azma", "Found the best street food spot in Pettah"),
-            ("abhiruk", "You have to send me the name right now"),
-            ("azma", "Chill bro, I'll take you there instead"),
-        ],
-    ),
-]
-
+# Connections: every pair is a DM thread. Messages themselves are ephemeral
+# (WebSocket/Redis only), so threads carry membership but no stored content.
 
 def seed():
     seed_media()
@@ -255,7 +176,7 @@ def seed():
                     )
                 )
 
-        for first, second, messages in CHATS:
+        for first, second in CONNECTIONS:
             conversation = Conversation()
             session.add(conversation)
             session.commit()
@@ -266,24 +187,14 @@ def seed():
             session.add(
                 ConversationMember(conversation_id=conversation.id, user_id=users[second].id)
             )
-            for index, (sender, text) in enumerate(messages):
-                # Everything but the newest last message is read, so every chat shows an unread dot
-                session.add(
-                    Message(
-                        conversation_id=conversation.id,
-                        sender_id=users[sender].id,
-                        text=text,
-                        is_read=index < len(messages) - 1,
-                    )
-                )
 
         session.commit()
 
         post_count = session.exec(select(Post)).all().__len__()
-        message_count = session.exec(select(Message)).all().__len__()
+        conversation_count = session.exec(select(Conversation)).all().__len__()
         print("Demo data seeded successfully!")
         print(f"Created users: {', '.join(users)}")
-        print(f"Created posts: {post_count}, messages: {message_count}")
+        print(f"Created posts: {post_count}, conversations: {conversation_count}")
         print("Demo logins (password123): abhiruk, ravindu644, sethuki, azma, charuki @test.com")
         print("Backend URL base: http://localhost:8000")
 

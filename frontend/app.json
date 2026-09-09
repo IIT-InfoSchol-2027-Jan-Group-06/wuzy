@@ -44,7 +44,8 @@
       "expo-status-bar",
       "expo-web-browser",
       "expo-secure-store",
-      "./plugins/withCleartext.js"
+      "./plugins/withCleartext.js",
+      "expo-sqlite"
     ],
     "experiments": {
       "typedRoutes": true,

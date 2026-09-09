@@ -13,7 +13,6 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
-import { Chip } from '@/components/Chip';
 import { GlassNavButton } from '@/components/GlassNavButton';
 import { useAuth } from '@/context/auth';
 
@@ -125,7 +124,7 @@ export default function EditProfile() {
 
           {/* FULL NAME section with padding */}
           <View style={[styles.section, styles.firstSection]}>
-            <Text style={styles.label}>Full Name</Text>
+            <Text style={[styles.label, { marginTop: 1 }]}>Full Name</Text>
             <TextInput
               ref={bioInputRef}
               style={styles.input}
@@ -158,7 +157,7 @@ export default function EditProfile() {
                 onChangeText={updateBioCount}
                 placeholder="Tell people about yourself..."
                 autoCapitalize="sentences"
-                numberOfLines={8}
+                multiline
                 maxLength={BIO_LIMIT}
                 ref={bioInputRef}
               />
@@ -174,15 +173,19 @@ export default function EditProfile() {
           {/* INTERESTS section with padding */}
           <View style={styles.section}>
             <Text style={styles.label}>Interests</Text>
-            <View style={styles.chipContainerStyle}>
+            <View style={styles.interestContainer}>
               {interests.map((interest, index) => (
-                <Chip
-                  key={index}
-                  label={interest}
-                  onPress={() => removeInterest(interest)}
-                  onRemove={() => removeInterest(interest)}
-                  showRemove={true}
-                />
+                <View key={index} style={styles.interestPill}>
+                  <Text style={styles.interestPillText}>{interest}</Text>
+                  <Pressable
+                    onPress={() => removeInterest(interest)}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Remove ${interest}`}
+                  >
+                    <Ionicons name="close" size={12} color={wuzyColors.gray} />
+                  </Pressable>
+                </View>
               ))}
               {showAddInterest ? (
                 <TextInput
@@ -327,12 +330,13 @@ const styles = StyleSheet.create({
     fontSize: wuzyType.body,
   },
   bioInputStyle: {
-    height: 120,
+    minHeight: 120,
     backgroundColor: wuzyColors.surface,
     borderRadius: 20,
     borderWidth: 1,
     borderColor: wuzyColors.yellow,
     paddingHorizontal: 16,
+    paddingVertical: 12,
     color: wuzyColors.white,
     textAlignVertical: 'top',
     fontFamily: wuzyFonts.body,
@@ -357,20 +361,42 @@ const styles = StyleSheet.create({
   bioCountTextRedStyle: {
     color: '#FF0000',
   },
-  chipContainerStyle: {
+  interestContainer: {
+    // Interest pills laid out in a wrap row on the frame background, no border
+    backgroundColor: wuzyColors.bg,
+    borderRadius: 20,
     flexDirection: 'row',
     flexWrap: 'wrap',
+    alignItems: 'center',
     gap: wuzyLayout.itemGap,
-    paddingHorizontal: 10,
+  },
+  interestPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 9999,
+    borderWidth: 1,
+    borderColor: wuzyColors.yellow,
+    backgroundColor: wuzyColors.yellowDim,
+  },
+  interestPillText: {
+    color: wuzyColors.yellow,
+    fontFamily: wuzyFonts.semibold,
+    fontSize: wuzyType.small,
   },
   addChipButtonStyle: {
     height: wuzyLayout.control,
-    backgroundColor: wuzyColors.surface,
+    backgroundColor: wuzyColors.bg,
     borderRadius: wuzyLayout.control / 2,
     paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: wuzyColors.yellowDim,
   },
   addChipTextStyle: {
     color: wuzyColors.gray,

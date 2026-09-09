@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   TextInput,
   Text,
@@ -11,9 +11,10 @@ import {
   Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter, useFocusEffect } from 'expo-router';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
-import { GlassNavButton } from '@/components/GlassNavButton';
 import { useAuth } from '@/context/auth';
 
 export default function EditProfile() {
@@ -21,7 +22,6 @@ export default function EditProfile() {
   const { user } = useAuth();
 
   const [fullName, setFullName] = useState(user?.display_name ?? user?.username ?? '');
-  const [username, setUsername] = useState(user?.username ?? '');
   const [bio, setBio] = useState(user?.bio ?? '');
   const [bioCount, setBioCount] = useState(0);
   const [bioOverLimit, setBioOverLimit] = useState(false);
@@ -29,16 +29,6 @@ export default function EditProfile() {
   const [newInterest, setNewInterest] = useState('');
   const [showAddInterest, setShowAddInterest] = useState(false);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
-  const bioInputRef = useRef<TextInput>(null);
-
-  useFocusEffect(() => {
-    // Delay focus slightly to avoid keyboard auto-showing
-    setTimeout(() => {
-      if (bioInputRef.current) {
-        bioInputRef.current.focus();
-      }
-    }, 100);
-  });
 
   const BIO_LIMIT = 150;
 
@@ -99,51 +89,54 @@ export default function EditProfile() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.mainContainer}>
-          {/* Dummy profile image at top - full width, exactly 400x368.8, no padding/margin */}
+          {/* Dummy profile image at top - full width, 10% taller than the design, no padding/margin */}
           <View style={styles.imageContainer}>
             <Image
               source={require('@/assets/images/avatar1.jpg')}
               style={styles.image}
             />
-            <GlassNavButton
-              icon="chevron-back"
-              onPress={() => router.back()}
-              accessibilityLabel="Go back"
-              style={styles.backButton}
+            <LinearGradient
+              colors={['transparent', wuzyColors.bg]}
+              locations={[0.8, 1]}
+              style={StyleSheet.absoluteFill}
+              pointerEvents="none"
             />
+            <Pressable
+              onPress={() => router.back()}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+              style={[styles.glassButton, styles.backButton]}
+            >
+              <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
+              <View style={styles.glassButtonFill} />
+              <View style={styles.glassButtonBorder} />
+              <Ionicons name="chevron-back" size={24} color={wuzyColors.white} />
+            </Pressable>
             <View style={styles.editGroup}>
               <Text style={styles.editText}>Edit Profile</Text>
-              <GlassNavButton
-                icon={<Ionicons name="create" size={25} color={wuzyColors.yellow} />}
+              <Pressable
                 onPress={() => {}}
+                accessibilityRole="button"
                 accessibilityLabel="Change photo"
-                style={styles.pencilButton}
-              />
+                style={[styles.glassButton, styles.pencilButton]}
+              >
+                <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
+                <View style={styles.glassButtonFill} />
+                <View style={styles.glassButtonBorder} />
+                <Ionicons name="create" size={25} color={wuzyColors.yellow} />
+              </Pressable>
             </View>
           </View>
 
           {/* FULL NAME section with padding */}
-          <View style={[styles.section, styles.firstSection]}>
-            <Text style={[styles.label, { marginTop: 1 }]}>Full Name</Text>
+          <View style={styles.section}>
+            <Text style={styles.label}>Full Name</Text>
             <TextInput
-              ref={bioInputRef}
               style={styles.input}
               value={fullName}
               onChangeText={setFullName}
               placeholder="Enter your full name"
               autoCapitalize="words"
-            />
-          </View>
-
-          {/* USERNAME section with padding */}
-          <View style={styles.section}>
-            <Text style={styles.label}>Username</Text>
-            <TextInput
-              style={styles.input}
-              value={username}
-              onChangeText={setUsername}
-              placeholder="@yourusername"
-              autoCapitalize="none"
             />
           </View>
 
@@ -159,7 +152,6 @@ export default function EditProfile() {
                 autoCapitalize="sentences"
                 multiline
                 maxLength={BIO_LIMIT}
-                ref={bioInputRef}
               />
               <View style={styles.bioCountStyle}>
                 <Text style={[
@@ -211,12 +203,28 @@ export default function EditProfile() {
 
           {/* Bottom buttons - vertically stacked, centered */}
           <View style={styles.buttonGroup}>
-            <GlassNavButton onPress={router.back} style={styles.saveButton} accessibilityLabel="Save changes">
+            <Pressable
+              onPress={router.back}
+              accessibilityRole="button"
+              accessibilityLabel="Save changes"
+              style={[styles.glassButton, styles.saveButton]}
+            >
+              <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
+              <View style={styles.glassButtonFill} />
+              <View style={styles.glassButtonBorder} />
               <Text style={styles.buttonTextStyle}>Save changes</Text>
-            </GlassNavButton>
-            <GlassNavButton onPress={cancelEdit} style={styles.cancelButton} accessibilityLabel="Cancel">
+            </Pressable>
+            <Pressable
+              onPress={cancelEdit}
+              accessibilityRole="button"
+              accessibilityLabel="Cancel"
+              style={[styles.glassButton, styles.cancelButton]}
+            >
+              <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
+              <View style={styles.glassButtonFill} />
+              <View style={styles.glassButtonBorder} />
               <Text style={styles.buttonTextStyle}>Cancel</Text>
-            </GlassNavButton>
+            </Pressable>
             <Pressable style={styles.deleteButton} onPress={handleDelete} accessibilityRole="button" accessibilityLabel="Delete account">
               <Text style={styles.deleteButtonText}>Delete account</Text>
             </Pressable>
@@ -254,15 +262,12 @@ const styles = StyleSheet.create({
   },
   mainContainer: {
     flex: 1,
-    // Side padding halved from the default screen gutter so content sits wider
-    paddingHorizontal: wuzyLayout.side / 2,
-    paddingTop: wuzyLayout.top,
+    // No side or top gutter: the image sits flush at the frame edge
   },
   imageContainer: {
-    // Full-bleed image at top - 400 wide, 368.8 tall, no padding/margin
+    // Full-bleed image at top - 400 wide, 10% taller than the design spec
     width: '100%',
-    height: 368.8,
-    marginHorizontal: -wuzyLayout.side / 2,
+    height: 405.68,
     backgroundColor: 'transparent',
     marginBottom: 0,
     padding: 0,
@@ -273,23 +278,48 @@ const styles = StyleSheet.create({
   image: {
     // Image fills container, full width over the negative margins
     width: '100%',
-    height: 368.8,
+    height: 405.68,
     resizeMode: 'cover',
   },
-  backButton: {
-    // Liquid glass back button layered over the image, top-left
+  // Liquid glass pill, matches the Edit profile / Connections buttons in profile.tsx
+  glassButton: {
+    borderRadius: 9999,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  glassButtonFill: {
     position: 'absolute',
-    left: 16,
-    top: 16,
-    width: 50,
-    height: 50,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(244, 196, 0, 0.1)',
+  },
+  glassButtonBorder: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 9999,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  backButton: {
+    // Liquid glass back button over the image, same top/left as the connections page header
+    position: 'absolute',
+    left: wuzyLayout.side,
+    top: wuzyLayout.top + 35,
+    width: wuzyLayout.glass,
+    height: wuzyLayout.glass,
   },
   editGroup: {
     // Edit Profile title + pencil grouped over the bottom of the image
     position: 'absolute',
     left: 16,
     right: 16,
-    bottom: 24,
+    bottom: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -304,13 +334,10 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
   },
-  firstSection: {
-    marginTop: 2,
-  },
   section: {
     marginBottom: wuzyLayout.gap,
-    // Horizontal padding for text inputs and content
-    paddingHorizontal: 10,
+    // 16px side gutters for the form content between the image and the buttons
+    paddingHorizontal: 16,
   },
   label: {
     fontFamily: wuzyFonts.semibold,
@@ -322,8 +349,6 @@ const styles = StyleSheet.create({
     height: wuzyLayout.control,
     backgroundColor: wuzyColors.surface,
     borderRadius: wuzyLayout.control / 2,
-    borderWidth: 1,
-    borderColor: wuzyColors.yellow,
     paddingHorizontal: 16,
     color: wuzyColors.white,
     fontFamily: wuzyFonts.semibold,
@@ -333,8 +358,6 @@ const styles = StyleSheet.create({
     minHeight: 120,
     backgroundColor: wuzyColors.surface,
     borderRadius: 20,
-    borderWidth: 1,
-    borderColor: wuzyColors.yellow,
     paddingHorizontal: 16,
     paddingVertical: 12,
     color: wuzyColors.white,
@@ -347,7 +370,7 @@ const styles = StyleSheet.create({
   },
   bioCountStyle: {
     position: 'absolute',
-    bottom: 0,
+    bottom: 1,
     right: 16,
     flexDirection: 'row',
     alignItems: 'center',
@@ -444,6 +467,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     paddingHorizontal: 0,
     paddingVertical: 6,
+    // Extra 20% on top of the 12px group gap, so Delete sits further from Cancel
+    marginTop: 2,
   },
   deleteButtonText: {
     color: '#FF3B30',

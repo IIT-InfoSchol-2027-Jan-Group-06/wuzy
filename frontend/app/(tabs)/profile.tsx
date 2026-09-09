@@ -135,7 +135,7 @@ export default function ProfileScreen() {
       <View style={{ paddingHorizontal: wuzyLayout.side, gap: wuzyLayout.gap, paddingTop: wuzyLayout.gap }}>
         <TagSection tags={user.hobbies ?? []} />
 
-        <View style={{ gap: wuzyLayout.itemGap }}>
+        <View style={{ flexDirection: 'row', gap: wuzyLayout.itemGap }}>
           {pillButton('Edit profile', () => router.push('/edit-profile'))}
           {pillButton('Connections', () => router.push('/connections'))}
         </View>

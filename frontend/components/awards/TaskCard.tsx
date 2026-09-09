@@ -75,7 +75,7 @@ export function TaskCard({ task, badge, statusText, actionLabel, onAction }: Tas
             fontSize: actionSize,
             color: isClaimable ? '#0B0E14' : isClaimed ? '#8E9BAE' : '#FFE783',
           }}>
-          {isClaimed ? 'Claimed' : actionLabel}
+          {isClaimed ? 'Claimed' : isClaimable ? 'Claim' : actionLabel}
         </Text>
       </Pressable>
     </View>

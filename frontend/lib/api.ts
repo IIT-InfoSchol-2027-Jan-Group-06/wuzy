@@ -193,6 +193,10 @@ export function apiClaimTask(taskId: number): Promise<ApiTaskClaim> {
   return apiPost<ApiTaskClaim>(`/awards/tasks/${taskId}/claim`, {});
 }
 
+export function apiBumpTaskProgress(taskId: number): Promise<ApiTask> {
+  return apiPost<ApiTask>(`/awards/tasks/${taskId}/progress`, {});
+}
+
 /** Compact "ago" label: 5m, 2h, 1d, 12 Aug. Empty for missing timestamps. */
 export function relativeTime(iso: string | null | undefined): string {
   if (!iso) return '';

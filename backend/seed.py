@@ -147,7 +147,7 @@ BADGES = [
 TASKS = [
     ("Attend 3 Live Events", 3, 3, "completed", "CLAIMABLE", "CLAIM", "/uploads/avatar/avatar1.png"),
     ("Connect with 10 Ravers", 7, 10, "friends", "IN_PROGRESS", "ADD", "/uploads/avatar/avatar3.png"),
-    ("Share an Event Ticket", 0, 1, "shared", "IN_PROGRESS", "SHARE", "/uploads/avatar/avatar4.png"),
+    ("Share an Event Ticket", 0, 3, "shared", "IN_PROGRESS", "SHARE", "/uploads/avatar/avatar4.png"),
 ]
 
 

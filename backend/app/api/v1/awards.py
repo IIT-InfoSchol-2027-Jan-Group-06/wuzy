@@ -1,7 +1,8 @@
 """Awards & Badges endpoints.
 
-GET  /awards          - Dashboard: all badges, all tasks, ready count
-POST /tasks/{id}/claim - Claim a completed task and unlock its badge
+GET  /awards                    - Dashboard: all badges, all tasks, ready count
+POST /tasks/{task_id}/progress  - Bump a task's progress by one (e.g. each share)
+POST /tasks/{id}/claim          - Claim a completed task and unlock its badge
 """
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -31,6 +32,31 @@ def get_awards(session: Session = Depends(get_session)):
         tasks=[TaskRead.model_validate(t) for t in tasks],
         ready_count=ready_count,
     )
+
+
+@router.post("/tasks/{task_id}/progress", response_model=TaskRead)
+def bump_task_progress(
+    task_id: int,
+    session: Session = Depends(get_session),
+):
+    """Count one more completed action toward a task, e.g. a ticket share.
+
+    Progress is capped at the target; once it reaches the target the task
+    flips to CLAIMABLE so it can be claimed. Claimed tasks stay put.
+    """
+    task = session.get(Task, task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    if task.status != "CLAIMED":
+        task.current_progress = min(task.target_progress, task.current_progress + 1)
+        if task.current_progress >= task.target_progress:
+            task.status = "CLAIMABLE"
+        session.add(task)
+        session.commit()
+        session.refresh(task)
+
+    return TaskRead.model_validate(task)
 
 
 @router.post("/tasks/{task_id}/claim", response_model=TaskClaimResponse)

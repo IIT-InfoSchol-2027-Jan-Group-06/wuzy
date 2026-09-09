@@ -1,6 +1,6 @@
-import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
-import { Share, Text, View, useWindowDimensions } from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
+import { Text, View, useWindowDimensions } from 'react-native';
 
 import { TaskCard } from '@/components/awards/TaskCard';
 import { taskBadgeArtFor } from '@/constants/awards-data';
@@ -35,23 +35,25 @@ export function TasksSection() {
   const [tasks, setTasks] = useState<ApiTask[]>([]);
   const [readyCount, setReadyCount] = useState(0);
 
-  useEffect(() => {
-    let active = true;
-    apiGetAwards()
-      .then((data) => {
-        if (!active) return;
-        setTasks(data.tasks);
-        setReadyCount(data.ready_count);
-      })
-      .catch(() => {
-        if (!active) return;
-        setTasks([]);
-        setReadyCount(0);
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      apiGetAwards()
+        .then((data) => {
+          if (!active) return;
+          setTasks(data.tasks);
+          setReadyCount(data.ready_count);
+        })
+        .catch(() => {
+          if (!active) return;
+          setTasks([]);
+          setReadyCount(0);
+        });
+      return () => {
+        active = false;
+      };
+    }, []),
+  );
 
   const handleAction = useCallback(
     async (task: ApiTask) => {
@@ -71,7 +73,7 @@ export function TasksSection() {
           router.push('/connect');
           break;
         case 'SHARE':
-          Share.share({ message: 'I am on Wuzy, come join me!' });
+          router.push({ pathname: '/ticket-vault', params: { taskId: String(task.id) } });
           break;
       }
     },

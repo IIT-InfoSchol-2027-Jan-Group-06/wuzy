@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams } from 'expo-router';
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { TicketCard } from '@/components/TicketCard';
@@ -47,6 +48,20 @@ export default function TicketVaultScreen() {
     };
   }, [taskId]);
 
+  // The Events-you-get bar slides forward on each share instead of snapping.
+  const barProgress = useSharedValue(0);
+
+  useEffect(() => {
+    barProgress.value = withTiming(
+      shareTarget > 0 ? Math.min(1, shareCount / shareTarget) : 0,
+      { duration: 450, easing: Easing.out(Easing.quad) },
+    );
+  }, [shareCount, shareTarget, barProgress]);
+
+  const barWidth = useAnimatedStyle(() => ({
+    width: `${barProgress.value * 100}%`,
+  }));
+
   const refreshShare = useCallback(async () => {
     if (!taskId) return;
     try {
@@ -60,21 +75,21 @@ export default function TicketVaultScreen() {
     }
   }, [taskId]);
 
-  const handleShare = async () => {
-    try {
-      const shareResult = await Share.share({
-        message: `${activeTicket.title}, ${activeTicket.date}. Join me on Wuzy!`,
-      });
-      if (shareResult.action !== Share.dismissedAction && taskId) {
-        try {
-          await apiBumpTaskProgress(Number(taskId));
-          await refreshShare();
-        } catch {
-          // Keep the count unchanged; the bump did not go through.
-        }
+  const handleShare = async (ticket: Ticket) => {
+    if (taskId) {
+      try {
+        await apiBumpTaskProgress(Number(taskId));
+        await refreshShare();
+      } catch {
+        // Keep the count unchanged; the bump did not go through.
       }
+    }
+    try {
+      await Share.share({
+        message: `${ticket.title}\n${ticket.date}\n${ticket.venue}\nJoin me on Wuzy!`,
+      });
     } catch {
-      // Share sheet dismissed or not supported; nothing to count.
+      // Share sheet dismissed or not supported; the count already went through.
     }
   };
 
@@ -110,7 +125,7 @@ export default function TicketVaultScreen() {
             onMomentumScrollEnd={handleMomentumScrollEnd}
             getItemLayout={(_, index) => ({ length: cardWidth + CARD_GAP, offset: (cardWidth + CARD_GAP) * index, index })}
             renderItem={({ item }) => (
-              <Pressable onPress={handleShare} accessibilityRole="button" className="active:opacity-80">
+              <Pressable onPress={() => handleShare(item)} accessibilityRole="button" className="active:opacity-80">
                 <TicketCard ticket={item} width={cardWidth} />
               </Pressable>
             )}
@@ -120,21 +135,23 @@ export default function TicketVaultScreen() {
         {shareTarget > 0 && (
           <View className="mx-[16px] mb-[8px] gap-[12px] rounded-2xl border border-white/10 bg-[#0B0E14]/70 p-4">
             <View className="flex-row items-center justify-between">
-              <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.small, color: wuzyColors.white }}>
+              <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.small, color: wuzyColors.yellow }}>
                 Events you get
               </Text>
-              <Text style={{ fontFamily: wuzyFonts.bold, fontSize: wuzyType.small, color: wuzyColors.yellow }}>
+              <Text style={{ fontFamily: wuzyFonts.bold, fontSize: wuzyType.small, color: wuzyColors.white }}>
                 {shareCount} / {shareTarget}
               </Text>
             </View>
+            <Text
+              numberOfLines={1}
+              style={{ fontFamily: wuzyFonts.bold, fontSize: wuzyType.body, color: wuzyColors.white }}>
+              {activeTicket.title}
+            </Text>
             <View className="h-[5px] overflow-hidden rounded-full bg-white/10">
-              <View
-                className="h-full rounded-full bg-wuzy-yellow"
-                style={{ width: `${Math.min(100, Math.round((shareCount / Math.max(shareTarget, 1)) * 100))}%` }}
-              />
+              <Animated.View className="h-full rounded-full bg-wuzy-yellow" style={barWidth} />
             </View>
             <Pressable
-              onPress={handleShare}
+              onPress={() => handleShare(activeTicket)}
               accessibilityRole="button"
               className="items-center justify-center rounded-full active:opacity-80"
               style={{ height: wuzyLayout.control, backgroundColor: wuzyColors.yellow }}>

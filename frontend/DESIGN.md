@@ -161,11 +161,10 @@ Full-bleed content inside a padded screen uses `marginHorizontal: -wuzyLayout.si
 ### BadgeGrid (awards sticker board)
 - **When to Use**: The Awards screen's sticker board (`app/(tabs)/awards.tsx`)
 - **Import**: `import { BadgeGrid } from '@/components/awards/BadgeGrid';`
-- **Look**: The 15 badge PNGs (`assets/badges/img1-15.png`) in a clean 3-by-5 board inside a transparent yellow glass card: `bg-[#FFE783]/10`, `backdrop-blur` (a BlurView on native), `border border-white/10`, `rounded-3xl`, `p-5`
-- **Placement**: Flex-wrap flow, 5 cells per row with a 12px gutter, each cell centered; the badge image renders `contain` inside its cell, larger than the visible box
-- **Sticker feel**: Soft drop shadow behind every badge; no background cards or borders on individual items
-- **Crop**: The artwork is scaled 1.08x and nudged up inside an `overflow-hidden` box, clipping stray pixels on the exported PNG top edges; the 2nd and 9th badges render smaller to sit in line
-- **Asset rule**: Badge files must be transparent PNGs with no square background frame baked into the image
+- **Look**: All 15 badge PNGs (`assets/badges/img1-15.png`) scattered across a fixed 200 tall transparent yellow glass card: `bg-[#FFE783]/10`, `backdrop-blur` (a BlurView on native), `border border-[#FFE783]/20`, `rounded-3xl`, `overflow-hidden`
+- **Placement**: A seeded random scatter (`STICKER_PLACEMENTS`): each sticker lands anywhere inside the box margins so it reads as a fun board rather than a grid, and never overlaps another. Any sticker the random pass cannot fit is placed on a gap-checked lattice sweep, so all 15 always land.
+- **Sticker feel**: Each sticker is 40-46 square, tilted up to `±12deg`, stacked with `zIndex`, and carries a soft drop shadow. No background cards or borders on individual items.
+- **Asset rule**: Badge files must be transparent PNGs with no square background frame baked into the image.
 
 ---
 

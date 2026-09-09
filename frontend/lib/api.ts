@@ -155,6 +155,44 @@ export interface ApiGroup {
   members: ApiUser[];
 }
 
+export interface ApiBadge {
+  id: number;
+  name: string;
+  image_url: string;
+  is_unlocked: boolean;
+}
+
+export interface ApiTask {
+  id: number;
+  title: string;
+  current_progress: number;
+  target_progress: number;
+  progress_unit: string;
+  status: 'CLAIMABLE' | 'IN_PROGRESS' | 'CLAIMED' | string;
+  action_type: string;
+  badge_image_url: string;
+}
+
+export interface ApiAwardsDashboard {
+  badges: ApiBadge[];
+  tasks: ApiTask[];
+  ready_count: number;
+}
+
+export interface ApiTaskClaim {
+  id: number;
+  status: string;
+  badge_unlocked: boolean;
+}
+
+export function apiGetAwards(): Promise<ApiAwardsDashboard> {
+  return apiGet<ApiAwardsDashboard>('/awards/');
+}
+
+export function apiClaimTask(taskId: number): Promise<ApiTaskClaim> {
+  return apiPost<ApiTaskClaim>(`/awards/tasks/${taskId}/claim`, {});
+}
+
 /** Compact "ago" label: 5m, 2h, 1d, 12 Aug. Empty for missing timestamps. */
 export function relativeTime(iso: string | null | undefined): string {
   if (!iso) return '';

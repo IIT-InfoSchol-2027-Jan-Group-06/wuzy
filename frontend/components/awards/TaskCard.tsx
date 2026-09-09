@@ -1,34 +1,38 @@
-import { Image, Pressable, Text, View, useWindowDimensions } from 'react-native';
+import { Image, Pressable, Text, View, useWindowDimensions, type ImageSourcePropType } from 'react-native';
 
 import { wuzyFonts } from '@/constants/wuzy-theme';
-import type { AwardTask } from '@/constants/awards-data';
+import type { ApiTask } from '@/lib/api';
 
 type TaskCardProps = {
-  task: AwardTask;
-  onAction?: (task: AwardTask) => void;
+  task: ApiTask;
+  badge: ImageSourcePropType;
+  statusText: string;
+  actionLabel: string;
+  onAction: () => void;
 };
 
 /** One task row: badge image, title and progress grouped on the left, a fixed action button on the right. */
-export function TaskCard({ task, onAction }: TaskCardProps) {
+export function TaskCard({ task, badge, statusText, actionLabel, onAction }: TaskCardProps) {
   const { width: screenWidth } = useWindowDimensions();
   const titleSize = Math.round(screenWidth * (15 / 375));
   const statusSize = Math.round(screenWidth * (11 / 375));
   const actionSize = Math.round(screenWidth * (11 / 375));
 
-  const isReady = task.status === 'ready';
-  const ratio = task.max > 0 ? Math.min(1, task.current / task.max) : 0;
+  const isClaimable = task.status === 'CLAIMABLE';
+  const isClaimed = task.status === 'CLAIMED';
+  const ratio = task.target_progress > 0 ? Math.min(1, task.current_progress / task.target_progress) : 0;
   const progressPercent = `${Math.round(ratio * 100)}%` as const;
 
   // The 3rd task badge renders a little smaller, centered inside the same 56px
   // slot so the row layout stays identical to the other tasks.
-  const badgeNarrow = task.id === 'connect-ravers';
+  const badgeNarrow = task.title === 'Connect with 10 Ravers';
 
   return (
     <View className="flex-row items-center justify-between gap-4 rounded-2xl bg-[#131927] p-4">
       <View className="flex-1 flex-row items-center gap-4">
         <View className="items-center justify-center" style={{ width: 56, height: 56 }}>
           <Image
-            source={task.badge}
+            source={badge}
             resizeMode="contain"
             style={{ width: badgeNarrow ? 44 : 56, height: badgeNarrow ? 44 : 56 }}
           />
@@ -53,24 +57,25 @@ export function TaskCard({ task, onAction }: TaskCardProps) {
               fontSize: statusSize,
               color: '#8E9BAE',
             }}>
-            {task.statusText}
+            {statusText}
           </Text>
         </View>
       </View>
 
       <Pressable
         accessibilityRole="button"
-        onPress={() => onAction?.(task)}
+        onPress={onAction}
+        disabled={isClaimed}
         className={`min-w-[70px] items-center self-center rounded-full px-[18px] py-[10px] active:scale-95 ${
-          isReady ? 'bg-wuzy-yellow' : 'border border-wuzy-yellow/40'
+          isClaimable ? 'bg-wuzy-yellow' : isClaimed ? 'border border-white/20' : 'border border-wuzy-yellow/40'
         }`}>
         <Text
           style={{
             fontFamily: wuzyFonts.semibold,
             fontSize: actionSize,
-            color: isReady ? '#0B0E14' : '#FFE783',
+            color: isClaimable ? '#0B0E14' : isClaimed ? '#8E9BAE' : '#FFE783',
           }}>
-          {task.actionLabel}
+          {isClaimed ? 'Claimed' : actionLabel}
         </Text>
       </Pressable>
     </View>

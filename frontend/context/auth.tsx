@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 
 import { getToken, setToken, clearToken } from '@/lib/auth-token';
 import { apiLogin, apiMe, type ApiUser, type AuthSession } from '@/lib/api';
+import { registerForPushNotifications } from '@/lib/push';
 
 type AuthContextValue = {
   user: ApiUser | null;
@@ -44,6 +45,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await clearToken();
     setUser(null);
   };
+
+  // Register this device's push token once a user is signed in, so chat
+  // messages for them can arrive as OS notifications when they are away.
+  useEffect(() => {
+    if (user) {
+      registerForPushNotifications();
+    }
+  }, [user]);
 
   const value = useMemo(() => ({ user, restoring, login, logout }), [user, restoring]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

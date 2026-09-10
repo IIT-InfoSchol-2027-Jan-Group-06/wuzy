@@ -46,7 +46,7 @@ export async function apiPost<T>(path: string, body: unknown): Promise<T> {
   return handleResponse<T>(res, path);
 }
 
-/** Fire-and-forget POST that returns 204 with no body (e.g. view recording). */
+/** Fire-and-forget POST that returns 204 with no body (e.g. view recording, push token registration). */
 export async function apiPostNoContent(path: string, body?: unknown): Promise<void> {
   const res = await fetch(`${API_URL}${path}`, {
     method: 'POST',
@@ -141,14 +141,18 @@ export interface ApiConversation {
   last_message_at: string | null;
 }
 
-export interface ApiMessage {
+/** A Connection and the thread the current user can chat in, if one exists. */
+export interface ApiPerson {
+  conversation_id: number | null;
+  user: ApiUser;
+}
+
+export interface ApiGroup {
   id: number;
-  conversation_id: number;
-  sender_id: number;
-  text: string;
-  is_read: boolean;
+  name: string;
+  created_by: number;
   created_at: string;
-  sender: ApiUser | null;
+  members: ApiUser[];
 }
 
 /** Compact "ago" label: 5m, 2h, 1d, 12 Aug. Empty for missing timestamps. */

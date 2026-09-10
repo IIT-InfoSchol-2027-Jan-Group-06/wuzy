@@ -7,7 +7,7 @@ export interface Notification {
   name: string;
   timestamp: string;
   group: 'new' | 'past';
-  category: 'events' | 'requests';
+  category: 'events' | 'requests' | 'messages';
 }
 
 export const notifications: Notification[] = [

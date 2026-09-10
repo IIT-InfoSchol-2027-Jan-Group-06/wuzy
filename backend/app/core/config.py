@@ -11,6 +11,9 @@ class Settings(BaseSettings):
     # Points to the docker-compose service name 'db' by default. Override
     # via .env when running against a local Postgres instance.
     database_url: str = "postgresql+psycopg2://postgres:postgres@db:5432/wuzy"
+    # Redis holds only ephemeral runtime data: the online session registry and
+    # per-user offline message queues. Nothing durable lives here.
+    redis_url: str = "redis://redis:6379/0"
     # Used to sign JWTs. Must be changed before any production deploy.
     secret_key: str = "dev-secret-key"
     algorithm: str = "HS256"

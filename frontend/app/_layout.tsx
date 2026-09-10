@@ -9,21 +9,53 @@ import {
   Poppins_700Bold,
 } from '@expo-google-fonts/poppins';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 
 import { AuthProvider, useAuth } from '@/context/auth';
+import { ChatUnreadProvider } from '@/context/chat-unread';
 import { wuzyColors } from '@/constants/wuzy-theme';
+import { configureNotifications, loadNotifications } from '@/lib/push';
+
+import type { Notification } from 'expo-notifications';
 
 export const unstable_settings = {
   anchor: '(tabs)',
 };
 
+// Open the chat thread a push notification points at when the user taps it.
+function useNotificationObserver() {
+  useEffect(() => {
+    let unsub: { remove(): void } | null = null;
+    (async () => {
+      const mod = await loadNotifications();
+      if (!mod) return;
+
+      const redirect = (notification: Notification) => {
+        const url = notification.request.content.data?.url;
+        if (typeof url === 'string') {
+          router.push(url as never);
+        }
+      };
+
+      const last = mod.getLastNotificationResponse();
+      if (last?.notification) redirect(last.notification);
+
+      unsub = mod.addNotificationResponseReceivedListener((response) =>
+        redirect(response.notification),
+      );
+    })();
+    return () => unsub?.remove();
+  }, []);
+}
+
 function RootNavigator() {
   const { user, restoring } = useAuth();
+  useNotificationObserver();
 
   if (restoring) {
     return (
@@ -45,6 +77,7 @@ function RootNavigator() {
           <Stack.Screen name="connect" />
           <Stack.Screen name="connections" />
           <Stack.Screen name="create-event" />
+          <Stack.Screen name="new-group" />
           <Stack.Screen name="event-details" />
           <Stack.Screen name="post-preview" />
           <Stack.Screen name="profile/[id]" />
@@ -67,6 +100,11 @@ export default function RootLayout() {
     Poppins_700Bold,
   });
 
+  // Decide how push notifications behave while the app is open.
+  useEffect(() => {
+    configureNotifications();
+  }, []);
+
   if (!fontsLoaded) {
     return (
       <View className="flex-1 items-center justify-center bg-wuzy-bg">
@@ -79,7 +117,9 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider value={DarkTheme}>
         <AuthProvider>
-          <RootNavigator />
+          <ChatUnreadProvider>
+            <RootNavigator />
+          </ChatUnreadProvider>
         </AuthProvider>
       </ThemeProvider>
     </GestureHandlerRootView>

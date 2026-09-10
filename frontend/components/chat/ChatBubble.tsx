@@ -1,4 +1,4 @@
-import React from 'react';
+import { memo } from 'react';
 import { Text, View } from 'react-native';
 
 import { wuzyColors, wuzyFonts, wuzyType } from '@/constants/wuzy-theme';
@@ -6,7 +6,16 @@ import { wuzyColors, wuzyFonts, wuzyType } from '@/constants/wuzy-theme';
 const RADIUS = 16;
 const NICK = 2;
 
-export function ChatBubble({ text, outgoing }: { text: string; outgoing: boolean }) {
+export const ChatBubble = memo(function ChatBubble({
+  text,
+  outgoing,
+  name,
+}: {
+  text: string;
+  outgoing: boolean;
+  /** Sender name, shown above incoming group messages. */
+  name?: string;
+}) {
   return (
     <View
       style={{
@@ -32,6 +41,17 @@ export function ChatBubble({ text, outgoing }: { text: string; outgoing: boolean
               borderColor: wuzyColors.glassBorder,
             }),
       }}>
+      {name && !outgoing ? (
+        <Text
+          style={{
+            fontFamily: wuzyFonts.semibold,
+            fontSize: wuzyType.small,
+            color: wuzyColors.yellow,
+            marginBottom: 4,
+          }}>
+          {name}
+        </Text>
+      ) : null}
       <Text
         style={{
           fontFamily: wuzyFonts.body,
@@ -43,4 +63,4 @@ export function ChatBubble({ text, outgoing }: { text: string; outgoing: boolean
       </Text>
     </View>
   );
-}
+});

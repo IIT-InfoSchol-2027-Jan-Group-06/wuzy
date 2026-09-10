@@ -7,7 +7,7 @@ from sqlmodel import Field, Relationship, SQLModel
 if TYPE_CHECKING:
     from app.models.conversation import Conversation
     from app.models.follow import Follow
-    from app.models.message import Message
+    from app.models.group import Group
     from app.models.post import Post
 
 
@@ -47,7 +47,10 @@ class User(SQLModel, table=True):
         # Many-to-many: resolved through the conversation_member join table.
         sa_relationship_kwargs={"secondary": "conversation_member"},
     )
-    sent_messages: list["Message"] = Relationship(back_populates="sender")
+    groups: list["Group"] = Relationship(
+        back_populates="members",
+        sa_relationship_kwargs={"secondary": "group_member"},
+    )
 
     @property
     def following_ids(self) -> list[int]:

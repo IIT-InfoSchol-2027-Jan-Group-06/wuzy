@@ -14,7 +14,9 @@ from sqlmodel import Session, select
 
 from app.core.auth import create_access_token, get_current_user_id
 from app.db.session import get_session
+from app.models.push_token import PushToken
 from app.models.user import User
+from app.schemas.push import PushTokenRegister
 from app.schemas.user import LoginRequest, TokenResponse, UserRead
 
 router = APIRouter()
@@ -52,3 +54,21 @@ def read_me(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
+
+
+@router.post("/push-token", status_code=204)
+def register_push_token(
+    payload: PushTokenRegister,
+    current_user_id: int = Depends(get_current_user_id),
+    session: Session = Depends(get_session),
+):
+    """Store or refresh the caller's Expo push token for offline chat alerts."""
+    token = session.exec(
+        select(PushToken).where(PushToken.user_id == current_user_id)
+    ).first()
+    if token is None:
+        session.add(PushToken(user_id=current_user_id, token=payload.token))
+    elif token.token != payload.token:
+        token.token = payload.token
+        session.add(token)
+    session.commit()

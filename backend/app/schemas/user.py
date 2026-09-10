@@ -43,6 +43,13 @@ class UserRead(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class UserUpdate(BaseModel):
+    display_name: str | None = None
+    bio: str | None = None
+    hobbies: list[str] | None = None
+    avatar_url: str | None = None
+
+
 class LoginRequest(BaseModel):
     """Payload for POST /auth/login."""
 

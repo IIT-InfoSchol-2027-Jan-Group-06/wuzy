@@ -9,9 +9,10 @@ import bcrypt
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
+from app.core.auth import get_current_user_id
 from app.db.session import get_session
 from app.models.user import User
-from app.schemas.user import UserCreate, UserRead
+from app.schemas.user import UserCreate, UserRead, UserUpdate
 
 router = APIRouter()
 
@@ -41,6 +42,24 @@ def read_users(session: Session = Depends(get_session)):
     filter by username or display_name.
     """
     return session.exec(select(User)).all()
+
+
+@router.patch("/me", response_model=UserRead)
+def update_me(
+    payload: UserUpdate,
+    current_user_id: int = Depends(get_current_user_id),
+    session: Session = Depends(get_session),
+):
+    user = session.get(User, current_user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    update_data = payload.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(user, field, value)
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    return user
 
 
 @router.get("/{user_id}", response_model=UserRead)

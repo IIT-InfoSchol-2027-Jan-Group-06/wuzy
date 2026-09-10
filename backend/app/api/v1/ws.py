@@ -6,7 +6,8 @@ Connection lifecycle:
   1. Verify the JWT belongs to the path user_id, then register them online.
   2. Replay any queued offline payloads oldest-first, so nothing waits.
   3. Forward incoming messages to recipients' live sockets, or drop them into
-     the recipients' offline mailboxes when they are away.
+     the recipients' offline mailboxes when they are away. Offline recipients
+     also get an OS push notification via Expo's push service.
   4. On disconnect, deregister the user so future senders queue instead.
 
 Two message shapes are routed here, both guarded in PostgreSQL before any
@@ -22,12 +23,14 @@ No message content is persisted anywhere.
 
 import asyncio
 import json
+import threading
 
 import jwt
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from sqlmodel import Session, select
 
 from app.core.config import settings
+from app.core.push import send_push
 from app.core.realtime import (
     is_online,
     queue_offline,
@@ -39,6 +42,7 @@ from app.db.session import engine
 from app.models.conversation import Conversation, ConversationMember
 from app.models.follow import Follow
 from app.models.group import Group, GroupMember
+from app.models.push_token import PushToken
 from app.models.user import User
 
 router = APIRouter()
@@ -95,14 +99,47 @@ def _group_member_ids(session: Session, group_id: int) -> list[int]:
     return [row.user_id for row in rows]
 
 
+def _notify_push(recipient_id: int, message: dict) -> None:
+    """Push a queued message to the recipient's device when they are away.
+
+    Best-effort: no token means no notification, and failures are swallowed.
+    The data.url deep-links back into the thread so tapping opens the chat.
+    """
+    with Session(engine) as session:
+        token = session.exec(
+            select(PushToken).where(PushToken.user_id == recipient_id)
+        ).first()
+    if token is None:
+        return
+
+    sender = message.get("from_name") or "Someone"
+    text = message.get("text", "")
+    if message.get("group_id") is not None:
+        thread_url = f"/chat/{message['group_id']}?kind=group"
+    else:
+        thread_url = f"/chat/{message.get('conversation_id')}?kind=dm"
+    # The Expo HTTP call can take seconds; keep it off the socket's event loop.
+    threading.Thread(
+        target=send_push,
+        args=(token.token, sender, text or "New message"),
+        kwargs={"data": {"url": thread_url}},
+        daemon=True,
+    ).start()
+
+
 def _send_or_queue(payload: dict, recipient_id: int) -> None:
-    """Deliver a payload to a live socket, else queue it for the offline mailbox."""
+    """Deliver a payload to a live socket, else queue it for the offline mailbox.
+
+    Offline recipients also get an OS notification so they know they missed a
+    message while outside the chat screens.
+    """
     recipient = _sockets.get(recipient_id)
     if recipient is not None:
         # Fire-and-forget to avoid blocking this reader on a slow client.
         asyncio.create_task(recipient.send_text(json.dumps(payload)))
     elif not is_online(recipient_id):
         queue_offline(recipient_id, payload)
+        _notify_push(recipient_id, payload)
 
 
 @router.websocket("/{user_id}")

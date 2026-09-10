@@ -46,7 +46,7 @@ export async function apiPost<T>(path: string, body: unknown): Promise<T> {
   return handleResponse<T>(res, path);
 }
 
-/** Fire-and-forget POST that returns 204 with no body (e.g. view recording). */
+/** Fire-and-forget POST that returns 204 with no body (e.g. view recording, push token registration). */
 export async function apiPostNoContent(path: string, body?: unknown): Promise<void> {
   const res = await fetch(`${API_URL}${path}`, {
     method: 'POST',

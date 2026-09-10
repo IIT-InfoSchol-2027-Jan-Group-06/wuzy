@@ -144,7 +144,7 @@ export default function ChatViewScreen() {
         <FlatList
           data={reversed}
           inverted
-          keyExtractor={(item, index) => `${item.created_at}-${index}`}
+          keyExtractor={(item) => `${item.from}-${item.created_at}-${item.text}`}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           ListFooterComponent={

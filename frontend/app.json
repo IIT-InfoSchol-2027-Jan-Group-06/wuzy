@@ -45,7 +45,14 @@
       "expo-web-browser",
       "expo-secure-store",
       "./plugins/withCleartext.js",
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-notifications",
+        {
+          "color": "#FFE783",
+          "defaultChannel": "messages"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

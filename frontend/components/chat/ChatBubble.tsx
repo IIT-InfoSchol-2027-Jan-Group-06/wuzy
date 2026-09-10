@@ -1,4 +1,4 @@
-import React from 'react';
+import { memo } from 'react';
 import { Text, View } from 'react-native';
 
 import { wuzyColors, wuzyFonts, wuzyType } from '@/constants/wuzy-theme';
@@ -6,7 +6,7 @@ import { wuzyColors, wuzyFonts, wuzyType } from '@/constants/wuzy-theme';
 const RADIUS = 16;
 const NICK = 2;
 
-export function ChatBubble({
+export const ChatBubble = memo(function ChatBubble({
   text,
   outgoing,
   name,
@@ -63,4 +63,4 @@ export function ChatBubble({
       </Text>
     </View>
   );
-}
+});

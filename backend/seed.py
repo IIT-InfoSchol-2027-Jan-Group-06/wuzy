@@ -234,10 +234,10 @@ def seed():
         session.commit()
 
         post_count = session.exec(select(Post)).all().__len__()
-        conversation_count = session.exec(select(Conversation)).all().__len__()
-        group_count = session.exec(select(Group)).all().__len__()
         badge_count = session.exec(select(Badge)).all().__len__()
         task_count = session.exec(select(Task)).all().__len__()
+        conversation_count = session.exec(select(Conversation)).all().__len__()
+        group_count = session.exec(select(Group)).all().__len__()
         print("Demo data seeded successfully!")
         print(f"Created users: {', '.join(users)}")
         print(f"Created posts: {post_count}, conversations: {conversation_count}, groups: {group_count}")

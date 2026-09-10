@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import {
   TextInput,
   Text,
@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Image,
   Modal,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
@@ -16,10 +17,11 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 import { useAuth } from '@/context/auth';
+import { apiPatch, type ApiUser } from '@/lib/api';
 
 export default function EditProfile() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
 
   const [fullName, setFullName] = useState(user?.display_name ?? user?.username ?? '');
   const [bio, setBio] = useState(user?.bio ?? '');
@@ -29,8 +31,32 @@ export default function EditProfile() {
   const [newInterest, setNewInterest] = useState('');
   const [showAddInterest, setShowAddInterest] = useState(false);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const clearTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const BIO_LIMIT = 150;
+
+  const handleSave = useCallback(async () => {
+    if (saving) return;
+    if (clearTimer.current) clearTimeout(clearTimer.current);
+    setSaving(true);
+    setSaveStatus('idle');
+    try {
+      const updated = await apiPatch<ApiUser>('/users/me', {
+        display_name: fullName || null,
+        bio: bio || null,
+      });
+      updateUser(updated);
+      setSaveStatus('success');
+      clearTimer.current = setTimeout(() => setSaveStatus('idle'), 2000);
+    } catch {
+      setSaveStatus('error');
+      clearTimer.current = setTimeout(() => setSaveStatus('idle'), 2000);
+    } finally {
+      setSaving(false);
+    }
+  }, [saving, fullName, bio, updateUser]);
 
   const updateBioCount = (text: string) => {
     setBio(text);
@@ -204,7 +230,8 @@ export default function EditProfile() {
           {/* Bottom buttons - vertically stacked, centered */}
           <View style={styles.buttonGroup}>
             <Pressable
-              onPress={router.back}
+              onPress={handleSave}
+              disabled={saving}
               accessibilityRole="button"
               accessibilityLabel="Save changes"
               style={[styles.glassButton, styles.saveButton]}
@@ -212,8 +239,18 @@ export default function EditProfile() {
               <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
               <View style={styles.glassButtonFill} />
               <View style={styles.glassButtonBorder} />
-              <Text style={styles.buttonTextStyle}>Save changes</Text>
+              {saving ? (
+                <ActivityIndicator size="small" color={wuzyColors.white} />
+              ) : (
+                <Text style={styles.buttonTextStyle}>Save changes</Text>
+              )}
             </Pressable>
+            {saveStatus === 'success' && (
+              <Text style={{ color: wuzyColors.yellow, fontFamily: wuzyFonts.semibold, fontSize: wuzyType.small }}>Saved!</Text>
+            )}
+            {saveStatus === 'error' && (
+              <Text style={{ color: '#FF3B30', fontFamily: wuzyFonts.semibold, fontSize: wuzyType.small }}>Failed to save. Try again.</Text>
+            )}
             <Pressable
               onPress={cancelEdit}
               accessibilityRole="button"

@@ -16,6 +16,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 
 import { AuthProvider, useAuth } from '@/context/auth';
+import { ChatUnreadProvider } from '@/context/chat-unread';
 import { wuzyColors } from '@/constants/wuzy-theme';
 
 export const unstable_settings = {
@@ -80,7 +81,9 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider value={DarkTheme}>
         <AuthProvider>
-          <RootNavigator />
+          <ChatUnreadProvider>
+            <RootNavigator />
+          </ChatUnreadProvider>
         </AuthProvider>
       </ThemeProvider>
     </GestureHandlerRootView>

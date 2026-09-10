@@ -95,6 +95,7 @@ Full-bleed content inside a padded screen uses `marginHorizontal: -wuzyLayout.si
 ### NavBar and useNavBarMetrics
 - Frosted pill, `control` tall, 72% of the window width capped at 300, rendered by the tabs layout only. Respects the bottom safe-area inset.
 - `useNavBarMetrics()` returns `{ barWidth, height, bottom, clearance }`. `clearance` is the space a screen must leave at the bottom so content and the `Fab` sit 16 above the bar.
+- Optional `chatUnread` prop: when greater than 0, the Chat icon gets a yellow dot badge on its top-right corner with the `caption`-size count (cap 99+). Fed by the `ChatUnreadProvider` context, so any chat tab can show an up-to-date count without re-rendering the bar itself.
 
 ### Fab
 - `import { Fab } from '@/components/Fab';`

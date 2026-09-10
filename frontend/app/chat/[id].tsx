@@ -1,6 +1,6 @@
 import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 import { ChatBubble } from '@/components/chat/ChatBubble';
 import { ChatHeader } from '@/components/chat/ChatHeader';
@@ -9,16 +9,18 @@ import { Chip } from '@/components/Chip';
 import { Screen } from '@/components/Screen';
 import { wuzyColors, wuzyLayout } from '@/constants/wuzy-theme';
 import { useAuth } from '@/context/auth';
+import { useChatUnread } from '@/context/chat-unread';
 import { apiGet, assetUrl, type ApiUser } from '@/lib/api';
 import { markThreadActive } from '@/lib/chat-activity';
-import { getMessages, saveMessage, type ThreadKind } from '@/lib/chat-db';
-import { connectChat, type ChatMessage, type ChatSocket } from '@/lib/ws';
+import { getMessages, type ThreadKind } from '@/lib/chat-db';
+import { acquireChat, sendDm, sendGroup, subscribeChat, type ChatMessage } from '@/lib/ws';
 
 const defaultAvatar = require('@/assets/images/avatar1.jpg');
 
 export default function ChatViewScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const { markThreadRead } = useChatUnread();
   const { id, kind } = useLocalSearchParams<{ id: string; kind?: string }>();
   const isGroup = kind === 'group';
   const threadId = Number(id);
@@ -30,14 +32,25 @@ export default function ChatViewScreen() {
   const [otherUserId, setOtherUserId] = useState<number | null>(null);
   const [memberCount, setMemberCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const socketRef = useRef<ChatSocket | null>(null);
 
   useEffect(() => {
     if (!user || !Number.isFinite(threadId)) return;
 
+    // Keep the shared socket alive while this thread is on screen and pipe
+    // this thread's inbound frames into the list. Frames are persisted by
+    // ws.ts already, so the listener only re-renders and clears the badge.
+    const releaseSocket = acquireChat(user.id);
+    const unsubscribe = subscribeChat((m) => {
+      const isThisThread =
+        m.group_id != null ? m.group_id === threadId : m.conversation_id === threadId;
+      if (!isThisThread || m.from === user.id) return;
+      setMessages((prev) => [...prev, m]);
+      markThreadRead(threadKind, threadId);
+    });
+
     let active = true;
     (async () => {
-      // Load the thread's locally-cached history first, then connect live.
+      // Load the thread's locally-cached history first.
       const history = (await getMessages(user.id, threadKind, threadId)).map((m) => ({
         type: 'message' as const,
         from: m.from,
@@ -50,6 +63,7 @@ export default function ChatViewScreen() {
       }));
       if (!active) return;
       setMessages(history);
+      markThreadRead(threadKind, threadId);
 
       // Resolve the header from the right source: a 1:1 peer or the group.
       if (isGroup) {
@@ -79,37 +93,24 @@ export default function ChatViewScreen() {
         }
       }
 
-      const socket = await connectChat(user.id, { kind: threadKind, id: threadId }, (m) => {
-        saveMessage(user.id, threadKind, m);
-        setMessages((prev) => [...prev, m]);
-      });
-      socketRef.current = socket;
-      setLoading(false);
+      if (active) setLoading(false);
     })();
 
     return () => {
       active = false;
-      socketRef.current?.close();
-      socketRef.current = null;
+      unsubscribe();
+      releaseSocket();
     };
-  }, [user, threadId, threadKind, router, isGroup]);
+  }, [user, threadId, threadKind, isGroup, router, markThreadRead]);
 
   const send = useCallback(
     (text: string) => {
       if (!user) return;
-      const optimistic: ChatMessage = {
-        type: 'message',
-        from: user.id,
-        from_name: user.display_name ?? user.username,
-        conversation_id: isGroup ? undefined : threadId,
-        group_id: isGroup ? threadId : undefined,
-        text,
-        created_at: new Date().toISOString(),
-      };
-      setMessages((prev) => [...prev, optimistic]);
-      saveMessage(user.id, threadKind, optimistic);
-      if (isGroup) socketRef.current?.sendGroup(text);
-      else if (otherUserId) socketRef.current?.sendDm(otherUserId, text);
+      if (isGroup) {
+        setMessages((prev) => [...prev, sendGroup(user.id, threadId, text)]);
+      } else if (otherUserId) {
+        setMessages((prev) => [...prev, sendDm(user.id, otherUserId, threadId, text)]);
+      }
       markThreadActive({ kind: threadKind, id: threadId });
     },
     [user, isGroup, threadId, threadKind, otherUserId],

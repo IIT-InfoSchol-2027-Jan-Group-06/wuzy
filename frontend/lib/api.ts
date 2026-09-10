@@ -141,6 +141,12 @@ export interface ApiConversation {
   last_message_at: string | null;
 }
 
+/** A Connection and the thread the current user can chat in, if one exists. */
+export interface ApiPerson {
+  conversation_id: number | null;
+  user: ApiUser;
+}
+
 export interface ApiGroup {
   id: number;
   name: string;

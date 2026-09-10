@@ -49,3 +49,10 @@ class ConversationRead(BaseModel):
     preview: str | None = None
     unread: int = 0
     last_message_at: datetime | None = None
+
+
+class PersonChat(BaseModel):
+    """A Connection and the thread the current user can chat in, if one exists."""
+
+    conversation_id: int | None = None
+    user: UserRead

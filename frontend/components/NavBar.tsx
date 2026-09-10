@@ -1,15 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
-import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { wuzyLayout } from '@/constants/wuzy-theme';
+import { wuzyColors, wuzyLayout, wuzyFonts, wuzyType } from '@/constants/wuzy-theme';
 
 export type NavBarItem = 'home' | 'events' | 'awards' | 'chat' | 'profile';
 
 type NavBarProps = {
   active?: NavBarItem;
   onItemPress?: (item: NavBarItem) => void;
+  chatUnread?: number;
 };
 
 const NAV_ITEMS: { key: NavBarItem; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
@@ -30,7 +31,7 @@ export function useNavBarMetrics() {
   return { barWidth, height, bottom, clearance: bottom + height + 16 };
 }
 
-export function NavBar({ active = 'home', onItemPress }: NavBarProps) {
+export function NavBar({ active = 'home', onItemPress, chatUnread = 0 }: NavBarProps) {
   const { barWidth, height, bottom } = useNavBarMetrics();
   const iconSize = Math.round(height * 0.52);
   const itemSize = Math.round(height * 0.8);
@@ -55,6 +56,30 @@ export function NavBar({ active = 'home', onItemPress }: NavBarProps) {
               className="items-center justify-center rounded-full active:scale-90"
               style={{ width: itemSize, height: itemSize }}>
               <Ionicons name={item.icon} size={iconSize} color="#ffffff" />
+              {item.key === 'chat' && chatUnread > 0 && (
+                <View
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    right: 0,
+                    minWidth: Math.round(itemSize * 0.34),
+                    height: Math.round(itemSize * 0.34),
+                    borderRadius: Math.round(itemSize * 0.17),
+                    paddingHorizontal: 4,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: wuzyColors.yellow,
+                  }}>
+                  <Text
+                    style={{
+                      fontFamily: wuzyFonts.bold,
+                      fontSize: wuzyType.caption,
+                      color: wuzyColors.bg,
+                    }}>
+                    {chatUnread > 99 ? '99+' : chatUnread}
+                  </Text>
+                </View>
+              )}
             </Pressable>
           ))}
         </View>

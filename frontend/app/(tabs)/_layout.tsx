@@ -1,10 +1,12 @@
 import { Tabs, useRouter, useSegments } from 'expo-router';
 import { NavBar } from '@/components/NavBar';
 import type { NavBarItem } from '@/components/NavBar';
+import { useChatUnread } from '@/context/chat-unread';
 
 export default function TabLayout() {
   const router = useRouter();
   const segments = useSegments();
+  const { total: chatUnread } = useChatUnread();
 
   const routes = {
     home: '/home',
@@ -37,7 +39,7 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{ headerShown: false }}
-      tabBar={() => <NavBar active={activeTab} onItemPress={handlePress} />}
+      tabBar={() => <NavBar active={activeTab} onItemPress={handlePress} chatUnread={chatUnread} />}
     >
       <Tabs.Screen name="home" />
       <Tabs.Screen name="explore" />

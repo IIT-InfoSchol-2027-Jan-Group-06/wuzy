@@ -26,7 +26,7 @@ export function Chip({
       accessibilityRole={onPress ? 'button' : undefined}
       accessibilityState={selected === undefined ? undefined : { selected }}
       className={`items-center justify-center rounded-full px-[16px] py-[8px] active:opacity-75 ${
-        selected ? 'bg-wuzy-yellow' : 'bg-wuzy-yellowDim'
+        selected ? 'bg-wuzy-yellow' : 'bg-wuzy-yellowDim border border-wuzy-yellow'
       }`}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%' }}>
         <Text

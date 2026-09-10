@@ -10,7 +10,7 @@ import { TagSection } from '@/components/TagSection';
 import { accountFor } from '@/constants/accounts';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 import { useAuth } from '@/context/auth';
-import { apiGet, type ApiPost } from '@/lib/api';
+import { apiGet, assetUrl, type ApiPost } from '@/lib/api';
 
 const GRID_GAP = 2;
 
@@ -67,7 +67,7 @@ export default function ProfileScreen() {
   return (
     <Screen scroll padded={false} style={{ paddingTop: 0 }}>
       <ProfileHero
-        background={extra.backgroundImage}
+        background={user.avatar_url ? { uri: assetUrl(user.avatar_url) } : extra.backgroundImage}
         name={user.display_name ?? user.username}
         awardsCount={extra.awardsCount}
         bio={user.bio}

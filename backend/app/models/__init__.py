@@ -1,10 +1,3 @@
-"""Model registry.
-
-Importing every model here guarantees they are all registered on SQLModel
-metadata before table creation or autogenerate runs, even if a caller only
-imports the package (e.g. app.db.session imports app.models).
-"""
-
 from app.models.conversation import Conversation, ConversationMember
 from app.models.follow import Follow
 from app.models.group import Group, GroupMember

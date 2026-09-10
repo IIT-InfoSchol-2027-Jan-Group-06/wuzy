@@ -200,8 +200,15 @@ export async function getUnreadCounts(ownerId: number): Promise<Map<string, numb
 /** Latest unread message per thread, used to build the "New message" notifications. */
 export async function getUnreadNotifications(ownerId: number): Promise<StoredMessage[]> {
   const db = await getDb();
-  return db.getAllAsync<StoredMessage>(
-    `SELECT m.kind, m.thread_id, m.from_id AS from, m.from_name, m.text, m.created_at
+  const rows = await db.getAllAsync<{
+    kind: ThreadKind;
+    thread_id: number;
+    from_id: number;
+    from_name: string | null;
+    text: string;
+    created_at: string;
+  }>(
+    `SELECT m.kind, m.thread_id, m.from_id, m.from_name, m.text, m.created_at
      FROM messages m
      JOIN (
        SELECT kind, thread_id, MAX(id) AS max_id
@@ -212,6 +219,14 @@ export async function getUnreadNotifications(ownerId: number): Promise<StoredMes
      ORDER BY m.created_at DESC;`,
     ownerId,
   );
+  return rows.map((r) => ({
+    kind: r.kind,
+    thread_id: r.thread_id,
+    from: r.from_id,
+    from_name: r.from_name,
+    text: r.text,
+    created_at: r.created_at,
+  }));
 }
 
 /** Total unread incoming messages across every thread (badge on the chat tab). */
@@ -241,13 +256,36 @@ export async function markThreadRead(ownerId: number, kind: ThreadKind, threadId
 /** Outgoing messages saved while offline that have not reached the server yet. */
 export async function getPendingMessages(ownerId: number): Promise<StoredMessage[]> {
   const db = await getDb();
-  return db.getAllAsync<StoredMessage>(
-    `SELECT id, kind, thread_id, from_id AS from, from_name, to_id, text, created_at, pending, is_read
+  const rows = await db.getAllAsync<{
+    id: number;
+    kind: ThreadKind;
+    thread_id: number;
+    from_id: number;
+    from_name: string | null;
+    to_id: number | null;
+    text: string;
+    created_at: string;
+    pending: number;
+    is_read: number;
+  }>(
+    `SELECT id, kind, thread_id, from_id, from_name, to_id, text, created_at, pending, is_read
      FROM messages
      WHERE owner_id = ? AND pending = 1
      ORDER BY id ASC`,
     ownerId,
   );
+  return rows.map((r) => ({
+    id: r.id,
+    kind: r.kind,
+    thread_id: r.thread_id,
+    from: r.from_id,
+    from_name: r.from_name,
+    to_id: r.to_id,
+    text: r.text,
+    created_at: r.created_at,
+    pending: r.pending,
+    is_read: r.is_read,
+  }));
 }
 
 /** Mark pending messages as delivered to the server. */

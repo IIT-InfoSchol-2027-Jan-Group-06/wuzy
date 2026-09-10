@@ -1,12 +1,13 @@
-"""Chat endpoints.
+"""Chat thread listing.
 
-GET  /conversations                        - current user's conversations, newest activity first
-GET  /conversations/{id}/messages          - one thread, marks incoming messages as read
-POST /conversations/{id}/messages          - send a message
+Messages themselves are ephemeral and travel over WebSocket/Redis, so there is
+no message history to read here. These routes only shape the conversation list
+(the DM thread rows) so the app has something to navigate.
 
-All chat endpoints verify membership via _load_conversation before
-allowing access. A user who is not part of the conversation gets a 404
-(not a 403) to avoid leaking the existence of private threads.
+GET  /chat/conversations            - current user's threads, most recent first
+GET  /chat/conversations/{id}/peer  - the other party in a thread
+GET  /chat/people                   - every Connection, plus their shared thread if any
+GET  /ws/conversations/{a}/{b}      - find or create a thread between two Connections
 """
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -16,31 +17,70 @@ from sqlmodel import Session, col, select
 from app.core.auth import get_current_user_id
 from app.db.session import get_session
 from app.models.conversation import Conversation, ConversationMember
-from app.models.message import Message
-from app.schemas.chat import ConversationRead, MessageCreate, MessageRead
+from app.models.follow import Follow
+from app.models.user import User
+from app.schemas.chat import ConversationRead, PersonChat
+from app.schemas.user import UserRead
 
 router = APIRouter()
 
 
-def _load_conversation(conversation_id: int, user_id: int, session: Session) -> Conversation:
-    """Return a conversation the user belongs to, else 404.
+@router.get("/people", response_model=list[PersonChat])
+def list_people(
+    current_user_id: int = Depends(get_current_user_id),
+    session: Session = Depends(get_session),
+):
+    """Return every Connection of the current user, with their shared thread.
 
-    Checks both that the conversation exists and that the user is a member.
-    Uses 404 for both failures so non-members cannot confirm a conversation
-    exists by trial and error.
+    A Connection is a mutual follow. The thread id is present when a 1:1
+    conversation already exists; otherwise the client can create one on demand
+    when the person opens a chat.
     """
-    conversation = session.exec(
-        select(Conversation)
-        .options(selectinload(Conversation.members))
-        .where(Conversation.id == conversation_id)
-    ).first()
-    if not conversation:
-        raise HTTPException(status_code=404, detail="Conversation not found")
+    following = {
+        row.followed_id
+        for row in session.exec(
+            select(Follow).where(Follow.follower_id == current_user_id)
+        ).all()
+    }
+    followed_by = {
+        row.follower_id
+        for row in session.exec(
+            select(Follow).where(Follow.followed_id == current_user_id)
+        ).all()
+    }
+    connection_ids = following & followed_by
+    if not connection_ids:
+        return []
 
-    member = session.get(ConversationMember, (conversation_id, user_id))
-    if not member:
-        raise HTTPException(status_code=404, detail="Conversation not found")
-    return conversation
+    users = session.exec(select(User).where(col(User.id).in_(connection_ids))).all()
+    by_id = {u.id: u for u in users}
+
+    my_rooms = {
+        m.conversation_id
+        for m in session.exec(
+            select(ConversationMember).where(ConversationMember.user_id == current_user_id)
+        ).all()
+    }
+
+    result = []
+    for other_id in connection_ids:
+        theirs = {
+            m.conversation_id
+            for m in session.exec(
+                select(ConversationMember).where(ConversationMember.user_id == other_id)
+            ).all()
+        }
+        shared = my_rooms & theirs
+        user = by_id.get(other_id)
+        if user is None:
+            continue
+        result.append(
+            PersonChat(
+                conversation_id=next(iter(shared)) if shared else None,
+                user=user,
+            )
+        )
+    return result
 
 
 @router.get("/conversations", response_model=list[ConversationRead])
@@ -48,13 +88,7 @@ def list_conversations(
     current_user_id: int = Depends(get_current_user_id),
     session: Session = Depends(get_session),
 ):
-    """Return every conversation the user is in, with the other party's profile,
-    the last message preview, and the unread count.
-
-    Results are sorted by most-recent activity first. The unread count only
-    counts messages sent by the other party (not the user's own unread
-    outgoing messages, which do not make sense to display as unread).
-    """
+    """Return every thread the user is in, with the other party's profile."""
     membership = session.exec(
         select(ConversationMember).where(ConversationMember.user_id == current_user_id)
     ).all()
@@ -64,84 +98,47 @@ def list_conversations(
     conversation_ids = [m.conversation_id for m in membership]
     conversations = session.exec(
         select(Conversation)
-        .options(selectinload(Conversation.members), selectinload(Conversation.messages))
+        .options(selectinload(Conversation.members))
         .where(col(Conversation.id).in_(conversation_ids))
     ).all()
 
     result = []
     for conversation in conversations:
         others = [m for m in conversation.members if m.id != current_user_id]
-        other = others[0] if others else None
-        last = conversation.messages[-1] if conversation.messages else None
-        unread = sum(
-            1 for m in conversation.messages if m.sender_id != current_user_id and not m.is_read
-        )
         result.append(
             ConversationRead(
                 id=conversation.id,
-                other=other,
-                preview=last.text if last else None,
-                unread=unread,
-                last_message_at=last.created_at if last else None,
+                other=others[0] if others else None,
+                preview=None,
+                unread=0,
+                last_message_at=None,
             )
         )
 
-    result.sort(key=lambda c: c.last_message_at or c.created_at, reverse=True)
     return result
 
 
-@router.get("/conversations/{conversation_id}/messages", response_model=list[MessageRead])
-def get_messages(
+@router.get("/conversations/{conversation_id}/peer", response_model=UserRead)
+def get_peer(
     conversation_id: int,
     current_user_id: int = Depends(get_current_user_id),
     session: Session = Depends(get_session),
 ):
-    """Return the full thread, oldest first, and mark the other party's messages as read.
+    """Return the other party in a thread the user belongs to."""
+    member = session.get(ConversationMember, (conversation_id, current_user_id))
+    if not member:
+        raise HTTPException(status_code=404, detail="Conversation not found")
 
-    This is a side-effecting GET: every unread message from the other user
-    is flipped to is_read=True before the response is built. The commit is
-    conditional so we do not touch the DB when there is nothing to update.
-    """
-    conversation = _load_conversation(conversation_id, current_user_id, session)
-    # Mark unread messages from the other party as read in one batch.
-    messages = session.exec(
-        select(Message)
-        .options(selectinload(Message.sender))
-        .where(Message.conversation_id == conversation.id, Message.sender_id != current_user_id, Message.is_read == False)  # noqa: E712
-    ).all()
-    for message in messages:
-        message.is_read = True
-    if messages:
-        session.commit()
+    other = session.exec(
+        select(ConversationMember).where(
+            ConversationMember.conversation_id == conversation_id,
+            ConversationMember.user_id != current_user_id,
+        )
+    ).first()
+    if not other:
+        raise HTTPException(status_code=404, detail="Peer not found")
 
-    return session.exec(
-        select(Message)
-        .options(selectinload(Message.sender))
-        .where(Message.conversation_id == conversation.id)
-        .order_by(col(Message.created_at).asc(), col(Message.id).asc())
-    ).all()
-
-
-@router.post("/conversations/{conversation_id}/messages", response_model=MessageRead, status_code=201)
-def send_message(
-    conversation_id: int,
-    payload: MessageCreate,
-    current_user_id: int = Depends(get_current_user_id),
-    session: Session = Depends(get_session),
-):
-    """Append a message to a conversation the user is in.
-
-    Empty or whitespace-only messages are rejected with 422. The sender is
-    derived from the JWT, not the request body, so clients cannot impersonate
-    another user.
-    """
-    conversation = _load_conversation(conversation_id, current_user_id, session)
-    text = payload.text.strip()
-    if not text:
-        raise HTTPException(status_code=422, detail="Message cannot be empty")
-
-    message = Message(conversation_id=conversation.id, sender_id=current_user_id, text=text)
-    session.add(message)
-    session.commit()
-    session.refresh(message)
-    return message
+    user = session.get(User, other.user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Peer not found")
+    return user

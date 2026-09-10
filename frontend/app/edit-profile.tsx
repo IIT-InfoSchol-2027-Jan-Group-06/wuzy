@@ -32,6 +32,7 @@ export default function EditProfile() {
   const [newInterest, setNewInterest] = useState('');
   const [showAddInterest, setShowAddInterest] = useState(false);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [showDuplicateInterest, setShowDuplicateInterest] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [profileImageUri, setProfileImageUri] = useState<string | null>(null);
@@ -103,6 +104,11 @@ export default function EditProfile() {
     const trimmed = newInterest.trim();
     if (trimmed === '') {
       setShowAddInterest(false);
+      return;
+    }
+    const lower = trimmed.toLowerCase();
+    if (interests.some(i => i.toLowerCase() === lower)) {
+      setShowDuplicateInterest(true);
       return;
     }
     setInterests([...interests, trimmed]);
@@ -327,6 +333,24 @@ export default function EditProfile() {
               </Pressable>
               <Pressable style={styles.modalNoButton} onPress={dismissDelete}>
                 <Text style={styles.modalNoText}>No</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        transparent
+        visible={showDuplicateInterest}
+        animationType="fade"
+        onRequestClose={() => setShowDuplicateInterest(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalText}>This interest already exists</Text>
+            <View style={styles.modalButtonRow}>
+              <Pressable style={styles.modalNoButton} onPress={() => setShowDuplicateInterest(false)}>
+                <Text style={styles.modalNoText}>OK</Text>
               </Pressable>
             </View>
           </View>

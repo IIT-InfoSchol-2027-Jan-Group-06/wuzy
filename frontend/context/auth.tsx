@@ -10,6 +10,8 @@ type AuthContextValue = {
   restoring: boolean;
   login: (email: string, password: string) => Promise<ApiUser>;
   logout: () => Promise<void>;
+  /** Merge partial fields into the current user held in context. */
+  updateUser: (patch: Partial<ApiUser>) => void;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -46,7 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   };
 
-  // Register this device's push token once a user is signed in, so chat
+// Register this device's push token once a user is signed in, so chat
   // messages for them can arrive as OS notifications when they are away.
   useEffect(() => {
     if (user) {
@@ -54,7 +56,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user]);
 
-  const value = useMemo(() => ({ user, restoring, login, logout }), [user, restoring]);
+  const updateUser = (patch: Partial<ApiUser>) => {
+    setUser(prev => (prev ? { ...prev, ...patch } : prev));
+  };
+
+  const value = useMemo(
+    () => ({ user, restoring, login, logout, updateUser }),
+    [user, restoring]
+  );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

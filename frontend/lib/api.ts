@@ -63,6 +63,15 @@ export function recordView(postId: number): Promise<void> {
   return apiPostNoContent(`/feed/${postId}/view`);
 }
 
+export async function apiPatch<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${API_URL}${path}`, {
+    method: 'PATCH',
+    headers: { ...API_HEADERS, ...(await authHeaders()) },
+    body: JSON.stringify(body),
+  });
+  return handleResponse<T>(res, path);
+}
+
 export interface AuthSession {
   access_token: string;
   token_type: string;

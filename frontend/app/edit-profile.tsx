@@ -14,10 +14,11 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
+import { launchImageLibraryAsync } from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 import { useAuth } from '@/context/auth';
-import { apiPatch, type ApiUser } from '@/lib/api';
+import { apiPatch, uploadImage, assetUrl, type ApiUser } from '@/lib/api';
 
 export default function EditProfile() {
   const router = useRouter();
@@ -33,9 +34,32 @@ export default function EditProfile() {
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [profileImageUri, setProfileImageUri] = useState<string | null>(null);
   const clearTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const BIO_LIMIT = 150;
+
+  const resolvedAvatar = profileImageUri
+    ? profileImageUri
+    : user?.avatar_url
+      ? assetUrl(user.avatar_url)
+      : null;
+
+  const pickProfileImage = useCallback(async () => {
+    try {
+      const result = await launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+      if (!result.canceled && result.assets[0]) {
+        setProfileImageUri(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error picking profile image:', error);
+    }
+  }, []);
 
   const handleSave = useCallback(async () => {
     if (saving) return;
@@ -43,9 +67,16 @@ export default function EditProfile() {
     setSaving(true);
     setSaveStatus('idle');
     try {
+      let avatarUrl: string | undefined;
+      if (profileImageUri) {
+        const { url } = await uploadImage('avatar', profileImageUri);
+        avatarUrl = url;
+      }
       const updated = await apiPatch<ApiUser>('/users/me', {
         display_name: fullName || null,
         bio: bio || null,
+        hobbies: interests.length > 0 ? interests : null,
+        ...(avatarUrl && { avatar_url: avatarUrl }),
       });
       updateUser(updated);
       setSaveStatus('success');
@@ -56,7 +87,7 @@ export default function EditProfile() {
     } finally {
       setSaving(false);
     }
-  }, [saving, fullName, bio, updateUser]);
+  }, [saving, fullName, bio, interests, profileImageUri, updateUser]);
 
   const updateBioCount = (text: string) => {
     setBio(text);
@@ -97,6 +128,11 @@ export default function EditProfile() {
   };
 
   const cancelEdit = () => {
+    setFullName(user?.display_name ?? user?.username ?? '');
+    setBio(user?.bio ?? '');
+    setBioCount(0);
+    setInterests(user?.hobbies ?? []);
+    setProfileImageUri(null);
     router.back();
   };
 
@@ -115,12 +151,19 @@ export default function EditProfile() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.mainContainer}>
-          {/* Dummy profile image at top - full width, 10% taller than the design, no padding/margin */}
+          {/* Profile image at top - full width, 10% taller than the design, no padding/margin */}
           <View style={styles.imageContainer}>
-            <Image
-              source={require('@/assets/images/avatar1.jpg')}
-              style={styles.image}
-            />
+            {resolvedAvatar ? (
+              <Image
+                source={{ uri: resolvedAvatar }}
+                style={styles.image}
+              />
+            ) : (
+              <Image
+                source={require('@/assets/images/avatar1.jpg')}
+                style={styles.image}
+              />
+            )}
             <LinearGradient
               colors={['transparent', wuzyColors.bg]}
               locations={[0.8, 1]}
@@ -141,7 +184,7 @@ export default function EditProfile() {
             <View style={styles.editGroup}>
               <Text style={styles.editText}>Edit Profile</Text>
               <Pressable
-                onPress={() => {}}
+                onPress={pickProfileImage}
                 accessibilityRole="button"
                 accessibilityLabel="Change photo"
                 style={[styles.glassButton, styles.pencilButton]}

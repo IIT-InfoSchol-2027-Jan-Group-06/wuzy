@@ -79,6 +79,8 @@ backend/
 | `POST` | `/users/` | No | Create user |
 | `GET` | `/users/` | No | List all users |
 | `GET` | `/users/{id}` | No | Get user by ID |
+| `GET` | `/users/by-username/{username}` | No | Resolve a user by username (from a scanned QR) |
+| `POST` | `/users/{id}/connect` | Yes | Connect with a user: mutual follow, idempotent (increments the Connections count) |
 | `POST` | `/posts/` | Yes | Create post (X-User-Id header) |
 | `POST` | `/posts/{id}/pin-to-profile` | Yes | Promote ephemeral to permanent (author only) |
 | `GET` | `/feed/discover` | Yes | Ephemeral posts alive for this session (X-Session-Id) + all permanent posts |

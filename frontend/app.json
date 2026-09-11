@@ -44,6 +44,14 @@
       "expo-status-bar",
       "expo-web-browser",
       "expo-secure-store",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Wuzy to access your camera",
+          "barcodeScannerEnabled": true,
+          "recordAudioAndroid": false
+        }
+      ],
       "./plugins/withCleartext.js",
       "expo-sqlite",
       [

@@ -1,22 +1,6 @@
 import { useEffect, useState } from 'react';
-import {
-  Dimensions,
-  Image,
-  Modal,
-  Pressable,
-  Text,
-  View,
-  type ImageSourcePropType,
-} from 'react-native';
-import Animated, {
-  Easing,
-  useAnimatedStyle,
-  useSharedValue,
-  withDelay,
-  withSequence,
-  withSpring,
-  withTiming,
-} from 'react-native-reanimated';
+import { Image, Pressable, Text, View, type ImageSourcePropType } from 'react-native';
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withDelay, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 
 import { questArtFor } from '@/constants/awards-data';
 import { wuzyColors, wuzyFonts } from '@/constants/wuzy-theme';
@@ -97,12 +81,6 @@ function SparklePiece({
 export function QuestCard({ quest, actionLabel, onAction, onClaimed }: QuestCardProps) {
   const art: ImageSourcePropType = questArtFor(quest.name) ?? require('@/assets/badges/img15.png');
 
-  // The big earned-sticker gag is screen-sized: a huge copy of the card art
-  // springs in over the claim, holds a beat, then shrinks and floats up as if
-  // being placed on the board above. Runs whole `celebrate` is true.
-  const { width: screenWidth } = Dimensions.get('window');
-  const bigSize = Math.round(screenWidth * 0.8);
-
   const sub = quest.active_subtask;
   const done = sub === null;
 
@@ -111,35 +89,6 @@ export function QuestCard({ quest, actionLabel, onAction, onClaimed }: QuestCard
 
   const [celebrate, setCelebrate] = useState(false);
   const pop = useSharedValue(1);
-
-  const bigOpacity = useSharedValue(0);
-  const bigScale = useSharedValue(0.4);
-  const bigY = useSharedValue(40);
-  const bigRotate = useSharedValue(-8);
-
-  useEffect(() => {
-    if (!celebrate) return;
-    bigOpacity.value = withSequence(
-      withTiming(1, { duration: 160 }),
-      withDelay(620, withTiming(0, { duration: 320, easing: Easing.in(Easing.cubic) })),
-    );
-    bigScale.value = withSequence(
-      withSpring(1.08, { damping: 10, stiffness: 230 }),
-      withSpring(1, { damping: 14, stiffness: 200 }),
-      withDelay(620, withSpring(0.2, { damping: 16 })),
-    );
-    bigY.value = withSequence(withSpring(0, { damping: 12 }), withDelay(620, withTiming(-110, { duration: 340, easing: Easing.in(Easing.cubic) })));
-    bigRotate.value = withSequence(withSpring(0, { damping: 10 }), withDelay(620, withSpring(-24, { damping: 12 })));
-  }, [celebrate, bigOpacity, bigScale, bigY, bigRotate]);
-
-  const bigStyle = useAnimatedStyle(() => ({
-    opacity: bigOpacity.value,
-    transform: [
-      { translateY: bigY.value },
-      { scale: bigScale.value },
-      { rotate: `${bigRotate.value}deg` },
-    ],
-  }));
 
   const popStyle = useAnimatedStyle(() => ({
     transform: [{ scale: pop.value }],
@@ -158,7 +107,7 @@ export function QuestCard({ quest, actionLabel, onAction, onClaimed }: QuestCard
       setTimeout(() => {
         setCelebrate(false);
         onClaimed?.();
-      }, 900);
+      }, 700);
     } catch {
       setCelebrate(false);
     }
@@ -230,43 +179,6 @@ export function QuestCard({ quest, actionLabel, onAction, onClaimed }: QuestCard
           </Animated.View>
         ) : null}
       </View>
-
-      {celebrate && (
-        <Modal visible transparent animationType="fade" statusBarTranslucent>
-          <View
-            style={{
-              flex: 1,
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: 'rgba(0,0,0,0.6)',
-            }}>
-            <Animated.View style={[bigStyle, { alignItems: 'center' }]}>
-              <View
-                className="items-center justify-center rounded-full"
-                style={{
-                  width: bigSize + 44,
-                  height: bigSize + 44,
-                  backgroundColor: 'rgba(255,231,131,0.16)',
-                  borderWidth: 2,
-                  borderColor: 'rgba(255,231,131,0.6)',
-                }}>
-                <Image
-                  source={art}
-                  resizeMode="contain"
-                  style={{
-                    width: bigSize,
-                    height: bigSize,
-                    shadowColor: '#000000',
-                    shadowOpacity: 0.5,
-                    shadowRadius: 20,
-                    shadowOffset: { width: 0, height: 10 },
-                  }}
-                />
-              </View>
-            </Animated.View>
-          </View>
-        </Modal>
-      )}
     </View>
   );
 }

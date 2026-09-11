@@ -5,8 +5,8 @@ import { Image, StyleSheet, Text, View, type ImageSourcePropType } from 'react-n
 import { questArtFor } from '@/constants/awards-data';
 import { wuzyColors, wuzyFonts } from '@/constants/wuzy-theme';
 
-// Seeded random scatter. Stickers land in the middle of the box (never near
-// corners) and never physically overlap. The box stays a fixed 200px height.
+// Seeded tilt. The placement itself is fixed: stickers cluster in the middle
+// of the box, spread out from its center point.
 function mulberry32(seed: number) {
   return () => {
     seed |= 0;
@@ -19,45 +19,25 @@ function mulberry32(seed: number) {
 
 type Placement = { left: number; top: number; size: number; rot: number; z: number };
 
-// Random scatter across the whole box: stickers are thrown anywhere inside the
-// margins (not clustered in the middle), so it reads as a fun board rather
-// than a grid. Overlaps are rejected, so all stickers always land.
-function randomScatter(seed: number, count: number, boxW: number, boxH: number): Placement[] {
+// Stickers sit in the middle of the board, spread horizontally around the
+// center point (50, 50), tilted a little so they still read as stickers
+// rather than a rigid grid row.
+function centeredPlacements(seed: number, count: number): Placement[] {
   const rand = mulberry32(seed);
   const spots: Placement[] = [];
-  const taken: { x: number; y: number; size: number }[] = [];
-  const fits = (x: number, y: number, size: number) =>
-    !taken.some((t) => {
-      const dx = x - t.x;
-      const dy = y - t.y;
-      const min = (size + t.size) / 2 + 2;
-      return dx * dx + dy * dy < min * min;
-    });
-  const push = (left: number, top: number, size: number) => {
-    taken.push({ x: (left / 100) * boxW, y: (top / 100) * boxH, size });
+  for (let i = 0; i < count; i += 1) {
+    const spread = (i - (count - 1) / 2) * 27;
+    const jitter = (rand() - 0.5) * 6;
     spots.push({
-      left,
-      top,
-      size,
-      rot: Math.round((rand() * 24 - 12) * 10) / 10,
-      z: 5 + Math.floor(rand() * 26),
+      left: 50 + spread + jitter,
+      top: 50 + (rand() - 0.5) * 12,
+      size: 100 + Math.round(rand() * 30),
+      rot: Math.round((rand() * 16 - 8) * 10) / 10,
+      z: 5 + Math.floor(rand() * 10),
     });
-  };
-
-  let guard = 0;
-  while (spots.length < count && guard < 4000) {
-    guard += 1;
-    const size = 52 + Math.round(rand() * 10);
-    const left = 16 + rand() * 68;
-    const top = 20 + rand() * 60;
-    if (!fits((left / 100) * boxW, (top / 100) * boxH, size)) continue;
-    push(left, top, size);
   }
   return spots;
 }
-
-const BOARD_WIDTH = 320;
-const BOARD_HEIGHT = 200;
 
 interface BadgeGridProps {
   earned: string[];
@@ -70,15 +50,12 @@ export function BadgeGrid({ earned }: BadgeGridProps) {
     [earned],
   );
 
-  const placements = useMemo(
-    () => randomScatter(42, art.length, BOARD_WIDTH, BOARD_HEIGHT),
-    [art.length],
-  );
+  const placements = useMemo(() => centeredPlacements(42, art.length), [art.length]);
 
   return (
     <View
       className="overflow-hidden rounded-3xl border border-[#FFE783]/20 bg-[#FFE783]/10"
-      style={{ height: 200, maxHeight: 200 }}>
+      style={{ height: 320, maxHeight: 320 }}>
       <BlurView intensity={40} tint="dark" pointerEvents="none" style={StyleSheet.absoluteFill} />
       {art.length === 0 ? (
         <View className="flex-1 items-center justify-center" style={{ paddingHorizontal: 24 }}>

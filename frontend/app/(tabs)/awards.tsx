@@ -26,7 +26,11 @@ export default function AwardsScreen() {
 
   // A task's sticker is earned the first time one of its steps is claimed;
   // a fully claimed task (active_subtask null) also keeps its sticker.
-  const earned = quests.filter((q) => q.claimed_steps > 0).map((q) => q.name);
+  // Ticket Sharing's blue sticker is not shown on the board.
+  const earned = quests
+    .filter((q) => q.claimed_steps > 0)
+    .map((q) => q.name)
+    .filter((n) => n !== 'Ticket Sharing');
 
   return (
     <Screen scroll style={{ gap: wuzyLayout.gap }}>

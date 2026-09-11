@@ -8,7 +8,6 @@ const AVATAR = 56;
 
 /** Connection card: name over username on the left, avatar with online dot on the right, interest tags below. Fills its parent's height. */
 export function ConnectionCard({ connection }: { connection: Connection }) {
-
   return (
     <View
       className="flex-1 justify-center rounded-[24px] p-[16px]"

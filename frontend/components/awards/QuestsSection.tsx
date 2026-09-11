@@ -1,41 +1,25 @@
-import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useRouter } from 'expo-router';
 import { Text, View } from 'react-native';
 
 import { QuestCard } from '@/components/awards/QuestCard';
 import { wuzyColors, wuzyFonts, wuzyType } from '@/constants/wuzy-theme';
-import { apiGetQuests, type ApiQuest } from '@/lib/api';
+import type { ApiQuest } from '@/lib/api';
 
-/** Tasks header, then the three flat task cards. */
-export function QuestsSection() {
+/** Maps each task to its right-column action (or none). */
+const actionFor: Record<string, { label: string; route: string }> = {
+  'Attend Live Events': { label: 'Attend', route: '/event-details' },
+  'Social Network': { label: 'Add', route: '/connect' },
+  'Ticket Sharing': { label: 'Share', route: '/ticket-vault' },
+};
+
+interface QuestsSectionProps {
+  quests: ApiQuest[];
+  onClaimed?: () => void;
+}
+
+/** Tasks header, then the three subtask-based task cards. */
+export function QuestsSection({ quests, onClaimed }: QuestsSectionProps) {
   const router = useRouter();
-  const [quests, setQuests] = useState<ApiQuest[]>([]);
-
-  useFocusEffect(
-    useCallback(() => {
-      let active = true;
-      apiGetQuests()
-        .then((data) => {
-          if (!active) return;
-          setQuests(data.quests);
-        })
-        .catch(() => {
-          if (!active) return;
-          setQuests([]);
-        });
-      return () => {
-        active = false;
-      };
-    }, []),
-  );
-
-  // The second and third tasks have an in-app action that earns them, so their
-  // cards carry a button that jumps straight to the screen where it happens.
-  const actionFor = (quest: ApiQuest): { label: string; onPress: () => void } | undefined => {
-    if (quest.name === 'Social Network') return { label: 'Add', onPress: () => router.push('/connect') };
-    if (quest.name === 'Ticket Sharing') return { label: 'Share', onPress: () => router.push('/ticket-vault') };
-    return undefined;
-  };
 
   return (
     <View className="mt-[30px]">
@@ -55,13 +39,14 @@ export function QuestsSection() {
 
       <View className="mt-[16px] gap-[12px]">
         {quests.map((quest) => {
-          const action = actionFor(quest);
+          const action = actionFor[quest.name];
           return (
             <QuestCard
               key={quest.id}
               quest={quest}
               actionLabel={action?.label}
-              onAction={action?.onPress}
+              onAction={action ? () => router.push(action.route as never) : undefined}
+              onClaimed={onClaimed}
             />
           );
         })}

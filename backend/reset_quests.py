@@ -1,8 +1,9 @@
 """Reset quest progress for testing the claim flow.
 
-Restores every user's quest progress to the fresh-seed demo state: the
-Counters are set back (Attend 3, Social 7, Ticket 1) and every task is
-unclaimed, so the claim path can be run from the beginning.
+Restores every user's quest state to the fresh-seed demo: Attend Live
+Events has "Attend 1 Event" at 1/1 (claimable), Social Network has
+"Add 3 Friends" at 2/3 (in progress), Ticket Sharing has "Share 1
+Ticket" at 1/1 (claimable).  All progress rows are rebuilt from scratch.
 
 Usage:
   python reset_quests.py            # reset all users
@@ -11,40 +12,50 @@ Usage:
 
 import sys
 
-from sqlmodel import Session, select
+from sqlmodel import Session, delete, select
 
 from app.db.session import engine
-from app.models.quest import Quest, QuestProgress
+from app.models.quest import Quest, QuestSubtask, QuestSubtaskProgress
 from app.models.user import User
 
+# Task name -> subtasks to pre-seed with demo counters.
+# Rows for every other subtask are wiped.
 DEMO_PROGRESS = {
-    "Attend Live Events": 3,
-    "Social Network": 7,
-    "Ticket Sharing": 1,
+    "Attend Live Events": [("Attend 1 Event", 1)],
+    "Social Network": [("Add 3 Friends", 2)],
+    "Ticket Sharing": [("Share 1 Ticket", 1)],
 }
 
 
-def reset_for(user: User, session: Session) -> int:
+def reset_for(user: User, session: Session) -> tuple[int, int]:
     quests = {quest.name: quest for quest in session.exec(select(Quest)).all()}
-    count = 0
-    for name, current in DEMO_PROGRESS.items():
-        quest = quests.get(name)
+    claimable = 0
+    for quest_name, subtask_progress in DEMO_PROGRESS.items():
+        quest = quests.get(quest_name)
         if quest is None:
             continue
-        row = session.exec(
-            select(QuestProgress).where(
-                QuestProgress.quest_id == quest.id,
-                QuestProgress.user_id == user.id,
+        subtasks = session.exec(
+            select(QuestSubtask).where(QuestSubtask.quest_id == quest.id)
+        ).all()
+        for subtask in subtasks:
+            target = next((t for n, t in subtask_progress if n == subtask.name), 0)
+            session.exec(
+                delete(QuestSubtaskProgress).where(
+                    QuestSubtaskProgress.subtask_id == subtask.id,
+                    QuestSubtaskProgress.user_id == user.id,
+                )
             )
-        ).first()
-        if row is None:
-            row = QuestProgress(user_id=user.id, quest_id=quest.id)
-            session.add(row)
-        row.current_progress = current
-        row.claimed = False
-        session.add(row)
-        count += 1
-    return count
+            session.add(
+                QuestSubtaskProgress(
+                    user_id=user.id,
+                    subtask_id=subtask.id,
+                    current_progress=target,
+                    claimed=False,
+                )
+            )
+            if target >= subtask.target_count:
+                claimable += 1
+    return claimable, len(session.exec(select(QuestSubtask)).all())
 
 
 def main() -> None:
@@ -65,8 +76,8 @@ def main() -> None:
             sys.exit(1)
 
         for user in users:
-            count = reset_for(user, session)
-            print(f"Reset {user.username} (id {user.id}): {count} quests, all unclaimed")
+            claimable, total = reset_for(user, session)
+            print(f"Reset {user.username} (id {user.id}): {claimable}/{total} claimable")
         session.commit()
 
 

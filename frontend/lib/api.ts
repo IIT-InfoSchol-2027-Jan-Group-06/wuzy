@@ -155,17 +155,26 @@ export interface ApiGroup {
   members: ApiUser[];
 }
 
+export interface ApiQuestSubtask {
+  id: number;
+  name: string;
+  description: string;
+  target_count: number;
+  progress_unit: string;
+  reward_xp: number;
+  reward_sticker: boolean;
+  current_progress: number;
+  claimed: boolean;
+}
+
 export interface ApiQuest {
   id: number;
   name: string;
   description: string;
-  reward_name: string;
-  reward_xp: number;
-  reward_sticker: boolean;
-  target_count: number;
-  progress_unit: string;
-  current_progress: number;
-  claimed: boolean;
+  active_subtask: ApiQuestSubtask | null;
+  subtask_step: number;
+  subtask_total: number;
+  claimed_steps: number;
 }
 
 export interface ApiQuestsDashboard {

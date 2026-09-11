@@ -22,7 +22,7 @@ export function QuestsSection({ quests, onClaimed }: QuestsSectionProps) {
   const router = useRouter();
 
   return (
-    <View className="mt-[30px]">
+    <View className="mt-[16px]">
       <Text style={{ fontFamily: wuzyFonts.bold, fontSize: wuzyType.body, color: wuzyColors.yellow }}>
         Tasks
       </Text>

@@ -130,7 +130,7 @@ Full-bleed content inside a padded screen uses `marginHorizontal: -wuzyLayout.si
 - 48 avatar, gray label with white name inline (`body`), gray timestamp (`small`). Notifications list.
 
 ### ConnectionCard
-- `surface` card, radius 24, padding 16. Yellow name (`body` semibold) over white username (`small`), 56 avatar with 14 online dot, `TagSection` below. Fills its `Wheel` slot.
+- `surface` card, radius 24, padding 16. Yellow name (`body` semibold) on the left, 56 avatar with 14 online dot on the right, `TagSection` below. Fills its `Wheel` slot. Connections come from the backend (`/chat/people`) shaped into the card by `toConnection` in `constants/connection-data.ts`; the online dot stays off until presence data exists.
 
 ### Wheel
 - Endless vertical picker. Props: `data`, `keyExtractor`, `renderItem`, `itemHeight`, `gap`. Centered item full size, neighbours at 0.85 opacity, fade out 3.5 items away. Resets to the first item with a 250ms ease when `data` changes. Knobs at the top of `components/Wheel.tsx`.
@@ -152,6 +152,9 @@ Full-bleed content inside a padded screen uses `marginHorizontal: -wuzyLayout.si
 
 ### QrCode
 - `value`, `size`, `color`, `card`. Card mode is a white rounded container; `card={false}` renders bare modules over dark images.
+
+### QrScanner
+- Camera side of the Connect card (`components/QrScanner.tsx`). A square (`aspectRatio: 1`, radius 24) `surface` box holding either a live `CameraView` (QR barcode scan behind a yellow finder frame) or the scan outcome. Parses the scanned URL's `/profile/<username>`, looks the user up (`/users/by-username/{username}`), establishes the mutual follow (`/users/{id}/connect`) and flashes a brief yellow "Connected!" before returning to scanning. The new connection's card appears on the Connections screen (refetched on focus), never in the camera view. An "Allow camera" `Chip` asks for permission when it is missing.
 
 ### ProfileHero and ProfileGrid
 - ProfileHero: full-width background photo (explicit capped height, same rule as the profile hero) fading to `bg`, with Bebas `hero` name, awards medals, and `body` bio at its foot. `actions` render at the top right (owner only: Connect and Settings glass buttons).
@@ -175,7 +178,8 @@ Tab roots (Home, Explore, Awards, Messages, Profile) open with `TabHeader`. Push
 
 - Profile: edge-to-edge hero photo (1.3 x width, max 540 tall) with connect and settings glass buttons at the top right and the name, awards, and bio at its foot; then tags, two `control` tall flat glass pills (dark blur, 10% yellow tint, 20% white border, Poppins semibold `small`) that fill the row up to 160 each, a centered Timeline title, and a full-bleed three-column grid that fills the width.
 
-- Connections: `ScreenHeader`, `SearchBar`, count, then a `Wheel` of `ConnectionCard`s (slot 132, gap 12) filling the rest of the screen.
+- Connections: `ScreenHeader`, `SearchBar`, a live count from the backend (`/chat/people`), then a `Wheel` of `ConnectionCard`s (slot 132, gap 12) filling the rest of the screen. Refetches on focus, so a QR scan on the Connect screen appears as a new connection with an incremented count.
+- Connect: full-bleed blurred profile photo behind a frosted card. Back `GlassNavButton` on the left of the top row. Two complete frosted cards (blur, glass tint, hairline border, "Connect" title, QR/scan content) share a sliding track via `Gesture.Pan`: swipe left to bring the scanner card in, swipe right to go back. Same card border, radius, and positioning in both states.
 - Ticket vault: blurred active-ticket art fills the screen behind a `ScreenHeader` and a snapping horizontal carousel (card 78% of width capped at 360, gap 16).
 - Chat thread: `ChatHeader`, inverted message list with a date `Chip` at the top, `MessageBar` in normal flow under the list inside a `KeyboardAvoidingView`.
 - Event details: full-bleed hero with the Bebas title and a like button at its foot, floating `ScreenHeader` with a share button, then description, attendees, venue, date and time, map, gift and Buy ticket actions.

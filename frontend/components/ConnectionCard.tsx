@@ -6,7 +6,7 @@ import type { Connection } from '@/constants/connection-data';
 
 const AVATAR = 56;
 
-/** Connection card: name over username on the left, avatar with online dot on the right, interest tags below. Fills its parent's height. */
+/** Connection card: name on the left, avatar with online dot on the right, interest tags below. Fills its parent's height. */
 export function ConnectionCard({ connection }: { connection: Connection }) {
   return (
     <View
@@ -23,9 +23,6 @@ export function ConnectionCard({ connection }: { connection: Connection }) {
         <View className="flex-1">
           <Text numberOfLines={1} style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.body, color: wuzyColors.yellow }}>
             {connection.name}
-          </Text>
-          <Text numberOfLines={1} style={{ fontFamily: wuzyFonts.body, fontSize: wuzyType.small, color: wuzyColors.white }}>
-            {connection.username}
           </Text>
         </View>
         <View>

@@ -2,6 +2,7 @@ import { BlurView } from 'expo-blur';
 import { Image, StyleSheet, View, type ImageSourcePropType } from 'react-native';
 
 // Badges must be transparent PNGs with no square frame baked into the file.
+// The full sticker set is a fixed decorative board; all 15 never change.
 const badgeImages: ImageSourcePropType[] = [
   require('@/assets/badges/img15.png'),
   require('@/assets/badges/img14.png'),
@@ -89,8 +90,8 @@ function randomScatter(seed: number, count: number, boxW: number, boxH: number):
 
 const STICKER_PLACEMENTS = randomScatter(42, 15, 320, 200) as Placement[];
 
-// Random scatter board: badges are absolutely placed around the center of the
-// box with varied sizes, tilts and depth. Box dimensions are hardcoded.
+// Sticker board: the full badge set is always displayed so it reads as a
+// fixed collector board, not a progress meter.
 export function BadgeGrid() {
   return (
     <View

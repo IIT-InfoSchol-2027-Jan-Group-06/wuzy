@@ -9,10 +9,14 @@ import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { mockEvent } from '@/constants/event-data';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
+import { apiBumpQuestProgress, apiGetQuests } from '@/lib/api';
 
 const AVATAR = 36;
 const AVATAR_OVERLAP = 12;
 const ACTION_HEIGHT = wuzyLayout.control;
+
+// Buying a ticket is the "attend" action, so each purchase counts toward this quest.
+const ATTEND_QUEST = 'Attend Live Events';
 
 export default function EventDetailsScreen() {
   const router = useRouter();
@@ -35,6 +39,20 @@ export default function EventDetailsScreen() {
     marginLeft: index === 0 ? 0 : -AVATAR_OVERLAP,
     zIndex: 10 - index,
   });
+
+  // Each ticket bought counts one attended live event toward the quest.
+  const handleBuyTicket = async () => {
+    try {
+      const data = await apiGetQuests();
+      const quest = data.quests.find((q) => q.name === ATTEND_QUEST);
+      if (quest) {
+        await apiBumpQuestProgress(quest.id);
+      }
+    } catch {
+      // Keeps the count unchanged; the bump did not go through.
+    }
+    router.push('/ticket');
+  };
 
   return (
     <Screen
@@ -126,7 +144,7 @@ export default function EventDetailsScreen() {
             <SvgImage source={require('@/assets/icons/gift.svg')} style={{ width: 28, height: 28 }} contentFit="contain" />
           </Pressable>
           <Pressable
-            onPress={() => router.push('/ticket')}
+            onPress={handleBuyTicket}
             accessibilityRole="button"
             className="flex-1 items-center justify-center rounded-full active:opacity-80"
             style={{ height: ACTION_HEIGHT, backgroundColor: wuzyColors.yellow }}>

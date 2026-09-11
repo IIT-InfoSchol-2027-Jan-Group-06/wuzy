@@ -161,10 +161,21 @@ Full-bleed content inside a padded screen uses `marginHorizontal: -wuzyLayout.si
 ### BadgeGrid (awards sticker board)
 - **When to Use**: The Awards screen's sticker board (`app/(tabs)/awards.tsx`)
 - **Import**: `import { BadgeGrid } from '@/components/awards/BadgeGrid';`
-- **Look**: All 15 badge PNGs (`assets/badges/img1-15.png`) scattered across a fixed 200 tall transparent yellow glass card: `bg-[#FFE783]/10`, `backdrop-blur` (a BlurView on native), `border border-[#FFE783]/20`, `rounded-3xl`, `overflow-hidden`
-- **Placement**: A seeded random scatter (`STICKER_PLACEMENTS`): each sticker lands anywhere inside the box margins so it reads as a fun board rather than a grid, and never overlaps another. Any sticker the random pass cannot fit is placed on a gap-checked lattice sweep, so all 15 always land.
+- **Look**: A fixed 200 tall transparent yellow glass card: `bg-[#FFE783]/10`, `backdrop-blur` (a BlurView on native), `border border-[#FFE783]/20`, `rounded-3xl`, `overflow-hidden`
+- **Placement**: A seeded random scatter (`STICKER_PLACEMENTS`): each sticker lands anywhere inside the box margins so it reads as a fun board rather than a grid, and never overlaps another. Any sticker the random pass cannot fit is placed on a gap-checked lattice sweep.
+- **Data**: The full 15-sticker set renders always as a fixed decorative board. The art is bundled locally in `components/awards/BadgeGrid.tsx`. Nothing is read from the API. Empty-state hints are unnecessary because the board is never empty.
 - **Sticker feel**: Each sticker is 40-46 square, tilted up to `±12deg`, stacked with `zIndex`, and carries a soft drop shadow. No background cards or borders on individual items.
 - **Asset rule**: Badge files must be transparent PNGs with no square background frame baked into the image.
+
+### QuestCard and QuestsSection (awards task chains)
+- **When to Use**: The Awards screen's task list (`app/(tabs)/awards.tsx`). One task chain per `ApiQuest`: Attend Live Events, Social Network, Ticket Sharing.
+- **Import**: `import { QuestCard } from '@/components/awards/QuestCard';` and `import { QuestsSection } from '@/components/awards/QuestsSection';`
+- **Data**: `apiGetQuests()` returns each quest with per-level status `LOCKED | UNLOCKED | COMPLETED | CLAIMED` (derived server-side). Quest header art maps by quest name via `questArtFor` in `constants/awards-data.ts`.
+- **Look**: `surface` card, radius 24, padding 16, cards stacked at `itemGap`. Header: 56 slot with 52 task art, name (`body` semibold white) over description (`small` gray), optional yellow-outline action pill (`small` semibold). Actions either route to a linked screen (Connect, Share) or, for Attend Live Events, claim the pending reward via the backend; that claim pill is dimmed and disabled until a step completes.
+- **Progress**: A 5 tall yellow bar fills overall: each claimed step owns a segment and the step in progress earns partial credit toward its segment, so the fill only ever grows. Below it sit current/target (`caption` gray) and total claimed XP (`caption` semibold yellow).
+- **Step rows**: Below a hairline, the chain's steps render as rows (gap 14), each with the goal (`small` medium white, gray once claimed and the row dims to 60%) over its reward line badge/XP/sticker joined by dots (`caption` gray). On the right a status control: `UNLOCKED` shows current/target (`caption` semibold yellow) in a faint yellow-filled secondary pill; `COMPLETED` shows the pulsing primary yellow Claim pill (`ClaimButton`) with a confetti pop on claim; `CLAIMED` shows a bordered grayed "Claimed" pill with a checkmark.
+- **Reveal**: Steps show one at a time. Only steps up to the current active one (the first not claimed) render, so after claiming an award the next step appears and users keep earning the chain's rewards in order. Claiming is sequential server-side, and `QuestsSection` refetches the dashboard after every claim so the next step arrives already updated.
+- **Ready pill**: `QuestsSection` header counts levels with `status === 'COMPLETED'` into a yellow pill, same shape as the Tasks header it replaced.
 
 ---
 

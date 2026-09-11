@@ -3,21 +3,22 @@ import { FlatList, NativeScrollEvent, NativeSyntheticEvent, Pressable, Share, St
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useLocalSearchParams } from 'expo-router';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { TicketCard } from '@/components/TicketCard';
 import { tickets, type Ticket } from '@/constants/ticket-data';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
-import { apiBumpTaskProgress, apiGetAwards } from '@/lib/api';
+import { apiBumpQuestProgress, apiGetQuests } from '@/lib/api';
 
 const CARD_GAP = 16;
+
+// The Ticket Sharing chain tracks shares; this quota backs the "Events you get" bar.
+const TICKET_QUEST = 'Ticket Sharing';
 
 /** Blurred active-ticket art fills the whole screen, so this route composes the shell by hand instead of using Screen. */
 export default function TicketVaultScreen() {
   const { width } = useWindowDimensions();
-  const { taskId } = useLocalSearchParams<{ taskId?: string }>();
   const [activeIndex, setActiveIndex] = useState(0);
   const [shareCount, setShareCount] = useState(0);
   const [shareTarget, setShareTarget] = useState(0);
@@ -26,27 +27,30 @@ export default function TicketVaultScreen() {
   const sidePadding = (width - cardWidth) / 2;
   const activeTicket = tickets[activeIndex] ?? tickets[0];
 
-  // Opened from the Awards "Share an Event Ticket" task: count completed shares
-  // toward progress, shown as events shared / events needed.
+  // Read the caller's share count toward the next Ticket Sharing level target.
+  const readShareQuota = useCallback(async () => {
+    try {
+      const data = await apiGetQuests();
+      const quest = data.quests.find((q) => q.name === TICKET_QUEST);
+      if (!quest) return { count: 0, target: 0 };
+      const active = quest.levels.find((level) => level.status !== 'CLAIMED') ?? quest.levels[quest.levels.length - 1];
+      return { count: quest.current_progress, target: active?.target_count ?? 0 };
+    } catch {
+      return { count: 0, target: 0 };
+    }
+  }, []);
+
   useEffect(() => {
-    if (!taskId) return;
     let active = true;
-    apiGetAwards()
-      .then((data) => {
-        if (!active) return;
-        const task = data.tasks.find((t) => t.id === Number(taskId));
-        setShareCount(task?.current_progress ?? 0);
-        setShareTarget(task?.target_progress ?? 0);
-      })
-      .catch(() => {
-        if (!active) return;
-        setShareCount(0);
-        setShareTarget(0);
-      });
+    readShareQuota().then((quota) => {
+      if (!active) return;
+      setShareCount(quota.count);
+      setShareTarget(quota.target);
+    });
     return () => {
       active = false;
     };
-  }, [taskId]);
+  }, [readShareQuota]);
 
   // The Events-you-get bar slides forward on each share instead of snapping.
   const barProgress = useSharedValue(0);
@@ -62,27 +66,18 @@ export default function TicketVaultScreen() {
     width: `${barProgress.value * 100}%`,
   }));
 
-  const refreshShare = useCallback(async () => {
-    if (!taskId) return;
-    try {
-      const data = await apiGetAwards();
-      const task = data.tasks.find((t) => t.id === Number(taskId));
-      setShareCount(task?.current_progress ?? 0);
-      setShareTarget(task?.target_progress ?? 0);
-    } catch {
-      setShareCount(0);
-      setShareTarget(0);
-    }
-  }, [taskId]);
-
   const handleShare = async (ticket: Ticket) => {
-    if (taskId) {
-      try {
-        await apiBumpTaskProgress(Number(taskId));
-        await refreshShare();
-      } catch {
-        // Keep the count unchanged; the bump did not go through.
+    try {
+      const data = await apiGetQuests();
+      const quest = data.quests.find((q) => q.name === TICKET_QUEST);
+      if (quest) {
+        await apiBumpQuestProgress(quest.id);
       }
+      const quota = await readShareQuota();
+      setShareCount(quota.count);
+      setShareTarget(quota.target);
+    } catch {
+      // Keep the count unchanged; the bump did not go through.
     }
     try {
       await Share.share({

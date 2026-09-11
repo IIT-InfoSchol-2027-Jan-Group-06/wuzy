@@ -1,7 +1,7 @@
 """add badge and task tables
 
 Revision ID: c5d6e7f8a9b0
-Revises: b4c5d6e7f8a9
+Revises: e5f6a7b8c9d0
 Create Date: 2026-09-08 12:00:00
 
 """
@@ -13,7 +13,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "c5d6e7f8a9b0"
-down_revision: str | None = "b4c5d6e7f8a9"
+down_revision: str | None = "e5f6a7b8c9d0"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

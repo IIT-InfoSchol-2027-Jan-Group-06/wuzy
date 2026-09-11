@@ -5,15 +5,14 @@ import shutil
 from pathlib import Path
 
 import bcrypt
-from sqlmodel import Session, select
+from sqlmodel import Session, delete, select
 
 from app.db.session import engine
-from app.models.badge import Badge
 from app.models.conversation import Conversation, ConversationMember
 from app.models.follow import Follow
 from app.models.group import Group, GroupMember
 from app.models.post import Post
-from app.models.task import Task
+from app.models.quest import Quest, QuestLevel, QuestProgress
 from app.models.user import User
 
 STORAGE_ROOT = Path("storage")
@@ -137,25 +136,147 @@ POSTS = {
 # Connections: every pair is a DM thread. Messages themselves are ephemeral
 # (WebSocket/Redis only), so threads carry membership but no stored content.
 
-BADGES = [
-    ("Raver", "/uploads/avatar/avatar1.png", True),
-    ("Event Host", "/uploads/avatar/avatar2.png", False),
-    ("Social Butterfly", "/uploads/avatar/avatar3.png", False),
-    ("Ticket Master", "/uploads/avatar/avatar4.png", False),
+# Quest chains. Each entry holds its levels as a tuple of
+# (level_number, target_count, goal_text, reward_name, reward_xp, reward_sticker).
+# Levels unlock in order: the next only becomes reachable once the previous
+# level's target is met.
+QUESTS = [
+    {
+        "name": "Attend Live Events",
+        "description": "Go to live events and climb the table.",
+        "levels": [
+            (1, 1, "Attend 1 Live Event", "Bronze Badge", 50, False),
+            (2, 2, "Attend 2 Live Events", "Silver Badge", 100, False),
+            (3, 3, "Attend 3 Live Events", "Gold Badge", 0, True),
+        ],
+    },
+    {
+        "name": "Social Network",
+        "description": "Connect with people and grow your circle.",
+        "levels": [
+            (1, 3, "Connect with 3 Users", "Starter Badge", 0, False),
+            (2, 7, "Connect with 7 Users", "Networker Badge", 0, False),
+            (3, 10, "Connect with 10 Users", "Community Champion Badge", 0, False),
+        ],
+    },
+    {
+        "name": "Ticket Sharing",
+        "description": "Share event tickets with your circle.",
+        "levels": [
+            (1, 1, "Share 1 Event Ticket", "Promoter Badge", 0, False),
+            (2, 2, "Share 2 Event Tickets", "Super Promoter Badge", 50, False),
+        ],
+    },
 ]
 
-TASKS = [
-    ("Attend 3 Live Events", 3, 3, "completed", "CLAIMABLE", "CLAIM", "/uploads/avatar/avatar1.png"),
-    ("Connect with 10 Ravers", 7, 10, "friends", "IN_PROGRESS", "ADD", "/uploads/avatar/avatar3.png"),
-    ("Share an Event Ticket", 0, 1, "shared", "IN_PROGRESS", "SHARE", "/uploads/avatar/avatar4.png"),
+# Demo starting progress per quest, applied on a fresh seed. Values are chosen
+# to show every level state at once: a claimed reward, a completed one ready
+# to claim (Ticket Sharing), and an in-progress level.
+# Tuple: (quest name, current_progress, claimed_level)
+QUEST_START_PROGRESS = [
+    ("Attend Live Events", 2, 1),
+    ("Social Network", 7, 1),
+    ("Ticket Sharing", 1, 0),
 ]
+
+
+def seed_quests(session: Session) -> None:
+    """Sync the quest catalog: drop stale quests, add missing ones.
+
+    Existing quests and levels keep their ids but their display fields are
+    refreshed from the catalog. Live user progress is preserved.
+    """
+    wanted_names = {quest["name"] for quest in QUESTS}
+    for stale in session.exec(select(Quest)).all():
+        if stale.name not in wanted_names:
+            session.exec(delete(QuestProgress).where(QuestProgress.quest_id == stale.id))
+            session.exec(delete(QuestLevel).where(QuestLevel.quest_id == stale.id))
+            session.delete(stale)
+    session.commit()
+
+    for index, quest in enumerate(QUESTS):
+        row = session.exec(select(Quest).where(Quest.name == quest["name"])).first()
+        if row is None:
+            row = Quest(
+                name=quest["name"],
+                description=quest["description"],
+                sort_order=index,
+            )
+            session.add(row)
+            session.commit()
+            session.refresh(row)
+        else:
+            row.description = quest["description"]
+            row.sort_order = index
+            session.add(row)
+
+        level_rows = {
+            lvl.level_number: lvl
+            for lvl in session.exec(select(QuestLevel).where(QuestLevel.quest_id == row.id)).all()
+        }
+        for level_number, target, goal, reward, xp, sticker in quest["levels"]:
+            level = level_rows.get(level_number)
+            if level is None:
+                session.add(
+                    QuestLevel(
+                        quest_id=row.id,
+                        level_number=level_number,
+                        target_count=target,
+                        goal_text=goal,
+                        reward_name=reward,
+                        reward_xp=xp,
+                        reward_sticker=sticker,
+                    )
+                )
+            else:
+                level.target_count = target
+                level.goal_text = goal
+                level.reward_name = reward
+                level.reward_xp = xp
+                level.reward_sticker = sticker
+                session.add(level)
+    session.commit()
+
+
+def seed_quest_progress(session: Session) -> None:
+    """Add a demo progress row per quest for every account, if missing.
+
+    Existing rows keep their live claimed/current values so a container
+    restart never resets what a user already earned.
+    """
+    users = session.exec(select(User)).all()
+    for user in users:
+        for quest_name, current, claimed in QUEST_START_PROGRESS:
+            quest = session.exec(select(Quest).where(Quest.name == quest_name)).first()
+            if quest is None:
+                continue
+            exists = session.exec(
+                select(QuestProgress).where(
+                    QuestProgress.quest_id == quest.id,
+                    QuestProgress.user_id == user.id,
+                )
+            ).first()
+            if exists is None:
+                session.add(
+                    QuestProgress(
+                        user_id=user.id,
+                        quest_id=quest.id,
+                        current_progress=current,
+                        claimed_level=claimed,
+                    )
+                )
+    session.commit()
 
 
 def seed():
     seed_media()
     with Session(engine) as session:
         if session.exec(select(User)).first():
-            print("Database already seeded, skipping...")
+            # Demo accounts already exist; sync the quest catalog and backfill
+            # any missing demo progress rows.
+            seed_quests(session)
+            seed_quest_progress(session)
+            print("Database already seeded, quest chains backfilled...")
             return
 
         users = {
@@ -215,33 +336,18 @@ def seed():
                 GroupMember(group_id=group.id, user_id=users[member_name].id)
             )
 
-        for name, image_url, is_unlocked in BADGES:
-            session.add(Badge(name=name, image_url=image_url, is_unlocked=is_unlocked))
-
-        for title, current, target, unit, status, action, badge_url in TASKS:
-            session.add(
-                Task(
-                    title=title,
-                    current_progress=current,
-                    target_progress=target,
-                    progress_unit=unit,
-                    status=status,
-                    action_type=action,
-                    badge_image_url=badge_url,
-                )
-            )
-
-        session.commit()
+        seed_quests(session)
+        seed_quest_progress(session)
 
         post_count = session.exec(select(Post)).all().__len__()
-        badge_count = session.exec(select(Badge)).all().__len__()
-        task_count = session.exec(select(Task)).all().__len__()
         conversation_count = session.exec(select(Conversation)).all().__len__()
         group_count = session.exec(select(Group)).all().__len__()
+        quest_count = session.exec(select(Quest)).all().__len__()
+        progress_count = session.exec(select(QuestProgress)).all().__len__()
         print("Demo data seeded successfully!")
         print(f"Created users: {', '.join(users)}")
         print(f"Created posts: {post_count}, conversations: {conversation_count}, groups: {group_count}")
-        print(f"Created badges: {badge_count}, tasks: {task_count}")
+        print(f"Created quests: {quest_count}, progress rows: {progress_count}")
         print("Demo logins (password123): abhiruk, ravindu644, sethuki, azma, charuki @test.com")
         print("Backend URL base: http://localhost:8000")
 

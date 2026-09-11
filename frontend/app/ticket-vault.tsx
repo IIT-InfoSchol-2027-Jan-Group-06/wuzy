@@ -1,92 +1,47 @@
-import { useCallback, useEffect, useState } from 'react';
-import { FlatList, NativeScrollEvent, NativeSyntheticEvent, Pressable, Share, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { useCallback, useState } from 'react';
+import { FlatList, NativeScrollEvent, NativeSyntheticEvent, Pressable, Share, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { TicketCard } from '@/components/TicketCard';
 import { tickets, type Ticket } from '@/constants/ticket-data';
-import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
+import { wuzyLayout } from '@/constants/wuzy-theme';
 import { apiBumpQuestProgress, apiGetQuests } from '@/lib/api';
 
 const CARD_GAP = 16;
 
-// The Ticket Sharing chain tracks shares; this quota backs the "Events you get" bar.
+// Each native share counts one action toward the Ticket Sharing task.
 const TICKET_QUEST = 'Ticket Sharing';
 
 /** Blurred active-ticket art fills the whole screen, so this route composes the shell by hand instead of using Screen. */
 export default function TicketVaultScreen() {
   const { width } = useWindowDimensions();
   const [activeIndex, setActiveIndex] = useState(0);
-  const [shareCount, setShareCount] = useState(0);
-  const [shareTarget, setShareTarget] = useState(0);
 
   const cardWidth = Math.min(Math.round(width * 0.78), 360);
   const sidePadding = (width - cardWidth) / 2;
   const activeTicket = tickets[activeIndex] ?? tickets[0];
 
-  // Read the caller's share count toward the next Ticket Sharing level target.
-  const readShareQuota = useCallback(async () => {
-    try {
-      const data = await apiGetQuests();
-      const quest = data.quests.find((q) => q.name === TICKET_QUEST);
-      if (!quest) return { count: 0, target: 0 };
-      const active = quest.levels.find((level) => level.status !== 'CLAIMED') ?? quest.levels[quest.levels.length - 1];
-      return { count: quest.current_progress, target: active?.target_count ?? 0 };
-    } catch {
-      return { count: 0, target: 0 };
-    }
-  }, []);
-
-  useEffect(() => {
-    let active = true;
-    readShareQuota().then((quota) => {
-      if (!active) return;
-      setShareCount(quota.count);
-      setShareTarget(quota.target);
-    });
-    return () => {
-      active = false;
-    };
-  }, [readShareQuota]);
-
-  // The Events-you-get bar slides forward on each share instead of snapping.
-  const barProgress = useSharedValue(0);
-
-  useEffect(() => {
-    barProgress.value = withTiming(
-      shareTarget > 0 ? Math.min(1, shareCount / shareTarget) : 0,
-      { duration: 450, easing: Easing.out(Easing.quad) },
-    );
-  }, [shareCount, shareTarget, barProgress]);
-
-  const barWidth = useAnimatedStyle(() => ({
-    width: `${barProgress.value * 100}%`,
-  }));
-
-  const handleShare = async (ticket: Ticket) => {
+  const handleShare = useCallback(async (ticket: Ticket) => {
     try {
       const data = await apiGetQuests();
       const quest = data.quests.find((q) => q.name === TICKET_QUEST);
       if (quest) {
         await apiBumpQuestProgress(quest.id);
       }
-      const quota = await readShareQuota();
-      setShareCount(quota.count);
-      setShareTarget(quota.target);
     } catch {
-      // Keep the count unchanged; the bump did not go through.
+      // Keeps the count unchanged; the bump did not go through.
     }
     try {
       await Share.share({
         message: `${ticket.title}\n${ticket.date}\n${ticket.venue}\nJoin me on Wuzy!`,
       });
     } catch {
-      // Share sheet dismissed or not supported; the count already went through.
+      // Share sheet dismissed or not supported; nothing to do.
     }
-  };
+  }, []);
 
   const handleMomentumScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const index = Math.round(event.nativeEvent.contentOffset.x / (cardWidth + CARD_GAP));
@@ -126,36 +81,6 @@ export default function TicketVaultScreen() {
             )}
           />
         </View>
-
-        {shareTarget > 0 && (
-          <View className="mx-[16px] mb-[8px] gap-[12px] rounded-2xl border border-white/10 bg-[#0B0E14]/70 p-4">
-            <View className="flex-row items-center justify-between">
-              <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.small, color: wuzyColors.yellow }}>
-                Events you get
-              </Text>
-              <Text style={{ fontFamily: wuzyFonts.bold, fontSize: wuzyType.small, color: wuzyColors.white }}>
-                {shareCount} / {shareTarget}
-              </Text>
-            </View>
-            <Text
-              numberOfLines={1}
-              style={{ fontFamily: wuzyFonts.bold, fontSize: wuzyType.body, color: wuzyColors.white }}>
-              {activeTicket.title}
-            </Text>
-            <View className="h-[5px] overflow-hidden rounded-full bg-white/10">
-              <Animated.View className="h-full rounded-full bg-wuzy-yellow" style={barWidth} />
-            </View>
-            <Pressable
-              onPress={() => handleShare(activeTicket)}
-              accessibilityRole="button"
-              className="items-center justify-center rounded-full active:opacity-80"
-              style={{ height: wuzyLayout.control, backgroundColor: wuzyColors.yellow }}>
-              <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.body, color: wuzyColors.bg }}>
-                Share event
-              </Text>
-            </Pressable>
-          </View>
-        )}
       </SafeAreaView>
     </View>
   );

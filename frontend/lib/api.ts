@@ -155,53 +155,33 @@ export interface ApiGroup {
   members: ApiUser[];
 }
 
-export type QuestLevelStatus = 'LOCKED' | 'UNLOCKED' | 'COMPLETED' | 'CLAIMED';
-
-export interface ApiQuestLevel {
-  id: number;
-  level_number: number;
-  target_count: number;
-  goal_text: string;
-  reward_name: string;
-  reward_xp: number;
-  reward_sticker: boolean;
-  status: QuestLevelStatus;
-}
-
 export interface ApiQuest {
   id: number;
   name: string;
   description: string;
+  reward_name: string;
+  reward_xp: number;
+  reward_sticker: boolean;
+  target_count: number;
+  progress_unit: string;
   current_progress: number;
-  total_xp: number;
-  levels: ApiQuestLevel[];
+  claimed: boolean;
 }
 
 export interface ApiQuestsDashboard {
   quests: ApiQuest[];
 }
 
-export interface ApiQuestClaim {
-  quest_id: number;
-  level_id: number;
-  level_number: number;
-  status: string;
-  reward_name: string;
-  reward_xp: number;
-  reward_sticker: boolean;
-  total_xp: number;
-}
-
 export function apiGetQuests(): Promise<ApiQuestsDashboard> {
   return apiGet<ApiQuestsDashboard>('/quests/');
 }
 
-export function apiClaimLevel(levelId: number): Promise<ApiQuestClaim> {
-  return apiPost<ApiQuestClaim>(`/quests/levels/${levelId}/claim`, {});
-}
-
 export function apiBumpQuestProgress(questId: number): Promise<ApiQuest> {
   return apiPost<ApiQuest>(`/quests/${questId}/progress`, {});
+}
+
+export function apiClaimQuest(questId: number): Promise<ApiQuest> {
+  return apiPost<ApiQuest>(`/quests/${questId}/claim`, {});
 }
 
 /** Compact "ago" label: 5m, 2h, 1d, 12 Aug. Empty for missing timestamps. */

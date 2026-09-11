@@ -12,7 +12,7 @@ from app.models.conversation import Conversation, ConversationMember
 from app.models.follow import Follow
 from app.models.group import Group, GroupMember
 from app.models.post import Post
-from app.models.quest import Quest, QuestLevel, QuestProgress
+from app.models.quest import Quest, QuestProgress
 from app.models.user import User
 
 STORAGE_ROOT = Path("storage")
@@ -136,61 +136,60 @@ POSTS = {
 # Connections: every pair is a DM thread. Messages themselves are ephemeral
 # (WebSocket/Redis only), so threads carry membership but no stored content.
 
-# Quest chains. Each entry holds its levels as a tuple of
-# (level_number, target_count, goal_text, reward_name, reward_xp, reward_sticker).
-# Levels unlock in order: the next only becomes reachable once the previous
-# level's target is met.
+# Flat tasks. Each counts performed actions toward a target; reaching the
+# target completes the task automatically. Rewards hold the prize granted.
 QUESTS = [
     {
         "name": "Attend Live Events",
         "description": "Go to live events and climb the table.",
-        "levels": [
-            (1, 1, "Attend 1 Live Event", "Bronze Badge", 50, False),
-            (2, 2, "Attend 2 Live Events", "Silver Badge", 100, False),
-            (3, 3, "Attend 3 Live Events", "Gold Badge", 0, True),
-        ],
+        "reward_name": "Gold Badge",
+        "reward_xp": 50,
+        "reward_sticker": True,
+        "target_count": 3,
+        "progress_unit": "completed",
     },
     {
         "name": "Social Network",
         "description": "Connect with people and grow your circle.",
-        "levels": [
-            (1, 3, "Connect with 3 Users", "Starter Badge", 0, False),
-            (2, 7, "Connect with 7 Users", "Networker Badge", 0, False),
-            (3, 10, "Connect with 10 Users", "Community Champion Badge", 0, False),
-        ],
+        "reward_name": "Community Champion Badge",
+        "reward_xp": 0,
+        "reward_sticker": False,
+        "target_count": 10,
+        "progress_unit": "friends",
     },
     {
         "name": "Ticket Sharing",
         "description": "Share event tickets with your circle.",
-        "levels": [
-            (1, 1, "Share 1 Event Ticket", "Promoter Badge", 0, False),
-            (2, 2, "Share 2 Event Tickets", "Super Promoter Badge", 50, False),
-        ],
+        "reward_name": "Super Promoter Badge",
+        "reward_xp": 50,
+        "reward_sticker": False,
+        "target_count": 2,
+        "progress_unit": "tickets",
     },
 ]
 
-# Demo starting progress per quest, applied on a fresh seed. Values are chosen
-# to show every level state at once: a claimed reward, a completed one ready
-# to claim (Ticket Sharing), and an in-progress level.
-# Tuple: (quest name, current_progress, claimed_level)
+# Demo counter per task, applied on a fresh seed: one task completed (target
+# met, unclaimed) so the Claim button is immediately testable, the rest
+# mid-way so the bars and counters show. Rows are unclaimed on purpose so the
+# claim flow can be run end to end.
+# Tuple: (quest name, current_progress, claimed)
 QUEST_START_PROGRESS = [
-    ("Attend Live Events", 2, 1),
-    ("Social Network", 7, 1),
-    ("Ticket Sharing", 1, 0),
+    ("Attend Live Events", 3, False),
+    ("Social Network", 7, False),
+    ("Ticket Sharing", 1, False),
 ]
 
 
 def seed_quests(session: Session) -> None:
-    """Sync the quest catalog: drop stale quests, add missing ones.
+    """Sync the task catalog: drop stale quests, add missing ones.
 
-    Existing quests and levels keep their ids but their display fields are
-    refreshed from the catalog. Live user progress is preserved.
+    Existing quests keep their ids but their display, reward and target fields
+    are refreshed from the catalog. Live user progress is preserved.
     """
     wanted_names = {quest["name"] for quest in QUESTS}
     for stale in session.exec(select(Quest)).all():
         if stale.name not in wanted_names:
             session.exec(delete(QuestProgress).where(QuestProgress.quest_id == stale.id))
-            session.exec(delete(QuestLevel).where(QuestLevel.quest_id == stale.id))
             session.delete(stale)
     session.commit()
 
@@ -200,48 +199,30 @@ def seed_quests(session: Session) -> None:
             row = Quest(
                 name=quest["name"],
                 description=quest["description"],
+                reward_name=quest["reward_name"],
+                reward_xp=quest["reward_xp"],
+                reward_sticker=quest["reward_sticker"],
+                target_count=quest["target_count"],
+                progress_unit=quest["progress_unit"],
                 sort_order=index,
             )
             session.add(row)
-            session.commit()
-            session.refresh(row)
         else:
             row.description = quest["description"]
+            row.reward_name = quest["reward_name"]
+            row.reward_xp = quest["reward_xp"]
+            row.reward_sticker = quest["reward_sticker"]
+            row.target_count = quest["target_count"]
+            row.progress_unit = quest["progress_unit"]
             row.sort_order = index
             session.add(row)
-
-        level_rows = {
-            lvl.level_number: lvl
-            for lvl in session.exec(select(QuestLevel).where(QuestLevel.quest_id == row.id)).all()
-        }
-        for level_number, target, goal, reward, xp, sticker in quest["levels"]:
-            level = level_rows.get(level_number)
-            if level is None:
-                session.add(
-                    QuestLevel(
-                        quest_id=row.id,
-                        level_number=level_number,
-                        target_count=target,
-                        goal_text=goal,
-                        reward_name=reward,
-                        reward_xp=xp,
-                        reward_sticker=sticker,
-                    )
-                )
-            else:
-                level.target_count = target
-                level.goal_text = goal
-                level.reward_name = reward
-                level.reward_xp = xp
-                level.reward_sticker = sticker
-                session.add(level)
     session.commit()
 
 
 def seed_quest_progress(session: Session) -> None:
-    """Add a demo progress row per quest for every account, if missing.
+    """Add a demo progress row per task for every account, if missing.
 
-    Existing rows keep their live claimed/current values so a container
+    Existing rows keep their live counter and claim flag so a container
     restart never resets what a user already earned.
     """
     users = session.exec(select(User)).all()
@@ -262,7 +243,7 @@ def seed_quest_progress(session: Session) -> None:
                         user_id=user.id,
                         quest_id=quest.id,
                         current_progress=current,
-                        claimed_level=claimed,
+                        claimed=claimed,
                     )
                 )
     session.commit()
@@ -276,7 +257,7 @@ def seed():
             # any missing demo progress rows.
             seed_quests(session)
             seed_quest_progress(session)
-            print("Database already seeded, quest chains backfilled...")
+            print("Database already seeded, tasks backfilled...")
             return
 
         users = {

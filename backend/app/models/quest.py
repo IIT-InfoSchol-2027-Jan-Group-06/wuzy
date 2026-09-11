@@ -1,48 +1,34 @@
-from sqlmodel import Field, Relationship, SQLModel
-
-
-class QuestLevel(SQLModel, table=True):
-    """One step in a quest chain, with its target count and reward.
-
-    level_number is the position within the chain (1-based). A level is
-    claimable only after the previous level was claimed, so progression
-    always happens in order.
-    """
-
-    __tablename__ = "quest_level"
-
-    id: int | None = Field(default=None, primary_key=True)
-    quest_id: int = Field(foreign_key="quest.id", index=True)
-    level_number: int
-    target_count: int
-    goal_text: str
-    reward_name: str
-    reward_xp: int = Field(default=0)
-    reward_sticker: bool = Field(default=False)
+from sqlmodel import Field, SQLModel
 
 
 class Quest(SQLModel, table=True):
-    """A quest chain: sequential levels that unlock as the level before is completed."""
+    """A flat task with a progress counter and a single reward.
+
+    There are no levels or sub-milestones. A task completes when the user's
+    counter reaches target_count, which flips the task to claimed and grants
+    the reward automatically.
+    """
 
     __tablename__ = "quest"
 
     id: int | None = Field(default=None, primary_key=True)
     name: str
     description: str
+    reward_name: str
+    reward_xp: int = Field(default=0)
+    reward_sticker: bool = Field(default=False)
+    target_count: int = Field(default=1)
+    progress_unit: str = Field(default="actions")
     sort_order: int = Field(default=0)
-
-    levels: list["QuestLevel"] = Relationship(
-        sa_relationship_kwargs={"order_by": "QuestLevel.level_number", "lazy": "selectin"}
-    )
 
 
 class QuestProgress(SQLModel, table=True):
-    """Per-user progress through a quest chain.
+    """Per-user progress through a task.
 
-    current_progress counts the user's actions toward the quest's goal.
-    claimed_level holds the highest level number whose reward was claimed;
-    0 means nothing claimed yet. Status per level is derived from these two
-    values, so it never goes stale.
+    current_progress counts the user's performed actions toward the task's
+    target. claimed flips true when the user presses Claim on a completed
+    task, granting the reward. completing the target alone just unlocks the
+    Claim step, so the claim flow stays testable.
     """
 
     __tablename__ = "quest_progress"
@@ -51,4 +37,4 @@ class QuestProgress(SQLModel, table=True):
     user_id: int = Field(foreign_key="user.id", index=True)
     quest_id: int = Field(foreign_key="quest.id", index=True)
     current_progress: int = Field(default=0)
-    claimed_level: int = Field(default=0)
+    claimed: bool = Field(default=False)

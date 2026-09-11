@@ -15,9 +15,6 @@ const AVATAR = 36;
 const AVATAR_OVERLAP = 12;
 const ACTION_HEIGHT = wuzyLayout.control;
 
-// Buying a ticket is the "attend" action, so each purchase counts toward this quest.
-const ATTEND_QUEST = 'Attend Live Events';
-
 export default function EventDetailsScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
@@ -40,11 +37,11 @@ export default function EventDetailsScreen() {
     zIndex: 10 - index,
   });
 
-  // Each ticket bought counts one attended live event toward the quest.
+  // Buying a ticket is the "attend" action, so each purchase counts toward the task.
   const handleBuyTicket = async () => {
     try {
       const data = await apiGetQuests();
-      const quest = data.quests.find((q) => q.name === ATTEND_QUEST);
+      const quest = data.quests.find((q) => q.name === 'Attend Live Events');
       if (quest) {
         await apiBumpQuestProgress(quest.id);
       }

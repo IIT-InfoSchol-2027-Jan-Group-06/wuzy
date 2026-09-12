@@ -1,6 +1,6 @@
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState, useEffect } from 'react';
-import { Alert, Image, Pressable, Text, View, Animated } from 'react-native';
+import { Alert, Image, ImageSourcePropType, Pressable, Text, View, Animated } from 'react-native';
 
 import { Screen } from '@/components/Screen';
 import { TabHeader } from '@/components/TabHeader';
@@ -42,9 +42,11 @@ export default function AwardsScreen() {
   const [completedTasks, setCompletedTasks] = useState<Set<string>>(new Set());
   const [xpData, setXpData] = useState<UserXpData | null>(null);
   const [prevRank, setPrevRank] = useState(RANKS[0].label);
-  const [animating, setAnimating] = useState(false);
-  const [scale, setScale] = useState(new Animated.Value(1));
-  const [bounceAnim] = useState(new Animated.Value(1));
+  const [boardAnim] = useState(new Animated.Value(1));
+  const [boardOpacity] = useState(new Animated.Value(1));
+  const [boardY] = useState(new Animated.Value(0));
+  const [boardImage, setBoardImage] = useState<ImageSourcePropType>(RANKS[0].badge);
+  const [leavingImage, setLeavingImage] = useState<ImageSourcePropType | null>(null);
 
   const totalXp = xpData?.total_xp ?? awards.reduce((sum, a) => sum + a.reward_xp, 0);
   const progress = xpData ? { rank: getRank(xpData.total_xp), progressPct: xpData.progress_pct, nextRank: xpData.next_rank, xpInRank: xpData.xp_in_rank, xpToNext: xpData.xp_to_next } : getProgressData(totalXp);
@@ -52,22 +54,22 @@ export default function AwardsScreen() {
   useEffect(() => {
     const newRank = progress.rank.label;
     if (newRank !== prevRank) {
-      setAnimating(true);
-      Animated.spring(bounceAnim, {
-        toValue: 1.5,
-        friction: 5,
-        tension: 40,
+      const newBadge = RANKS.find((r) => r.label === newRank)?.badge ?? RANKS[0].badge;
+      setLeavingImage(boardImage);
+      Animated.timing(boardOpacity, {
+        toValue: 0,
+        duration: 260,
         useNativeDriver: true,
       }).start(() => {
-        Animated.spring(bounceAnim, {
-          toValue: 1,
-          friction: 8,
-          tension: 30,
-          useNativeDriver: true,
-        }).start(() => {
-          setAnimating(false);
-          setPrevRank(newRank);
-        });
+        setLeavingImage(null);
+        setBoardImage(newBadge);
+        boardAnim.setValue(0.3);
+        boardY.setValue(60);
+        Animated.parallel([
+          Animated.spring(boardAnim, { toValue: 1, friction: 6, tension: 60, useNativeDriver: true }),
+          Animated.timing(boardOpacity, { toValue: 1, duration: 380, useNativeDriver: true }),
+          Animated.spring(boardY, { toValue: 0, friction: 7, tension: 50, useNativeDriver: true }),
+        ]).start(() => setPrevRank(newRank));
       });
     }
   }, [progress.rank.label, prevRank]);
@@ -149,8 +151,6 @@ export default function AwardsScreen() {
     }, [loadQuests, loadAwards, loadXp]),
   );
 
-  const rankBadge = RANKS.find((r) => r.label === progress.rank.label) ?? RANKS[0];
-
   return (
     <Screen scroll style={{ gap: wuzyLayout.gap, paddingBottom: 96 }}>
       <TabHeader title="Awards" />
@@ -169,17 +169,27 @@ export default function AwardsScreen() {
             }}>
             Complete a task to earn its badge
           </Text>
-          <Image
-            source={stickerBoardImage}
-            style={{ width: 260, height: 260, resizeMode: 'contain' }}
-          />
+          <View style={{ width: 260, height: 260, alignItems: 'center', justifyContent: 'center' }}>
+            <Image source={stickerBoardImage} style={{ width: 260, height: 260, resizeMode: 'contain' }} />
+            {leavingImage && (
+              <Animated.Image
+                source={leavingImage}
+                style={{ position: 'absolute', width: 200, height: 200, resizeMode: 'contain', opacity: boardOpacity }}
+              />
+            )}
+            <Animated.Image
+              source={boardImage}
+              style={{
+                position: 'absolute',
+                width: 200,
+                height: 200,
+                resizeMode: 'contain',
+                opacity: leavingImage ? 0 : boardOpacity,
+                transform: [{ scale: boardAnim }, { translateY: boardY }],
+              }}
+            />
+          </View>
           <View style={{ marginTop: 16, alignItems: 'center', gap: 8 }}>
-            <Animated.View style={{ transform: [{ scale: animating ? bounceAnim : scale }] }}>
-              <Image source={rankBadge.badge} style={{ width: 72, height: 72, resizeMode: 'contain' }} />
-            </Animated.View>
-            <Text style={{ fontFamily: wuzyFonts.bold, fontSize: wuzyType.body, color: wuzyColors.yellow }}>
-              {progress.rank.label}
-            </Text>
             <View style={{ width: 200, height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.1)', overflow: 'hidden' }}>
               <Animated.View style={{ height: '100%', width: `${progress.progressPct}%`, backgroundColor: wuzyColors.yellow, borderRadius: 4 }} />
             </View>

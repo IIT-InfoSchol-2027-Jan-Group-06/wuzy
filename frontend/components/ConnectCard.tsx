@@ -1,10 +1,9 @@
-import { useCallback, useMemo, useState, type ReactNode } from 'react';
-import { Image, ImageSourcePropType, StyleSheet, Text, View } from 'react-native';
+import { useState, type ReactNode } from 'react';
+import { Image, ImageSourcePropType, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 import { GlassNavButton } from '@/components/GlassNavButton';
 import { QrCode } from '@/components/QrCode';
@@ -18,13 +17,13 @@ interface ConnectCardProps {
   backgroundImage?: ImageSourcePropType;
 }
 
-// Space left between the two glass cards while they slide past each other.
-const SLIDE_GAP = 40;
+// The inactive icon needs to read against the translucent glass half; the active one uses wuzyColors.bg.
+const MODE_ICON_INACTIVE = '#282F36';
 
 /** The frosted frame each mode shows in: blur, glass tint, gradient sheen, hairline border. */
-function GlassPanel({ width, children }: { width: number; children: ReactNode }) {
+function GlassPanel({ children }: { children: ReactNode }) {
   return (
-    <View className="overflow-hidden" style={{ width, borderRadius: 24 }}>
+    <View className="overflow-hidden" style={{ width: '100%', borderRadius: 24 }}>
       <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
       <View style={[StyleSheet.absoluteFill, { backgroundColor: wuzyColors.glassFill }]} />
       <LinearGradient
@@ -42,58 +41,55 @@ function GlassPanel({ width, children }: { width: number; children: ReactNode })
   );
 }
 
+/** Two-segment glass pill that flips the Connect card between the owner QR and the scanner. */
+function ModeToggle({ camera, onToggle }: { camera: boolean; onToggle: (camera: boolean) => void }) {
+  const iconSize = Math.round(wuzyLayout.glass * 0.48) + 3;
+  const segment = (name: keyof typeof Ionicons.glyphMap, active: boolean, label: string, target: boolean) => (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ selected: active }}
+      onPress={() => onToggle(target)}
+      style={{
+        width: wuzyLayout.glass + 30,
+        height: wuzyLayout.control + 5,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: active ? wuzyColors.yellow : 'transparent',
+      }}>
+      <Ionicons
+        name={name}
+        size={iconSize}
+        color={active ? wuzyColors.bg : MODE_ICON_INACTIVE}
+        // Android pads icon fonts by default, which pushes the glyph off centre.
+        style={{ includeFontPadding: false, textAlignVertical: 'center' }}
+      />
+    </Pressable>
+  );
+
+  return (
+    <View className="overflow-hidden rounded-full" style={{ flexDirection: 'row', borderWidth: 1, borderColor: wuzyColors.yellow }}>
+      <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
+      {/* Yellow liquid-glass tint over the blur, then a soft shine down the top half. */}
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: wuzyColors.yellowDim }]} />
+      <LinearGradient
+        colors={['rgba(255,255,255,0.3)', 'rgba(255,255,255,0)']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        locations={[0, 1]}
+        style={{ position: 'absolute', left: 0, right: 0, top: 0, height: '60%' }}
+      />
+      {segment('qr-code', !camera, 'Show my QR code', false)}
+      <View style={{ width: 1, alignSelf: 'stretch', backgroundColor: wuzyColors.yellow }} />
+      {segment('camera', camera, 'Open scanner', true)}
+    </View>
+  );
+}
+
 /** Full-screen QR card over a blurred copy of the profile photo. Composes its own shell because the backdrop is full-bleed. */
 export function ConnectCard({ username, qrValue, onBack, backgroundImage }: ConnectCardProps) {
-  // Swipe the card left to open the scanner, right to come back to the owner's QR.
-  // Both sides share one sliding track of glass cards; progress is 0 on the QR and 1 on the camera.
+  // The toggle pill flips the glass card between the owner's QR and the scanner.
   const [showCamera, setShowCamera] = useState(false);
-  const [cardWidth, setCardWidth] = useState(0);
-  const progress = useSharedValue(0);
-  const width = useSharedValue(0);
-  const start = useSharedValue(0);
-  const armed = useSharedValue(false);
-
-  const trackX = useAnimatedStyle(() => ({
-    transform: [{ translateX: -progress.value * (width.value + SLIDE_GAP) }],
-  }));
-
-  const armCamera = useCallback(() => {
-    setShowCamera(true);
-  }, []);
-
-  const commit = useCallback((toCamera: boolean) => {
-    if (!toCamera) setShowCamera(false);
-  }, []);
-
-  const pan = useMemo(
-    () =>
-      Gesture.Pan()
-        .activeOffsetX([-12, 12])
-        .onBegin(() => {
-          // The compiler linter treats Reanimated shared values as immutable; they are mutable by design.
-          // eslint-disable-next-line react-hooks/immutability
-          start.value = progress.value;
-        })
-        .onUpdate((e) => {
-          // eslint-disable-next-line react-hooks/immutability
-          progress.value = Math.min(1, Math.max(0, start.value - e.translationX / Math.max(width.value + SLIDE_GAP, 1)));
-          // Mount the scanner while the camera side is revealed, so the slide stays filled.
-          if (progress.value > 0.02 && !armed.value) {
-            // eslint-disable-next-line react-hooks/immutability
-            armed.value = true;
-            runOnJS(armCamera)();
-          }
-        })
-        .onEnd((e) => {
-          const toCamera = e.velocityX < -400 ? true : e.velocityX > 400 ? false : progress.value > 0.5;
-          // eslint-disable-next-line react-hooks/immutability
-          progress.value = withTiming(toCamera ? 1 : 0, { duration: 250 }, () => {
-            if (!toCamera) armed.value = false;
-            runOnJS(commit)(toCamera);
-          });
-        }),
-    [armCamera, commit, progress, start, width, armed],
-  );
 
   const connectTitle = (
     <Text className="uppercase" style={{ fontFamily: wuzyFonts.display, fontSize: wuzyType.title, letterSpacing: 2, color: wuzyColors.yellow }}>
@@ -141,31 +137,18 @@ export function ConnectCard({ username, qrValue, onBack, backgroundImage }: Conn
         </View>
 
         <View className="flex-1 items-center justify-center" style={{ paddingHorizontal: wuzyLayout.side }}>
-          <GestureDetector gesture={pan}>
-            <View
-              className="overflow-hidden"
-              style={{ width: '100%', maxWidth: 400, borderRadius: 24 }}
-              onLayout={(e) => {
-                setCardWidth(e.nativeEvent.layout.width);
-                // eslint-disable-next-line react-hooks/immutability
-                width.value = e.nativeEvent.layout.width;
-              }}>
-              {cardWidth > 0 && (
-                <Animated.View style={[{ flexDirection: 'row', gap: SLIDE_GAP }, trackX]}>
-                  <GlassPanel width={cardWidth}>
-                    {connectTitle}
-                    {qrSide}
-                  </GlassPanel>
-                  {showCamera && (
-                    <GlassPanel width={cardWidth}>
-                      {connectTitle}
-                      {cameraSide}
-                    </GlassPanel>
-                  )}
-                </Animated.View>
-              )}
-            </View>
-          </GestureDetector>
+          <View style={{ alignItems: 'center', width: '100%', maxWidth: 400, gap: 40 }}>
+            <ModeToggle
+              camera={showCamera}
+              onToggle={(toCamera) => {
+                if (toCamera !== showCamera) setShowCamera(toCamera);
+              }}
+            />
+            <GlassPanel>
+              {connectTitle}
+              {showCamera ? cameraSide : qrSide}
+            </GlassPanel>
+          </View>
         </View>
       </SafeAreaView>
     </View>

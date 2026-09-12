@@ -3,6 +3,8 @@ import { ActivityIndicator, StyleSheet, Text, View, type ViewStyle } from 'react
 import { CameraView, useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
 
 import { Chip } from '@/components/Chip';
+import { ConnectionCard } from '@/components/ConnectionCard';
+import { toConnection } from '@/constants/connection-data';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 import { apiGet, apiPost, type ApiUser } from '@/lib/api';
 
@@ -28,10 +30,11 @@ function ScanBox({ children }: { children: ReactNode }) {
 }
 
 /** Camera side of the Connect card. Scans another user's Wuzy code and connects with them.
- *  Their card shows on the Connections screen, not in the camera view. */
+ *  The new connection's card shows in the camera frame, then scanning resumes. */
 export function QrScanner() {
   const [permission, requestPermission] = useCameraPermissions();
   const [phase, setPhase] = useState<Phase>('camera');
+  const [foundUser, setFoundUser] = useState<ApiUser | null>(null);
 
   // phase as a ref pairs with setPhase so the camera's callback never acts on a stale value.
   const phaseRef = useRef(phase);
@@ -41,10 +44,13 @@ export function QrScanner() {
     setPhase(next);
   }, []);
 
-  // "Connected!" is brief feedback; the camera returns to scanning on its own.
+  // "The scanned user's card" is brief feedback; the camera returns to scanning on its own.
   useEffect(() => {
     if (phase !== 'found') return;
-    const timer = setTimeout(() => go('camera'), 1500);
+    const timer = setTimeout(() => {
+      setFoundUser(null);
+      go('camera');
+    }, 2000);
     return () => clearTimeout(timer);
   }, [phase, go]);
 
@@ -68,6 +74,7 @@ export function QrScanner() {
         } catch {
           // Connecting is best-effort; the connection still shows on Connections.
         }
+        setFoundUser(user);
         go('found');
       } catch {
         go('missing');
@@ -95,12 +102,12 @@ export function QrScanner() {
     );
   }
 
-  if (phase === 'found') {
+  if (phase === 'found' && foundUser) {
     return (
       <ScanBox>
-        <Text className="uppercase" style={{ fontFamily: wuzyFonts.display, fontSize: wuzyType.title, letterSpacing: 2, color: wuzyColors.yellow }}>
-          Connected!
-        </Text>
+        <View style={{ flex: 1, width: '100%' }}>
+          <ConnectionCard connection={toConnection(foundUser)} />
+        </View>
       </ScanBox>
     );
   }

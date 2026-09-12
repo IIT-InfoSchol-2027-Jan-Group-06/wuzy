@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Image, Pressable, Text, View, type ImageSourcePropType } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withDelay, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 
-import { questArtFor } from '@/constants/awards-data';
 import { wuzyColors, wuzyFonts } from '@/constants/wuzy-theme';
 import { apiClaimQuest, type ApiQuest } from '@/lib/api';
 
@@ -73,15 +72,13 @@ function SparklePiece({
   );
 }
 
-/** A compact single task card: icon on the left, then the task title with a
- * progress bar and counter underneath, and on the right either a Claim button
- * (with a sparkle pop on press) when the task is complete, an action button
- * (Add / Share) while still in progress, or an All Done badge once every
- * subtask has been claimed. Claiming notifies the parent so it refetches and
- * the card advances to the next subtask. */
+/** A compact single task card: task title with a progress bar and counter, and
+ * on the right either a Claim button (with a sparkle pop on press) when the
+ * task is complete, an action button (Add / Share) while still in progress, or
+ * a dimmed "All Done" card once every subtask has been claimed. Claiming
+ * notifies the parent so it refetches and the card advances to the next
+ * subtask. */
 export function QuestCard({ quest, actionLabel, onAction, onClaimed, onClaimCustom }: QuestCardProps) {
-  const art: ImageSourcePropType = questArtFor(quest.name) ?? require('@/assets/badges/img15.png');
-
   const sub = quest.active_subtask;
   const done = sub === null;
 
@@ -121,12 +118,8 @@ export function QuestCard({ quest, actionLabel, onAction, onClaimed, onClaimCust
   const canClaim = sub !== null && sub.current_progress >= sub.target_count;
 
   return (
-    <View className="rounded-3xl bg-wuzy-surface p-4">
+    <View className="rounded-3xl bg-wuzy-surface p-4" style={done ? { opacity: 0.5 } : undefined}>
       <View className="flex-row items-center gap-[12px]">
-        <View className="items-center justify-center" style={{ width: 60, height: 60 }}>
-          <Image source={art} resizeMode="contain" style={{ width: 56, height: 56 }} />
-        </View>
-
         <View className="flex-1">
           <Text numberOfLines={1} style={{ fontFamily: wuzyFonts.semibold, fontSize: 15, color: wuzyColors.white }}>
             {quest.name}

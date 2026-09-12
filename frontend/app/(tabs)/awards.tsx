@@ -1,14 +1,12 @@
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState, useEffect } from 'react';
-import { Alert, Image, ImageSourcePropType, Pressable, Text, View, Animated } from 'react-native';
+import { Alert, ImageSourcePropType, Pressable, Text, View, Animated } from 'react-native';
 
 import { Screen } from '@/components/Screen';
 import { TabHeader } from '@/components/TabHeader';
 import { QuestsSection } from '@/components/awards/QuestsSection';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 import { apiCompleteProfile, apiGetAwards, apiGetQuests, apiGetUserXp, apiPurchaseTicket, apiRecordDailyLogin, type ApiAwardRead, type ApiQuest, type UserXpData } from '@/lib/api';
-
-const stickerBoardImage = require('@/assets/badges/image.png');
 
 const RANKS = [
   { threshold: 0, label: 'Bronze', badge: require('@/assets/badges/img1.png') },
@@ -42,11 +40,10 @@ export default function AwardsScreen() {
   const [completedTasks, setCompletedTasks] = useState<Set<string>>(new Set());
   const [xpData, setXpData] = useState<UserXpData | null>(null);
   const [prevRank, setPrevRank] = useState(RANKS[0].label);
-  const [boardAnim] = useState(new Animated.Value(1));
-  const [boardOpacity] = useState(new Animated.Value(1));
-  const [boardY] = useState(new Animated.Value(0));
+  const [leaveAnim] = useState(new Animated.Value(0));
+  const [enterAnim] = useState(new Animated.Value(1));
+  const [enterY] = useState(new Animated.Value(0));
   const [boardImage, setBoardImage] = useState<ImageSourcePropType>(RANKS[0].badge);
-  const [leavingImage, setLeavingImage] = useState<ImageSourcePropType | null>(null);
 
   const totalXp = xpData?.total_xp ?? awards.reduce((sum, a) => sum + a.reward_xp, 0);
   const progress = xpData ? { rank: getRank(xpData.total_xp), progressPct: xpData.progress_pct, nextRank: xpData.next_rank, xpInRank: xpData.xp_in_rank, xpToNext: xpData.xp_to_next } : getProgressData(totalXp);
@@ -55,24 +52,22 @@ export default function AwardsScreen() {
     const newRank = progress.rank.label;
     if (newRank !== prevRank) {
       const newBadge = RANKS.find((r) => r.label === newRank)?.badge ?? RANKS[0].badge;
-      setLeavingImage(boardImage);
-      Animated.timing(boardOpacity, {
+      leaveAnim.setValue(1);
+      enterAnim.setValue(0);
+      enterY.setValue(60);
+      Animated.timing(leaveAnim, {
         toValue: 0,
         duration: 260,
         useNativeDriver: true,
       }).start(() => {
-        setLeavingImage(null);
         setBoardImage(newBadge);
-        boardAnim.setValue(0.3);
-        boardY.setValue(60);
         Animated.parallel([
-          Animated.spring(boardAnim, { toValue: 1, friction: 6, tension: 60, useNativeDriver: true }),
-          Animated.timing(boardOpacity, { toValue: 1, duration: 380, useNativeDriver: true }),
-          Animated.spring(boardY, { toValue: 0, friction: 7, tension: 50, useNativeDriver: true }),
+          Animated.timing(enterAnim, { toValue: 1, duration: 380, useNativeDriver: true }),
+          Animated.spring(enterY, { toValue: 0, friction: 7, tension: 50, useNativeDriver: true }),
         ]).start(() => setPrevRank(newRank));
       });
     }
-  }, [progress.rank.label, prevRank]);
+  }, [progress.rank.label, prevRank, leaveAnim, enterAnim, enterY]);
 
   const loadQuests = useCallback(() => {
     apiRecordDailyLogin()
@@ -170,22 +165,19 @@ export default function AwardsScreen() {
             Complete a task to earn its badge
           </Text>
           <View style={{ width: 260, height: 260, alignItems: 'center', justifyContent: 'center' }}>
-            <Image source={stickerBoardImage} style={{ width: 260, height: 260, resizeMode: 'contain' }} />
-            {leavingImage && (
-              <Animated.Image
-                source={leavingImage}
-                style={{ position: 'absolute', width: 200, height: 200, resizeMode: 'contain', opacity: boardOpacity }}
-              />
-            )}
+            <Animated.Image
+              source={boardImage}
+              style={{ position: 'absolute', width: 260, height: 260, resizeMode: 'contain', opacity: leaveAnim }}
+            />
             <Animated.Image
               source={boardImage}
               style={{
                 position: 'absolute',
-                width: 200,
-                height: 200,
+                width: 260,
+                height: 260,
                 resizeMode: 'contain',
-                opacity: leavingImage ? 0 : boardOpacity,
-                transform: [{ scale: boardAnim }, { translateY: boardY }],
+                opacity: enterAnim,
+                transform: [{ translateY: enterY }],
               }}
             />
           </View>

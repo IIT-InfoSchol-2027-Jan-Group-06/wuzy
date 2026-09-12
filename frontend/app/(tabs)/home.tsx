@@ -18,7 +18,7 @@ const viewabilityConfig = { itemVisiblePercentThreshold: 50 };
 export default function HomeScreen() {
   const router = useRouter();
   const { clearance } = useNavBarMetrics();
-  const { posts, loading, error, refresh, removePost } = useFeed();
+  const { posts, loading, error, refresh } = useFeed();
   const recordedRef = useRef(new Set<number>());
 
   // Header hides on a downward scroll and slides back in on the first upward
@@ -39,17 +39,16 @@ export default function HomeScreen() {
     }
   });
 
-  const onViewableItemsChanged = useCallback(
+const onViewableItemsChanged = useCallback(
     ({ viewableItems }: { viewableItems: { item: (typeof posts)[number]; key: string | null }[] }) => {
       for (const { item } of viewableItems) {
         if (!item.save_to_profile && !recordedRef.current.has(item.id)) {
           recordedRef.current.add(item.id);
           recordView(item.id);
-          removePost(item.id);
         }
       }
     },
-    [removePost],
+    [],
   );
 
   // Refetch whenever the home screen regains focus (e.g. after sharing a post)

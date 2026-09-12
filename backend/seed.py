@@ -1,88 +1,215 @@
-"""Seed database with demo data.
+# Seed script for demo data - runs on container startup
+# Tables are created by alembic migrations before this runs
 
-Idempotent: skips if any users exist.
-"""
+import shutil
+from pathlib import Path
 
-from sqlmodel import Session, select, func
+import bcrypt
+from sqlmodel import Session, delete, func, select
 
 from app.db.session import engine
-from app.models.user import User
+from app.models.conversation import Conversation, ConversationMember
+from app.models.follow import Follow
+from app.models.group import Group, GroupMember
 from app.models.post import Post
 from app.models.quest import Quest, QuestSubtask, QuestSubtaskProgress
-from sqlmodel import delete
+from app.models.user import User
+
+STORAGE_ROOT = Path("storage")
+SEED_MEDIA = Path("seed_media")
 
 
-# Demo users
-USERS = [
-    ("alice", "alice@example.com"),
-    ("bob", "bob@example.com"),
+def hash_password(password: str) -> str:
+    # bcrypt directly (passlib 1.7.4 is deprecated and broken with bcrypt 5.x)
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+
+
+def seed_media():
+    """Copy committed seed images into the storage dir if it is empty."""
+    if not SEED_MEDIA.exists():
+        return
+    for kind in ("post", "avatar"):
+        src = SEED_MEDIA / kind
+        dst = STORAGE_ROOT / kind
+        if not src.is_dir():
+            continue
+        dst.mkdir(parents=True, exist_ok=True)
+        for image in src.iterdir():
+            if not image.is_file():
+                continue
+            target = dst / image.name
+            if not target.exists():
+                shutil.copy(image, target)
+
+
+# Demo accounts: (email, password, username, display_name, bio, hobbies, avatar)
+ACCOUNTS = [
+    (
+        "abhiruk@test.com",
+        "password123",
+        "abhiruk",
+        "Abhiruk Prashan",
+        "Full-stack dev by day, concert goer by night. I build things and break the dance floor.",
+        ["Tech", "Music", "Gaming"],
+        "avatar1.png",
+    ),
+    (
+        "ravindu644@test.com",
+        "password123",
+        "ravindu644",
+        "Ravindu Deshan",
+        "Fitness nut and runner. Always up for a beach day.",
+        ["Fitness", "Sports", "Travel"],
+        "avatar2.png",
+    ),
+    (
+        "sethuki@test.com",
+        "password123",
+        "sethuki",
+        "Sethuki Karawita",
+        "Designer who sketches between coffee breaks. Obsessed with typography and sunsets.",
+        ["Art", "Design", "Reading"],
+        "avatar3.png",
+    ),
+    (
+        "azma@test.com",
+        "password123",
+        "azma",
+        "Azma Ashraf",
+        "Foodie and travel photographer. I collect stamps in my passport and recipes in my head.",
+        ["Food", "Photography", "Travel"],
+        "avatar4.png",
+    ),
+    (
+        "charuki@test.com",
+        "password123",
+        "charuki",
+        "Charuki Weheragoda",
+        "Music lover, dancer, part-time DJ. Vibes over everything.",
+        ["Music", "Dance", "Movies"],
+        "avatar5.png",
+    ),
 ]
 
+# Connections: every pair is mutual (each person follows the other).
+# Anything one partner posts shows up in the other's feed.
+CONNECTIONS = [
+    ("abhiruk", "sethuki"),
+    ("abhiruk", "charuki"),
+    ("abhiruk", "azma"),
+    ("ravindu644", "sethuki"),
+    ("sethuki", "charuki"),
+    ("sethuki", "azma"),
+    ("charuki", "ravindu644"),
+]
 
-def seed_users(session: Session) -> None:
-    for username, email in USERS:
-        exists = session.exec(select(User).where(User.email == email)).first()
-        if not exists:
-            session.add(User(username=username, email=email, hashed_password="demo"))
-    session.commit()
-
-
-def seed_posts(session: Session) -> None:
-    if session.exec(select(func.count(Post.id))).one()[0] > 0:
-        return
-    users = session.exec(select(User).all()).all()
-    if not users:
-        return
-
-    demo_posts = [
-        {
-            "caption": "Golden hour at the rooftop venue",
-            "media_url": "https://picsum.photos/seed/post1/800/600",
-            "user_id": users[0].id,
-        },
-        {
-            "caption": "Backstage energy is unmatched",
-            "media_url": "https://picsum.photos/seed/post2/800/600",
-            "user_id": users[0].id,
-        },
-        {
-            "caption": "Crowd was absolutely electric tonight",
-            "media_url": "https://picsum.photos/seed/post3/800/600",
-            "user_id": users[0].id,
-        },
-        {
-            "caption": "Sunday sunset session",
-            "media_url": "https://picsum.photos/seed/post4/800/600",
-            "user_id": users[0].id,
-        },
-        {
-            "caption": "Vibes in the warehouse district",
-            "media_url": "https://picsum.photos/seed/post5/800/600",
-            "user_id": users[1].id,
-        },
-        {
-            "caption": "Warehouse session was unreal",
-            "media_url": "https://picsum.photos/seed/post6/800/600",
-            "user_id": users[1].id,
-        },
-        {
-            "caption": "This lineup was insane",
-            "media_url": "https://picsum.photos/seed/post7/800/600",
-            "user_id": users[1].id,
-        },
-        {
-            "caption": "Late night rooftop session",
-            "media_url": "https://picsum.photos/seed/post8/800/600",
-            "user_id": users[1].id,
-        },
-    ]
-    for post_data in demo_posts:
-        session.add(Post(**post_data))
-    session.commit()
-
+# Posts per user: (media, caption, location, save_to_profile)
+POSTS = {
+    "abhiruk": [
+        ("post1.png", "Golden hour doesn't get better than this", "new york", True),
+        ("post3.png", "New setup, who dis", "colombo", True),
+        ("event1.png", "Front row for the live set", "colombo", True),
+        ("event5.png", "Going live in 10", "colombo", False),
+    ],
+    "ravindu644": [
+        ("post2.png", "Morning run squad", "colombo", True),
+        ("event2.png", "Beach clean-up morning", "galle", True),
+        ("post4.png", "Post-gym refuel", "colombo", True),
+    ],
+    "sethuki": [
+        ("post4.png", "Sketching the skyline", "kandy", True),
+        ("event3.png", "Gallery opening night", "colombo", True),
+        ("event7.png", "Print making workshop", "colombo", True),
+    ],
+    "azma": [
+        ("post1,jpeg", "Market colours", "colombo", True),
+        ("post1.png", "Market colours", "colombo", True),
+        ("event4.png", "Sunrise at the coast", "mirissa", True),
+    ],
+    "charuki": [
+        ("event3.png", "DJ set going off", "colombo", True),
+        ("post3.png", "Studio session", "colombo", True),
+        ("post2.png", "Grooving on the beach set", "mount lavinia", False),
+    ],
+}
 
 # Connections: every pair is a DM thread. Messages themselves are ephemeral
 # (WebSocket/Redis only), so threads carry membership but no stored content.
+
+def seed():
+    seed_media()
+    with Session(engine) as session:
+        if session.exec(select(User)).first():
+            print("Database already seeded, skipping...")
+            return
+
+        users = {
+            username: User(
+                email=email,
+                username=username,
+                hashed_password=hash_password(password),
+                display_name=display_name,
+                bio=bio,
+                hobbies=hobbies,
+                avatar_url=f"/uploads/avatar/{avatar}",
+                is_active=True,
+            )
+            for email, password, username, display_name, bio, hobbies, avatar in ACCOUNTS
+        }
+        for user in users.values():
+            session.add(user)
+        session.commit()
+        for user in users.values():
+            session.refresh(user)
+
+        for first, second in CONNECTIONS:
+            session.add(Follow(follower_id=users[first].id, followed_id=users[second].id))
+            session.add(Follow(follower_id=users[second].id, followed_id=users[first].id))
+
+        for author_name, posts in POSTS.items():
+            for media, caption, location, save_to_profile in posts:
+                session.add(
+                    Post(
+                        media_url=f"/uploads/post/{media}",
+                        caption=caption,
+                        location=location,
+                        save_to_profile=save_to_profile,
+                        user_id=users[author_name].id,
+                    )
+                )
+
+        for first, second in CONNECTIONS:
+            conversation = Conversation()
+            session.add(conversation)
+            session.commit()
+            session.refresh(conversation)
+            session.add(
+                ConversationMember(conversation_id=conversation.id, user_id=users[first].id)
+            )
+            session.add(
+                ConversationMember(conversation_id=conversation.id, user_id=users[second].id)
+            )
+
+        # Demo group with several members, giving every account a group chat to test.
+        group = Group(name="Weekend Squad", created_by=users["abhiruk"].id)
+        session.add(group)
+        session.commit()
+        session.refresh(group)
+        for member_name in ("abhiruk", "sethuki", "charuki", "azma"):
+            session.add(
+                GroupMember(group_id=group.id, user_id=users[member_name].id)
+            )
+
+        session.commit()
+
+        post_count = session.exec(select(Post)).all().__len__()
+        conversation_count = session.exec(select(Conversation)).all().__len__()
+        group_count = session.exec(select(Group)).all().__len__()
+        print("Demo data seeded successfully!")
+        print(f"Created users: {', '.join(users)}")
+        print(f"Created posts: {post_count}, conversations: {conversation_count}, groups: {group_count}")
+        print("Demo logins (password123): abhiruk, ravindu644, sethuki, azma, charuki @test.com")
+        print("Backend URL base: http://localhost:8000")
 
 # Tasks hold ordered subtasks. Each subtask has its own target, counter unit
 # and reward; the user works through them one at a time, claiming each.
@@ -236,17 +363,26 @@ def seed_quest_progress(session: Session) -> None:
     session.commit()
 
 
-if __name__ == "__main__":
-    with Session(engine) as session:
-        count = session.exec(select(func.count(User.id))).one()
+
+def _run_quest_seed() -> None:
+    """Seed the quest catalog + demo progress using main's idempotent style.
+
+    Runs on every container start so a DB that rewinds (down -v) gets the
+    award page's tasks + demo progress automatically.
+    """
+    from sqlmodel import Session as _Session
+
+    from app.db.session import engine as _engine
+
+    with _Session(_engine) as _session:
+        count = _session.exec(select(func.count(User.id))).one()
         if count > 0:
-            print(f"Database already seeded with {count} users, tasks backfilled...")
-            seed_quests(session)
-            seed_quest_progress(session)
-        else:
-            print("Database empty, seeding demo data...")
-            seed_users(session)
-            seed_posts(session)
-            seed_quests(session)
-            seed_quest_progress(session)
-            print("Seed complete.")
+            seed_quests(_session)
+            seed_quest_progress(_session)
+
+
+seed_quests_if_present = _run_quest_seed
+
+if __name__ == "__main__":
+    seed()
+    seed_quests_if_present()

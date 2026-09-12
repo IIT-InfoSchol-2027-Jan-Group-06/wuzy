@@ -19,10 +19,16 @@ const API_HEADERS = {
   'Content-Type': 'application/json',
 };
 
+/** Random id for this app run. New on every launch, so ephemeral posts viewed
+ * this session stay in the feed until the app is closed and reopened. */
+const SESSION_ID = `s-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
+
 /** Attach the stored JWT as a bearer token so the server can verify the caller. */
 async function authHeaders(): Promise<Record<string, string>> {
   const token = await getToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  const headers: Record<string, string> = { 'X-Session-Id': SESSION_ID };
+  if (token) headers.Authorization = `Bearer ${token}`;
+  return headers;
 }
 
 async function handleResponse<T>(res: Response, path: string): Promise<T> {

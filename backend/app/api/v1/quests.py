@@ -15,7 +15,7 @@ from sqlmodel import Session, select
 from app.core.auth import get_current_user_id
 from app.db.session import get_session
 from app.models.quest import Quest, QuestSubtask, QuestSubtaskProgress
-from app.schemas.quest import QuestRead, QuestSubtaskRead, QuestsDashboard
+from app.schemas.quest import QuestRead, QuestsDashboard, QuestSubtaskRead
 
 router = APIRouter()
 

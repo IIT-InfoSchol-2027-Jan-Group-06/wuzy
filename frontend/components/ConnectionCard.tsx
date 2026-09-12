@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { Image, Pressable, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
@@ -20,10 +20,21 @@ interface ConnectionCardProps {
   onAvatarPress?: () => void;
   /** Opens the connection's profile; only wired when the card is expanded. */
   onProfilePress?: () => void;
+  /** Wired to the expanded card's "Refer to a friend" button. */
+  onReferPress?: () => void;
+  /** Rendered inside the expanded card instead of the action buttons. */
+  expandedContent?: ReactNode;
 }
 
 /** Connection card: name on the left, avatar with online dot on the right, interest tags below. Tapping the avatar expands it. */
-export function ConnectionCard({ connection, expanded = false, onAvatarPress, onProfilePress }: ConnectionCardProps) {
+export function ConnectionCard({
+  connection,
+  expanded = false,
+  onAvatarPress,
+  onProfilePress,
+  onReferPress,
+  expandedContent,
+}: ConnectionCardProps) {
   const expandedSV = useSharedValue(false);
 
   useEffect(() => {
@@ -90,7 +101,7 @@ export function ConnectionCard({ connection, expanded = false, onAvatarPress, on
       <View style={{ marginTop: wuzyLayout.itemGap }}>
         <TagSection tags={connection.tags} />
       </View>
-      {expanded && (
+      {expanded && (expandedContent ?? (
         <View className="flex-row" style={{ gap: wuzyLayout.itemGap, marginTop: 25 }}>
           <GlassNavButton
             onPress={onProfilePress ?? (() => {})}
@@ -100,7 +111,7 @@ export function ConnectionCard({ connection, expanded = false, onAvatarPress, on
               Go to profile
             </Text>
           </GlassNavButton>
-          <GlassNavButton onPress={() => {}} style={{ flex: 1, height: wuzyLayout.control }}>
+          <GlassNavButton onPress={onReferPress ?? (() => {})} style={{ flex: 1, height: wuzyLayout.control }}>
             <Text
               numberOfLines={2}
               style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.small, color: wuzyColors.yellow, textAlign: 'center' }}>
@@ -108,7 +119,7 @@ export function ConnectionCard({ connection, expanded = false, onAvatarPress, on
             </Text>
           </GlassNavButton>
         </View>
-      )}
+      ))}
     </Animated.View>
   );
 }

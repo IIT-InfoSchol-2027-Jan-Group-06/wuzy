@@ -24,6 +24,7 @@ DEMO_PROGRESS = {
     "Attend Live Events": [("Attend 1 Event", 1)],
     "Social Network": [("Add 3 Friends", 2)],
     "Ticket Sharing": [("Share 1 Ticket", 1)],
+    "Daily Login": [("Day 1 Login", 1)],
 }
 
 

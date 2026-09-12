@@ -14,6 +14,7 @@ from app.models.post_view import PostView
 from app.models.push_token import PushToken
 from app.models.quest import Quest, QuestSubtask, QuestSubtaskProgress
 from app.models.referral import ReferralRequest
+from app.models.ticket import Award, Ticket
 from app.models.user import User
 
 __all__ = [
@@ -32,4 +33,6 @@ __all__ = [
     "Event",
     "EventEngagement",
     "ReferralRequest",
+    "Ticket",
+    "Award",
 ]

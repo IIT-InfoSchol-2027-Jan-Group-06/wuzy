@@ -15,6 +15,7 @@ from app.models.follow import Follow
 from app.models.group import Group, GroupMember
 from app.models.post import Post
 from app.models.quest import Quest, QuestSubtask, QuestSubtaskProgress
+from app.models.ticket import Award, Ticket
 from app.models.user import User
 
 STORAGE_ROOT = Path("storage")
@@ -398,6 +399,15 @@ QUESTS = [
             ("Share 5 Tickets", 5, "tickets", 80, True),
         ],
     ),
+    (
+        "Daily Login",
+        "Log in every day to earn awards.",
+        [
+            ("Day 1 Login", 1, "days", 10, False),
+            ("3-Day Streak", 3, "days", 30, False),
+            ("7-Day Streak", 7, "days", 50, True),
+        ],
+    ),
 ]
 
 # Demo progress per task, applied on a fresh seed. Tuples name the subtask
@@ -409,6 +419,7 @@ QUEST_START_PROGRESS = [
     ("Attend Live Events", [("Attend 1 Event", 1)]),
     ("Social Network", [("Add 3 Friends", 2)]),
     ("Ticket Sharing", [("Share 1 Ticket", 1)]),
+    ("Daily Login", [("Day 1 Login", 1)]),
 ]
 
 
@@ -520,6 +531,67 @@ def seed_quest_progress(session: Session) -> None:
 
 
 
+def _run_ticket_award_seed() -> None:
+    """Seed ticket and award demo data when users exist."""
+    from sqlmodel import Session as _Session
+
+    from app.db.session import engine as _engine
+
+    with _Session(_engine) as _session:
+        count = _session.exec(select(func.count(User.id))).one()
+        if count > 0:
+            seed_tickets(_session)
+            seed_awards(_session)
+
+
+def seed_tickets(session: Session) -> None:
+    """Seed demo tickets for all users if they have none."""
+    users = session.exec(select(User)).all()
+    for user in users:
+        exists = session.exec(
+            select(Ticket).where(Ticket.user_id == user.id)
+        ).first()
+        if exists is None:
+            session.add(Ticket(user_id=user.id, ticket_type="standard"))
+    session.commit()
+
+
+def seed_awards(session: Session) -> None:
+    """Seed demo awards for users who have tickets."""
+    users = session.exec(select(User)).all()
+    for user in users:
+        tickets = session.exec(
+            select(Ticket).where(Ticket.user_id == user.id)
+        ).all()
+        for ticket in tickets:
+            if not ticket.award_granted:
+                award = Award(
+                    user_id=user.id,
+                    award_type="ticket_purchase",
+                    reward_xp=50,
+                )
+                session.add(award)
+                ticket.award_granted = True
+                session.add(ticket)
+        has_profile_award = session.exec(
+            select(Award).where(
+                Award.user_id == user.id,
+                Award.award_type == "profile_complete",
+            )
+        ).first()
+        if has_profile_award is None and user.bio and user.display_name:
+            award = Award(
+                user_id=user.id,
+                award_type="profile_complete",
+                reward_xp=100,
+            )
+            session.add(award)
+    session.commit()
+
+
+seed_tickets_if_present = _run_ticket_award_seed
+
+
 def _run_quest_seed() -> None:
     """Seed the quest catalog + demo progress using main's idempotent style.
 
@@ -563,3 +635,4 @@ if __name__ == "__main__":
     seed()
     seed_quests_if_present()
     seed_events_if_present()
+    seed_tickets_if_present()

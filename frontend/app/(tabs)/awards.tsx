@@ -1,28 +1,87 @@
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Image, Text, View } from 'react-native';
+import { Alert, Image, Pressable, Text, View } from 'react-native';
 
 import { Screen } from '@/components/Screen';
 import { TabHeader } from '@/components/TabHeader';
 import { QuestsSection } from '@/components/awards/QuestsSection';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
-import { apiGetQuests, type ApiQuest } from '@/lib/api';
+import { apiCompleteProfile, apiGetAwards, apiGetQuests, apiPurchaseTicket, apiRecordDailyLogin, type ApiAwardRead, type ApiQuest } from '@/lib/api';
 
 const stickerBoardImage = require('@/assets/badges/image.png');
 
 export default function AwardsScreen() {
   const [quests, setQuests] = useState<ApiQuest[]>([]);
+  const [awards, setAwards] = useState<ApiAwardRead[]>([]);
+  const [processing, setProcessing] = useState<string | null>(null);
+  const [completedTasks, setCompletedTasks] = useState<Set<string>>(new Set());
 
   const loadQuests = useCallback(() => {
-    apiGetQuests()
+    apiRecordDailyLogin()
+      .then(() => apiGetQuests())
       .then((data) => setQuests(data.quests))
       .catch(() => setQuests([]));
   }, []);
 
+  const loadAwards = useCallback(() => {
+    apiGetAwards()
+      .then((data) => setAwards(data))
+      .catch(() => setAwards([]));
+  }, []);
+
+  const markTaskComplete = useCallback((name: string) => {
+    setCompletedTasks((prev) => new Set(prev).add(name));
+  }, []);
+
+  const handlePurchaseTicket = async () => {
+    setProcessing('ticket');
+    try {
+      await apiPurchaseTicket();
+      Alert.alert('Award', 'Ticket purchased! +50 XP earned');
+      markTaskComplete('Purchase Ticket');
+      loadQuests();
+      loadAwards();
+    } catch {
+      Alert.alert('Error', 'Failed to purchase ticket');
+    } finally {
+      setProcessing(null);
+    }
+  };
+
+  const handleCompleteProfile = async () => {
+    setProcessing('profile');
+    try {
+      await apiCompleteProfile();
+      Alert.alert('Award', 'Profile complete! +100 XP earned');
+      markTaskComplete('Complete Profile');
+      loadAwards();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : '';
+      if (message.includes('already claimed')) {
+        Alert.alert('Award', 'Profile completion award already claimed');
+      } else {
+        Alert.alert('Error', 'Failed to complete profile');
+      }
+    } finally {
+      setProcessing(null);
+    }
+  };
+
+  const onClaimTask = useCallback((name: string) => {
+    return async () => {
+      if (name === 'Purchase Ticket') {
+        await handlePurchaseTicket();
+      } else if (name === 'Complete Profile') {
+        await handleCompleteProfile();
+      }
+    };
+  }, [handlePurchaseTicket, handleCompleteProfile]);
+
   useFocusEffect(
     useCallback(() => {
       loadQuests();
-    }, [loadQuests]),
+      loadAwards();
+    }, [loadQuests, loadAwards]),
   );
 
   return (
@@ -45,10 +104,11 @@ export default function AwardsScreen() {
           </Text>
           <Image
             source={stickerBoardImage}
-            style={{ width: 150, height: 150, resizeMode: 'contain' }}
+            style={{ width: 260, height: 260, resizeMode: 'contain' }}
           />
         </View>
-        <QuestsSection quests={quests} onClaimed={loadQuests} />
+
+        <QuestsSection quests={quests} onClaimed={loadQuests} completedTasks={completedTasks} onClaimTask={onClaimTask} />
       </View>
     </Screen>
   );

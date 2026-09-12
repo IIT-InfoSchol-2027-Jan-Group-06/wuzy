@@ -1,7 +1,7 @@
 import Constants from 'expo-constants';
 import { File } from 'expo-file-system';
 
-import { getToken, setToken } from '@/lib/auth-token';
+import { getLastLoginDate, getToken, setLastLoginDate, setToken } from '@/lib/auth-token';
 
 /**
  * Base URL for the Wuzy backend.
@@ -243,6 +243,27 @@ export interface ApiQuestsDashboard {
   quests: ApiQuest[];
 }
 
+export interface ApiTicketRead {
+  id: number;
+  user_id: number;
+  ticket_type: string;
+  purchased_at: string;
+  award_granted: boolean;
+}
+
+export interface ApiAwardRead {
+  id: number;
+  user_id: number;
+  award_type: string;
+  reward_xp: number;
+  awarded_at: string;
+}
+
+export interface TicketPurchaseResponse {
+  ticket: ApiTicketRead;
+  award: ApiAwardRead | null;
+}
+
 export function apiGetQuests(): Promise<ApiQuestsDashboard> {
   return apiGet<ApiQuestsDashboard>('/quests/');
 }
@@ -301,6 +322,42 @@ export function respondReferral(id: number, accept: boolean): Promise<ApiReferra
 /** Tell the sender a resolved referral has been seen, so its card returns to the Send Request pill. Idempotent. */
 export function consumeReferral(id: number): Promise<ApiReferralRequest> {
   return apiPost<ApiReferralRequest>(`/referrals/${id}/consume`, {});
+}
+
+export async function apiPurchaseTicket(): Promise<TicketPurchaseResponse> {
+  return apiPost<TicketPurchaseResponse>('/tickets/purchase', {});
+}
+
+export async function apiGetTickets(): Promise<ApiTicketRead[]> {
+  return apiGet<ApiTicketRead[]>('/tickets/');
+}
+
+export async function apiCompleteProfile(): Promise<ApiAwardRead> {
+  return apiPost<ApiAwardRead>('/awards/complete-profile', {});
+}
+
+export async function apiGetAwards(): Promise<ApiAwardRead[]> {
+  return apiGet<ApiAwardRead[]>('/awards/');
+}
+
+/** Record a daily login and bump the Daily Login quest progress once per calendar day. */
+export async function apiRecordDailyLogin(): Promise<void> {
+  const token = await getToken();
+  if (!token) return;
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    const last = await getLastLoginDate();
+    if (last === today) return;
+
+    const data = await apiGetQuests();
+    const quest = data.quests.find((q) => q.name === 'Daily Login');
+    if (quest && quest.active_subtask) {
+      await apiBumpQuestProgress(quest.id);
+      await setLastLoginDate(today);
+    }
+  } catch {
+    // Ignore offline or transient failures
+  }
 }
 
 /** Compact "ago" label: 5m, 2h, 1d, 12 Aug. Empty for missing timestamps. */

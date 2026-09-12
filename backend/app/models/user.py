@@ -9,6 +9,7 @@ if TYPE_CHECKING:
     from app.models.follow import Follow
     from app.models.group import Group
     from app.models.post import Post
+    from app.models.ticket import Award, Ticket
 
 
 class User(SQLModel, table=True):
@@ -51,6 +52,8 @@ class User(SQLModel, table=True):
         back_populates="members",
         sa_relationship_kwargs={"secondary": "group_member"},
     )
+    tickets: list["Ticket"] = Relationship(back_populates="user")
+    awards: list["Award"] = Relationship(back_populates="user")
 
     @property
     def following_ids(self) -> list[int]:

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -7,7 +7,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
-import { apiGetEvent, assetUrl, type ApiRecommendedEvent } from '@/lib/api';
+import { apiGetEvent, apiPurchaseTicket, assetUrl, type ApiRecommendedEvent } from '@/lib/api';
 
 const card = { backgroundColor: wuzyColors.surface, borderRadius: 24, borderWidth: 1, borderColor: wuzyColors.glassBorder };
 
@@ -17,6 +17,8 @@ export default function TicketScreen() {
   const { width } = useWindowDimensions();
   const [event, setEvent] = useState<ApiRecommendedEvent | null>(null);
   const [ticketCount, setTicketCount] = useState(1);
+  const [purchasing, setPurchasing] = useState(false);
+  const [purchaseSuccess, setPurchaseSuccess] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -41,6 +43,19 @@ export default function TicketScreen() {
   const formatPrice = (value: number) => `${currency}${value.toLocaleString()}`;
   const total = ticketPrice * ticketCount;
   const bannerHeight = Math.min(Math.round((width - 2 * wuzyLayout.side) * 0.42), 180);
+
+  const handlePurchase = async () => {
+    setPurchasing(true);
+    setPurchaseSuccess(false);
+    try {
+      await apiPurchaseTicket();
+      setPurchaseSuccess(true);
+    } catch {
+      Alert.alert('Error', 'Failed to purchase ticket');
+    } finally {
+      setPurchasing(false);
+    }
+  };
 
   const stepper = (icon: 'remove' | 'add', onPress: () => void) => (
     <Pressable onPress={onPress} accessibilityRole="button" className="w-10 h-10 rounded-full items-center justify-center active:opacity-70" style={{ backgroundColor: wuzyColors.yellowDim }}>
@@ -103,11 +118,18 @@ export default function TicketScreen() {
 
       {event && (
         <Pressable
-          onPress={() => router.push('/ticket-vault')}
+          onPress={handlePurchase}
+          disabled={purchasing || purchaseSuccess}
           accessibilityRole="button"
           className="items-center justify-center rounded-full active:opacity-80"
-          style={{ height: wuzyLayout.control, marginBottom: wuzyLayout.itemGap, backgroundColor: wuzyColors.yellow }}>
-          <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.body, color: wuzyColors.bg }}>Pay {formatPrice(total)}</Text>
+          style={{ height: wuzyLayout.control, marginBottom: wuzyLayout.itemGap, backgroundColor: purchasing || purchaseSuccess ? wuzyColors.yellowDim : wuzyColors.yellow }}>
+          {purchasing ? (
+            <ActivityIndicator size="small" color={wuzyColors.bg} />
+          ) : purchaseSuccess ? (
+            <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.body, color: wuzyColors.bg }}>Purchased!</Text>
+          ) : (
+            <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.body, color: wuzyColors.bg }}>Pay {formatPrice(total)}</Text>
+          )}
         </Pressable>
       )}
     </Screen>

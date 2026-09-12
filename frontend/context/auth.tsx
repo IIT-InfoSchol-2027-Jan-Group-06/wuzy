@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { getToken, setToken, clearToken } from '@/lib/auth-token';
-import { apiLogin, apiMe, type ApiUser, type AuthSession } from '@/lib/api';
+import { apiLogin, apiMe, apiRecordDailyLogin, type ApiUser, type AuthSession } from '@/lib/api';
 import { registerForPushNotifications } from '@/lib/push';
 
 type AuthContextValue = {
@@ -51,6 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (user) {
       registerForPushNotifications();
+      apiRecordDailyLogin();
     }
   }, [user]);
 

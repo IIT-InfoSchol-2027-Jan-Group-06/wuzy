@@ -11,6 +11,7 @@ type QuestCardProps = {
   actionLabel?: string;
   onAction?: () => void;
   onClaimed?: () => void;
+  onClaimCustom?: () => Promise<void>;
 };
 
 const SPARKLE_SET = [
@@ -78,7 +79,7 @@ function SparklePiece({
  * (Add / Share) while still in progress, or an All Done badge once every
  * subtask has been claimed. Claiming notifies the parent so it refetches and
  * the card advances to the next subtask. */
-export function QuestCard({ quest, actionLabel, onAction, onClaimed }: QuestCardProps) {
+export function QuestCard({ quest, actionLabel, onAction, onClaimed, onClaimCustom }: QuestCardProps) {
   const art: ImageSourcePropType = questArtFor(quest.name) ?? require('@/assets/badges/img15.png');
 
   const sub = quest.active_subtask;
@@ -103,7 +104,11 @@ export function QuestCard({ quest, actionLabel, onAction, onClaimed }: QuestCard
     flashButton();
     setCelebrate(true);
     try {
-      await apiClaimQuest(quest.id);
+      if (onClaimCustom) {
+        await onClaimCustom();
+      } else {
+        await apiClaimQuest(quest.id);
+      }
       setTimeout(() => {
         setCelebrate(false);
         onClaimed?.();
@@ -166,14 +171,14 @@ export function QuestCard({ quest, actionLabel, onAction, onClaimed }: QuestCard
               </View>
             )}
           </Animated.View>
-        ) : onAction ? (
+        ) : onAction || onClaimCustom ? (
           <Animated.View style={popStyle}>
             <Pressable
               accessibilityRole="button"
-              onPress={onAction}
+              onPress={onAction ?? onClaimCustom}
               className="items-center justify-center rounded-full border border-wuzy-yellow/50 px-[16px] py-[8px] active:opacity-80">
               <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: 13, color: wuzyColors.yellow }}>
-                {actionLabel}
+                {actionLabel ?? 'Claim'}
               </Text>
             </Pressable>
           </Animated.View>

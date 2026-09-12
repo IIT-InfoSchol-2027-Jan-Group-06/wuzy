@@ -1,104 +1,28 @@
-import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { View } from 'react-native';
+import { useRouter } from 'expo-router';
 
-import { ConnectionCard } from '@/components/ConnectionCard';
+import { ConnectionList } from '@/components/ConnectionList';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
-import { SearchBar } from '@/components/SearchBar';
-import { Wheel } from '@/components/Wheel';
-import { toConnection, type Connection } from '@/constants/connection-data';
-import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
-import { apiGet, type ApiPerson } from '@/lib/api';
-
-const CARD_HEIGHT = 132;
+import { wuzyLayout } from '@/constants/wuzy-theme';
+import { useConnections } from '@/hooks/useConnections';
 
 export default function ConnectionsScreen() {
   const router = useRouter();
-  const [query, setQuery] = useState('');
-  const [connections, setConnections] = useState<Connection[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-
-  // A Connection is a mutual follow. Refetch on focus so a freshly scanned QR
-  // connection shows up here with its share of the count.
-  const load = useCallback(async () => {
-    try {
-      setLoading(true);
-      const people = await apiGet<ApiPerson[]>('/chat/people');
-      setConnections(people.map((p) => toConnection(p.user)));
-    } catch {
-      setConnections([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useFocusEffect(
-    useCallback(() => {
-      load();
-    }, [load]),
-  );
-
-  // Memoised so the wheel only resets when the results actually change.
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return connections;
-    return connections.filter(
-      (c) =>
-        c.name.toLowerCase().includes(q) ||
-        c.username.toLowerCase().includes(q) ||
-        c.tags.some((t) => t.toLowerCase().includes(q)),
-    );
-  }, [query, connections]);
-
-  // The expanded card is re-rendered last by the wheel and stacked above the rest.
-  const frontIndex = useMemo(() => {
-    if (!expandedId) return null;
-    return filtered.findIndex((c) => c.id === expandedId);
-  }, [filtered, expandedId]);
-
-  const emptyLabel = query ? 'No connections match your search' : 'No connections yet';
+  const { connections, loading } = useConnections();
 
   return (
     <Screen>
-      {/* Taps outside an expanded card collapse it; nested Pressables below claim their own touches. */}
-      <Pressable style={{ flex: 1 }} onPress={() => setExpandedId(null)}>
-        <View style={{ gap: wuzyLayout.itemGap }}>
-          <ScreenHeader title="Connections" />
-          <SearchBar value={query} onChangeText={setQuery} placeholder="Search connections" />
-          <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.body, color: wuzyColors.gray }}>
-            {loading ? 'Loading' : `${filtered.length} connections`}
-          </Text>
-        </View>
-        <View className="flex-1">
-          {loading ? (
-            <ActivityIndicator size="large" color={wuzyColors.yellow} style={{ marginTop: wuzyLayout.gap }} />
-          ) : filtered.length === 0 ? (
-            <Text
-              className="text-center"
-              style={{ marginTop: wuzyLayout.gap, fontFamily: wuzyFonts.body, fontSize: wuzyType.body, color: wuzyColors.gray }}>
-              {emptyLabel}
-            </Text>
-          ) : (
-            <Wheel
-              data={filtered}
-              keyExtractor={(c) => c.id}
-              itemHeight={CARD_HEIGHT}
-              gap={wuzyLayout.itemGap}
-              frontIndex={frontIndex}
-              renderItem={(c) => (
-                <ConnectionCard
-                  connection={c}
-                  expanded={expandedId === c.id}
-                  onAvatarPress={() => setExpandedId((prev) => (prev === c.id ? null : c.id))}
-                  onProfilePress={() => router.push(`/profile/${c.id}`)}
-                />
-              )}
-            />
-          )}
-        </View>
-      </Pressable>
+      <View style={{ flex: 1, gap: wuzyLayout.itemGap }}>
+        <ScreenHeader title="Connections" />
+        <ConnectionList
+          connections={connections}
+          loading={loading}
+          emptyLabel="No connections yet"
+          onProfilePress={(c) => router.push(`/profile/${c.id}`)}
+          onReferPress={(c) => router.push({ pathname: '/refer-friend', params: { id: c.id, name: c.name } })}
+        />
+      </View>
     </Screen>
   );
 }

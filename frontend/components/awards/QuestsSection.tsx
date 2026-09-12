@@ -3,7 +3,7 @@ import { Text, View } from 'react-native';
 
 import { QuestCard } from '@/components/awards/QuestCard';
 import { wuzyColors, wuzyFonts, wuzyType } from '@/constants/wuzy-theme';
-import { apiRecordDailyLogin, type ApiQuest } from '@/lib/api';
+import type { ApiQuest } from '@/lib/api';
 
 /** Maps each task to its right-column action (or none). */
 const actionFor: Record<string, { label: string; route: string }> = {
@@ -11,6 +11,7 @@ const actionFor: Record<string, { label: string; route: string }> = {
   'Social Network': { label: 'Add', route: '/connect' },
   'Ticket Sharing': { label: 'Share', route: '/ticket-vault' },
   'Complete Profile': { label: 'Complete', route: '/(tabs)/profile' },
+  'Purchase Ticket': { label: 'Purchase', route: '/ticket' },
 };
 
 interface QuestsSectionProps {
@@ -30,6 +31,16 @@ export function QuestsSection({ quests, onClaimed, completedTasks, onClaimTask }
     'Complete Profile': 'Fill in your profile to earn 100 XP',
   };
 
+  // Display order: Daily Login leads the board, Ticket Sharing closes it.
+  const taskOrder = [
+    'Daily Login',
+    'Attend Live Events',
+    'Social Network',
+    'Purchase Ticket',
+    'Complete Profile',
+    'Ticket Sharing',
+  ];
+
   return (
     <View className="mt-[16px]">
       <Text style={{ fontFamily: wuzyFonts.bold, fontSize: wuzyType.body, color: wuzyColors.yellow }}>
@@ -47,37 +58,12 @@ export function QuestsSection({ quests, onClaimed, completedTasks, onClaimTask }
       </Text>
 
       <View className="mt-[16px] gap-[12px]">
-        {quests.map((quest) => {
-          const action = actionFor[quest.name];
-          if (quest.name === 'Daily Login') {
-            return (
-              <QuestCard
-                key={quest.id}
-                quest={quest}
-                actionLabel="Login"
-                onAction={async () => {
-                  await apiRecordDailyLogin();
-                  onClaimed?.();
-                }}
-                onClaimed={onClaimed}
-              />
-            );
-          }
-          return (
-            <QuestCard
-              key={quest.id}
-              quest={quest}
-              actionLabel={action?.label}
-              onAction={action ? () => router.push(action.route as never) : undefined}
-              onClaimed={onClaimed}
-            />
-          );
-        })}
-        {taskNames.map((name) => {
-          const isDone = completedTasks?.has(name) ?? false;
-          const action = actionFor[name];
-          const actionLabel = action?.label ?? (name === 'Purchase Ticket' ? 'Purchase' : 'Complete');
-          if (action && name !== 'Purchase Ticket') {
+        {taskOrder.map((name) => {
+          if (taskNames.includes(name)) {
+            const isPurchaseTicket = name === 'Purchase Ticket';
+            const isDone = !isPurchaseTicket && (completedTasks?.has(name) ?? false);
+            const action = actionFor[name];
+            const actionLabel = action?.label ?? (name === 'Purchase Ticket' ? 'Purchase' : 'Complete');
             return (
               <QuestCard
                 key={name}
@@ -91,26 +77,22 @@ export function QuestsSection({ quests, onClaimed, completedTasks, onClaimTask }
                   claimed_steps: isDone ? 1 : 0,
                 }}
                 actionLabel={actionLabel}
-                onAction={() => router.push(action.route as never)}
+                onAction={action ? () => router.push(action.route as never) : undefined}
                 onClaimed={onClaimed}
+                onClaimCustom={action ? undefined : onClaimTask?.(name)}
               />
             );
           }
+          const quest = quests.find((q) => q.name === name);
+          if (!quest) return null;
+          const action = actionFor[name];
           return (
             <QuestCard
-              key={name}
-              quest={{
-                id: -1,
-                name,
-                description: taskDescriptions[name],
-                active_subtask: isDone ? null : { id: 0, quest_id: 0, name: name, description: taskDescriptions[name], target_count: 1, progress_unit: 'once', reward_xp: 50, reward_sticker: false, current_progress: 0, claimed: false },
-                subtask_step: 1,
-                subtask_total: 1,
-                claimed_steps: isDone ? 1 : 0,
-              }}
-              actionLabel={actionLabel}
+              key={quest.id}
+              quest={quest}
+              actionLabel={action?.label}
+              onAction={action ? () => router.push(action.route as never) : undefined}
               onClaimed={onClaimed}
-              onClaimCustom={onClaimTask?.(name)}
             />
           );
         })}

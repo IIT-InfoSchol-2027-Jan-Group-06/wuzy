@@ -61,6 +61,8 @@ function WheelItem({
 
   return (
     <Animated.View
+      needsOffscreenAlphaCompositing={elevated}
+      renderToHardwareTextureAndroid={elevated}
       style={[
         { position: 'absolute', left: 0, right: 0, top: -itemHeight / 2, height: itemHeight },
         style,
@@ -112,7 +114,8 @@ export function Wheel<T>({ data, keyExtractor, renderItem, itemHeight, gap = 8, 
   return (
     <GestureDetector gesture={pan}>
       <View style={{ flex: 1, justifyContent: 'center', overflow: 'hidden' }}>
-        <View style={{ height: 0 }}>
+        {/* collapsable off so Android cannot flatten this height-0 layer and reshuffle who the wrappers are siblings of. */}
+        <View collapsable={false} style={{ height: 0 }}>
           {order.map((i) => (
             <WheelItem
               key={keyExtractor(data[i])}

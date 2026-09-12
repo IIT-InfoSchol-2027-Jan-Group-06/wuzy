@@ -6,6 +6,7 @@ import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { GlassNavButton } from '@/components/GlassNavButton';
+import { LiquidGlass } from '@/components/LiquidGlass';
 import { QrCode } from '@/components/QrCode';
 import { QrScanner } from '@/components/QrScanner';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
@@ -68,21 +69,11 @@ function ModeToggle({ camera, onToggle }: { camera: boolean; onToggle: (camera: 
   );
 
   return (
-    <View className="overflow-hidden rounded-full" style={{ flexDirection: 'row', borderWidth: 1, borderColor: wuzyColors.yellow }}>
-      <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
-      {/* Yellow liquid-glass tint over the blur, then a soft shine down the top half. */}
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: wuzyColors.yellowDim }]} />
-      <LinearGradient
-        colors={['rgba(255,255,255,0.3)', 'rgba(255,255,255,0)']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        locations={[0, 1]}
-        style={{ position: 'absolute', left: 0, right: 0, top: 0, height: '60%' }}
-      />
+    <LiquidGlass style={{ flexDirection: 'row' }}>
       {segment('qr-code', !camera, 'Show my QR code', false)}
       <View style={{ width: 1, alignSelf: 'stretch', backgroundColor: wuzyColors.yellow }} />
       {segment('camera', camera, 'Open scanner', true)}
-    </View>
+    </LiquidGlass>
   );
 }
 

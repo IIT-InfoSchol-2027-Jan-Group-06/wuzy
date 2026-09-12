@@ -588,6 +588,17 @@ def seed_awards(session: Session) -> None:
             session.add(award)
     session.commit()
 
+    # Sync total_xp on all users
+    for user in users:
+        total_xp = session.exec(
+            select(Award).where(Award.user_id == user.id)
+        ).all()
+        total_xp = sum(a.reward_xp for a in total_xp)
+        if user.total_xp != total_xp:
+            user.total_xp = total_xp
+            session.add(user)
+    session.commit()
+
 
 seed_tickets_if_present = _run_ticket_award_seed
 

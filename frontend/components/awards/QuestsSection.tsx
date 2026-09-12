@@ -3,7 +3,7 @@ import { Text, View } from 'react-native';
 
 import { QuestCard } from '@/components/awards/QuestCard';
 import { wuzyColors, wuzyFonts, wuzyType } from '@/constants/wuzy-theme';
-import type { ApiQuest } from '@/lib/api';
+import { apiRecordDailyLogin, type ApiQuest } from '@/lib/api';
 
 /** Maps each task to its right-column action (or none). */
 const actionFor: Record<string, { label: string; route: string }> = {
@@ -49,6 +49,20 @@ export function QuestsSection({ quests, onClaimed, completedTasks, onClaimTask }
       <View className="mt-[16px] gap-[12px]">
         {quests.map((quest) => {
           const action = actionFor[quest.name];
+          if (quest.name === 'Daily Login') {
+            return (
+              <QuestCard
+                key={quest.id}
+                quest={quest}
+                actionLabel="Login"
+                onAction={async () => {
+                  await apiRecordDailyLogin();
+                  onClaimed?.();
+                }}
+                onClaimed={onClaimed}
+              />
+            );
+          }
           return (
             <QuestCard
               key={quest.id}

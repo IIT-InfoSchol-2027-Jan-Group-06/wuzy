@@ -46,6 +46,8 @@ def complete_profile(
         reward_xp=PROFILE_AWARD_XP,
     )
     session.add(award)
+    user.total_xp += PROFILE_AWARD_XP
+    session.add(user)
     session.commit()
     session.refresh(award)
 

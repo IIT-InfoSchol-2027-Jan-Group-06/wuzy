@@ -31,6 +31,7 @@ class User(SQLModel, table=True):
     avatar_url: str | None = Field(default=None)
     is_active: bool = Field(default=True)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    total_xp: int = Field(default=0)
 
     # Each relationship uses explicit foreign_keys because SQLAlchemy cannot
     # disambiguate multiple FK paths to the same target table (User) without help.

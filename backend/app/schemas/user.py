@@ -37,6 +37,7 @@ class UserRead(BaseModel):
     created_at: datetime
     tickets_count: int = 0
     awards_count: int = 0
+    total_xp: int = 0
 
     model_config = {"from_attributes": True}
 

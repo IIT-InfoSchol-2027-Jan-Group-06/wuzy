@@ -182,6 +182,7 @@ export interface ApiUser {
   avatar_url: string | null;
   is_active: boolean;
   created_at: string;
+  total_xp: number;
 }
 
 export interface ApiPost {
@@ -338,6 +339,19 @@ export async function apiCompleteProfile(): Promise<ApiAwardRead> {
 
 export async function apiGetAwards(): Promise<ApiAwardRead[]> {
   return apiGet<ApiAwardRead[]>('/awards/');
+}
+
+export interface UserXpData {
+  total_xp: number;
+  rank: string;
+  progress_pct: number;
+  next_rank: string | null;
+  xp_in_rank: number;
+  xp_to_next: number;
+}
+
+export function apiGetUserXp(): Promise<UserXpData> {
+  return apiGet<UserXpData>('/users/me/xp');
 }
 
 /** Record a daily login and bump the Daily Login quest progress once per calendar day. */

@@ -39,6 +39,8 @@ def purchase_ticket(
         reward_xp=TICKET_AWARD_XP,
     )
     session.add(award)
+    user.total_xp += TICKET_AWARD_XP
+    session.add(user)
     ticket.award_granted = True
     session.add(ticket)
     session.commit()

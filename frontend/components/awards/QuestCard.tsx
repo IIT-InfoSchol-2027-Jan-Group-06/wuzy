@@ -123,8 +123,8 @@ export function QuestCard({ quest, actionLabel, onAction, onClaimed, onClaimCust
   return (
     <View className="rounded-3xl bg-wuzy-surface p-4">
       <View className="flex-row items-center gap-[12px]">
-        <View className="items-center justify-center" style={{ width: 48, height: 48 }}>
-          <Image source={art} resizeMode="contain" style={{ width: 44, height: 44 }} />
+        <View className="items-center justify-center" style={{ width: 60, height: 60 }}>
+          <Image source={art} resizeMode="contain" style={{ width: 56, height: 56 }} />
         </View>
 
         <View className="flex-1">

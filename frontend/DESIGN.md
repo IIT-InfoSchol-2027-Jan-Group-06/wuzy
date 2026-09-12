@@ -154,7 +154,7 @@ Full-bleed content inside a padded screen uses `marginHorizontal: -wuzyLayout.si
 - `value`, `size`, `color`, `card`. Card mode is a white rounded container; `card={false}` renders bare modules over dark images.
 
 ### QrScanner
-- Camera side of the Connect card (`components/QrScanner.tsx`). A square (`aspectRatio: 1`, radius 24) `surface` box holding either a live `CameraView` (QR barcode scan behind a yellow finder frame) or the scan outcome. Parses the scanned URL's `/profile/<username>`, looks the user up (`/users/by-username/{username}`), establishes the mutual follow (`/users/{id}/connect`), and shows the new connection as a `ConnectionCard` in the box for a couple of seconds before returning to scanning. The same card appears on the Connections screen (refetched on focus). An "Allow camera" `Chip` asks for permission when it is missing.
+- Camera side of the Connect card (`components/QrScanner.tsx`). A square (`aspectRatio: 1`, radius 24) `surface` box holding either a live `CameraView` (QR barcode scan behind a yellow finder frame) or the scan outcome. Parses the scanned URL's `/profile/<username>`, looks the user up (`/users/by-username/{username}`), establishes the mutual follow (`/users/{id}/connect`), and flashes a brief yellow "Connected!" before returning to scanning. The new connection's card appears on the Connections screen (refetched on focus), never in the camera view. An "Allow camera" `Chip` asks for permission when it is missing.
 
 ### ProfileHero and ProfileGrid
 - ProfileHero: full-width background photo (explicit capped height, same rule as the profile hero) fading to `bg`, with Bebas `hero` name, awards medals, and `body` bio at its foot. `actions` render at the top right (owner only: Connect and Settings glass buttons).

@@ -24,6 +24,8 @@ export interface WheelProps<T> {
   renderItem: (item: T) => ReactNode;
   itemHeight: number;
   gap?: number;
+  /** Data index painted above and after every other item (the expanded card). */
+  frontIndex?: number | null;
 }
 
 function WheelItem({
@@ -32,6 +34,7 @@ function WheelItem({
   offset,
   slot,
   itemHeight,
+  elevated,
   children,
 }: {
   index: number;
@@ -39,6 +42,7 @@ function WheelItem({
   offset: SharedValue<number>;
   slot: number;
   itemHeight: number;
+  elevated: boolean;
   children: ReactNode;
 }) {
   const style = useAnimatedStyle(() => {
@@ -56,14 +60,21 @@ function WheelItem({
   });
 
   return (
-    <Animated.View style={[{ position: 'absolute', left: 0, right: 0, top: -itemHeight / 2, height: itemHeight }, style]}>
+    <Animated.View
+      style={[
+        { position: 'absolute', left: 0, right: 0, top: -itemHeight / 2, height: itemHeight },
+        style,
+        // Stacking happens between these wrappers (the actual siblings), not inside the cards:
+        // the expanded one sits clearly on top, every other one sits low.
+        elevated ? { zIndex: 100, elevation: 100 } : { zIndex: 1, elevation: 1 },
+      ]}>
       {children}
     </Animated.View>
   );
 }
 
 /** Endless vertical wheel: the item at `offset` sits in the centre at full size, the rest wrap around above and below. */
-export function Wheel<T>({ data, keyExtractor, renderItem, itemHeight, gap = 8 }: WheelProps<T>) {
+export function Wheel<T>({ data, keyExtractor, renderItem, itemHeight, gap = 8, frontIndex = null }: WheelProps<T>) {
   const slot = itemHeight + gap;
   // Float index of the centred item. Integer when settled.
   const offset = useSharedValue(0);
@@ -90,14 +101,28 @@ export function Wheel<T>({ data, keyExtractor, renderItem, itemHeight, gap = 8 }
       offset.value = withTiming(Math.round(offset.value + fling), { duration: SETTLE_MS, easing: Easing.out(Easing.cubic) });
     });
 
+  // Paint the expanded card last so no later sibling flattens over it, especially on Android.
+  const order = data.map((_, i) => i);
+  if (frontIndex != null && frontIndex >= 0 && frontIndex < order.length) {
+    order.splice(frontIndex, 1);
+    order.push(frontIndex);
+  }
+
   // ponytail: every item stays mounted. Window them if a wheel ever holds hundreds.
   return (
     <GestureDetector gesture={pan}>
       <View style={{ flex: 1, justifyContent: 'center', overflow: 'hidden' }}>
         <View style={{ height: 0 }}>
-          {data.map((item, index) => (
-            <WheelItem key={keyExtractor(item)} index={index} count={data.length} offset={offset} slot={slot} itemHeight={itemHeight}>
-              {renderItem(item)}
+          {order.map((i) => (
+            <WheelItem
+              key={keyExtractor(data[i])}
+              index={i}
+              count={data.length}
+              offset={offset}
+              slot={slot}
+              itemHeight={itemHeight}
+              elevated={i === frontIndex}>
+              {renderItem(data[i])}
             </WheelItem>
           ))}
         </View>

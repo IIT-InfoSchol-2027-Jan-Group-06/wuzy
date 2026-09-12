@@ -158,14 +158,14 @@ Full-bleed content inside a padded screen uses `marginHorizontal: -wuzyLayout.si
 - ProfileGrid: full-bleed three-column photo grid of `ApiPost`s with loading and empty states. `onEmptyPress` turns the empty state into the owner's "share your first one" call to action; without it the empty state is a plain "No posts yet".
 - Used by Profile (tab, owner, has edit/connect/connections actions) and the pushed `profile/[id]` route (read-only viewer: floating `ScreenHeader` back button only, lists that user's permanent posts).
 
-### BadgeGrid (awards sticker board)
-- **When to Use**: The Awards screen's sticker board (`app/(tabs)/awards.tsx`)
-- **Import**: `import { BadgeGrid } from '@/components/awards/BadgeGrid';`
-- **Look**: The 15 badge PNGs (`assets/badges/img1-15.png`) in a clean 3-by-5 board inside a transparent yellow glass card: `bg-[#FFE783]/10`, `backdrop-blur` (a BlurView on native), `border border-white/10`, `rounded-3xl`, `p-5`
-- **Placement**: Flex-wrap flow, 5 cells per row with a 12px gutter, each cell centered; the badge image renders `contain` inside its cell, larger than the visible box
-- **Sticker feel**: Soft drop shadow behind every badge; no background cards or borders on individual items
-- **Crop**: The artwork is scaled 1.08x and nudged up inside an `overflow-hidden` box, clipping stray pixels on the exported PNG top edges; the 2nd and 9th badges render smaller to sit in line
-- **Asset rule**: Badge files must be transparent PNGs with no square background frame baked into the image
+### QuestCard and QuestsSection (awards tasks)
+- **When to Use**: The Awards screen's task list (`app/(tabs)/awards.tsx`). Three parent tasks - Attend Live Events, Social Network, Ticket Sharing - each holding an ordered list of subtasks the user completes one at a time.
+- **Import**: `import { QuestCard } from '@/components/awards/QuestCard';` and `import { QuestsSection } from '@/components/awards/QuestsSection';`
+- **Data**: `apiGetQuests()` returns each task with its `active_subtask` (the first unclaimed one, carrying its own `current_progress`, `target_count`, `progress_unit` and reward) plus `subtask_step` / `subtask_total` for the step dots. `active_subtask` is null once every substep is claimed. `apiBumpQuestProgress(id)` counts one performed action (capped at the active substep's target); `apiClaimQuest(id)` claims it and advances to the next substep. Task header art maps by task name via `questArtFor` in `constants/awards-data.ts`.
+- **Look**: Compact `surface` card, radius 24, padding 16, cards stacked at `itemGap`. One row: a 48 slot with task art on the left; a center column holding the task name (Poppins semibold white), the active subtask name in yellow `caption`, then the progress bar, then the step dots; the right column holds the status control.
+- **Progress bar**: A 24 tall pill (`bg-white/10`, 11 white semibold text) with the yellow fill absolutely positioned behind it. The counter text - "0 / 3 completed", "2 / 3 friends" - sits centered inside the bar on top of the fill, so it stays readable at any fill level. Below it the step dots mark position: done steps are yellow pills, the active step is a longer yellow pill, upcoming steps are white/15 dots.
+- **Status control (right)**: In-progress subtasks with an action get an outlined yellow pill: Attend Live Events "Attend" pushes `/event-details`, Social Network "Add" pushes `/connect`, Ticket Sharing "Share" pushes `/ticket-vault`. When the active subtask hits its target the card shows a solid yellow Claim pill. Pressing it triggers a sparkle-pop on the pill (a spring and a burst of colored particles); on success the card advances to the next subtask. Claiming a subtask that is not yet at the target returns a 400. Once every substep is claimed the card shows an outlined "All Done" badge. The board area above the tasks shows only a centered muted hint, "Complete a task to earn its badge"; no earned artwork is rendered.
+- **Real-time progress**: The route (`app/(tabs)/awards.tsx`) fetches quests on focus and owns the state. The screens that perform the counted action call `apiBumpQuestProgress` (buying a ticket in `event-details.tsx`, sharing one in `ticket-vault.tsx`, confirming a scan in `connect.tsx`). On return, `QuestsSection` re-renders from the fresh fetch, so the bar, counter, and status control update the moment the user returns to the Awards screen.
 
 ---
 

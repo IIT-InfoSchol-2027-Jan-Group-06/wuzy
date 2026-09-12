@@ -12,7 +12,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.api.v1 import auth, chat, feed, groups, posts, upload, users, ws
+from app.api.v1 import auth, chat, feed, groups, posts, quests, upload, users, ws
 from app.db.session import init_db
 
 
@@ -39,6 +39,7 @@ app.include_router(chat.router, prefix="/chat", tags=["chat"])
 app.include_router(groups.router, prefix="/groups", tags=["groups"])
 app.include_router(upload.router, prefix="/upload", tags=["upload"])
 app.include_router(ws.router, prefix="/ws", tags=["ws"])
+app.include_router(quests.router, prefix="/quests", tags=["quests"])
 
 # Serve uploaded files from the storage directory so /uploads/* URLs resolve.
 storage_dir = Path("storage")

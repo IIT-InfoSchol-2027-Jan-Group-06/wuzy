@@ -27,9 +27,5 @@ export function useFeed() {
     refresh();
   }, [refresh]);
 
-  const removePost = useCallback((id: number) => {
-    setPosts((prev) => prev.filter((p) => p.id !== id));
-  }, []);
-
-  return { posts, loading, error, refresh, removePost };
+  return { posts, loading, error, refresh };
 }

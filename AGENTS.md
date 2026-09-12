@@ -68,8 +68,8 @@ backend/
 ### Models
 
 - **User**: id, email (unique), username (unique), hashed_password, is_active, created_at. Has `posts` relationship.
-- **Post**: id, media_url, caption, save_to_profile (bool, indexed), user_id (FK), created_at. `save_to_profile=False` = ephemeral (disappears after viewed), `True` = permanent (stays on profile grid).
-- **PostView**: id, user_id (FK), post_id (FK), viewed_at. Pure tracking table, no relationships.
+- **Post**: id, media_url, caption, save_to_profile (bool, indexed), user_id (FK), created_at. `save_to_profile=False` = ephemeral (disappears after the viewing app session ends), `True` = permanent (stays on profile grid).
+- **PostView**: id, user_id (FK), post_id (FK), session_id, viewed_at. Logs views keyed by the app session that recorded them. Pure tracking table, no relationships.
 
 ### API Routes
 
@@ -81,8 +81,8 @@ backend/
 | `GET` | `/users/{id}` | No | Get user by ID |
 | `POST` | `/posts/` | Yes | Create post (X-User-Id header) |
 | `POST` | `/posts/{id}/pin-to-profile` | Yes | Promote ephemeral to permanent (author only) |
-| `GET` | `/feed/discover` | Yes | Ephemeral unseen + all permanent posts |
-| `POST` | `/feed/{id}/view` | Yes | Record a view (idempotent 204) |
+| `GET` | `/feed/discover` | Yes | Ephemeral posts alive for this session (X-Session-Id) + all permanent posts |
+| `POST` | `/feed/{id}/view` | Yes | Record a view tagged with X-Session-Id (idempotent 204) |
 | `GET` | `/feed/profile/{user_id}` | No | Permanent posts for a user's profile |
 
 ### Conventions

@@ -19,10 +19,16 @@ const API_HEADERS = {
   'Content-Type': 'application/json',
 };
 
+/** Random id for this app run. New on every launch, so ephemeral posts viewed
+ * this session stay in the feed until the app is closed and reopened. */
+const SESSION_ID = `s-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
+
 /** Attach the stored JWT as a bearer token so the server can verify the caller. */
 async function authHeaders(): Promise<Record<string, string>> {
   const token = await getToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  const headers: Record<string, string> = { 'X-Session-Id': SESSION_ID };
+  if (token) headers.Authorization = `Bearer ${token}`;
+  return headers;
 }
 
 async function handleResponse<T>(res: Response, path: string): Promise<T> {
@@ -153,6 +159,44 @@ export interface ApiGroup {
   created_by: number;
   created_at: string;
   members: ApiUser[];
+}
+
+export interface ApiQuestSubtask {
+  id: number;
+  name: string;
+  description: string;
+  target_count: number;
+  progress_unit: string;
+  reward_xp: number;
+  reward_sticker: boolean;
+  current_progress: number;
+  claimed: boolean;
+}
+
+export interface ApiQuest {
+  id: number;
+  name: string;
+  description: string;
+  active_subtask: ApiQuestSubtask | null;
+  subtask_step: number;
+  subtask_total: number;
+  claimed_steps: number;
+}
+
+export interface ApiQuestsDashboard {
+  quests: ApiQuest[];
+}
+
+export function apiGetQuests(): Promise<ApiQuestsDashboard> {
+  return apiGet<ApiQuestsDashboard>('/quests/');
+}
+
+export function apiBumpQuestProgress(questId: number): Promise<ApiQuest> {
+  return apiPost<ApiQuest>(`/quests/${questId}/progress`, {});
+}
+
+export function apiClaimQuest(questId: number): Promise<ApiQuest> {
+  return apiPost<ApiQuest>(`/quests/${questId}/claim`, {});
 }
 
 /** Compact "ago" label: 5m, 2h, 1d, 12 Aug. Empty for missing timestamps. */

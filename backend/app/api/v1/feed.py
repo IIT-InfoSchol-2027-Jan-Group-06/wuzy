@@ -1,20 +1,25 @@
 """Feed endpoints.
 
-GET  /feed/discover              - Ephemeral posts the user hasn't viewed + public permanent posts
+GET  /feed/discover              - Ephemeral posts alive for this session + public permanent posts
 POST /feed/{post_id}/view        - Record that the user viewed a post (204)
 GET  /feed/profile/{user_id}     - Permanent profile posts for a user
 
 The discover feed is the heart of the app. It mixes two kinds of posts:
-  1. Ephemeral (save_to_profile=False): visible until the current user views
-     them, then they vanish. This creates the "Instants" effect.
+  1. Ephemeral (save_to_profile=False): visible for the whole app session in
+     which they are seen. Once the app is closed and reopened (a new session),
+     the posts viewed in past sessions are gone. This creates the "Instants"
+     effect.
   2. Permanent (save_to_profile=True): always visible, like a normal Instagram
      post on someone's profile grid.
 
 Both kinds are restricted to posts from people the current user follows
-(or their own posts).
+(or their own posts). Requests carry the current app session id in the
+X-Session-Id header; views are tagged with it so the feed can tell a view
+from this session apart from one from a previous launch.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, Header, HTTPException, Response
+from sqlalchemy import or_
 from sqlalchemy.orm import selectinload
 from sqlmodel import Session, col, select
 
@@ -32,11 +37,13 @@ router = APIRouter()
 def discover_feed(
     current_user_id: int = Depends(get_current_user_id),
     session: Session = Depends(get_session),
+    x_session_id: str | None = Header(default=None),
 ):
     """Return posts the current user can discover.
 
     The query has two branches combined with OR:
-      - Ephemeral posts NOT in the user's post_view rows (unseen)
+      - Ephemeral posts NOT viewed in a past session (views tied to the current
+        session id are still visible)
       - All permanent posts (always shown regardless of views)
 
     Both branches are scoped to authors the user follows plus themselves.
@@ -53,21 +60,15 @@ def discover_feed(
     ]
     author_ids = {current_user_id, *followed_ids}
 
-    # Fetch all post IDs this user has already viewed. Ephemeral posts in
-    # this set will be excluded from the results.
-    viewed_post_ids = [
-        pv.post_id
-        for pv in session.exec(
-            select(PostView).where(PostView.user_id == current_user_id)
-        ).all()
-    ]
-
-    # Build the filter: (ephemeral AND unviewed) OR permanent.
-    if viewed_post_ids:
-        ephemeral_unviewed = (Post.save_to_profile == False) & ~col(Post.id).in_(viewed_post_ids)  # noqa: E712
-    else:
-        # No views yet: every ephemeral post is eligible.
-        ephemeral_unviewed = Post.save_to_profile == False  # noqa: E712
+    # Post IDs the user viewed in a session other than the current one.
+    # Views with no session id (legacy rows) count as a past session so they
+    # keep hiding posts. Views recorded in THIS session do not hide anything:
+    # ephemeral posts last until the app is opened again.
+    seen_before = select(PostView.post_id).where(
+        PostView.user_id == current_user_id,
+        or_(PostView.session_id.is_(None), PostView.session_id != x_session_id),
+    )
+    ephemeral_unviewed = (Post.save_to_profile == False) & ~col(Post.id).in_(seen_before)  # noqa: E712
 
     permanent = Post.save_to_profile == True  # noqa: E712
     stmt = (
@@ -86,12 +87,14 @@ def record_view(
     post_id: int,
     current_user_id: int = Depends(get_current_user_id),
     session: Session = Depends(get_session),
+    x_session_id: str | None = Header(default=None),
 ):
     """Record that the current user viewed a post.
 
-    The frontend calls this when a post card scrolls into view. For ephemeral
-    posts, this causes the post to disappear from the user's discover feed
-    on next fetch. Idempotent: duplicate calls are safe no-ops.
+    The frontend calls this when a post card scrolls into view. The view is
+    tagged with the current app session, so the post stays in the discover
+    feed until the app is reopened with a fresh session id, then it is hidden.
+    Idempotent: duplicate calls are safe no-ops.
     """
     post = session.get(Post, post_id)
     if not post:
@@ -106,7 +109,11 @@ def record_view(
     ).first()
 
     if not existing:
-        view = PostView(user_id=current_user_id, post_id=post_id)
+        view = PostView(
+            user_id=current_user_id,
+            post_id=post_id,
+            session_id=x_session_id,
+        )
         session.add(view)
         session.commit()
 

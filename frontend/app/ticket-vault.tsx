@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { FlatList, NativeScrollEvent, NativeSyntheticEvent, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { useCallback, useState } from 'react';
+import { FlatList, NativeScrollEvent, NativeSyntheticEvent, Pressable, Share, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -8,8 +8,12 @@ import { ScreenHeader } from '@/components/ScreenHeader';
 import { TicketCard } from '@/components/TicketCard';
 import { tickets, type Ticket } from '@/constants/ticket-data';
 import { wuzyLayout } from '@/constants/wuzy-theme';
+import { apiBumpQuestProgress, apiGetQuests } from '@/lib/api';
 
 const CARD_GAP = 16;
+
+// Each native share counts one action toward the Ticket Sharing task.
+const TICKET_QUEST = 'Ticket Sharing';
 
 /** Blurred active-ticket art fills the whole screen, so this route composes the shell by hand instead of using Screen. */
 export default function TicketVaultScreen() {
@@ -19,6 +23,25 @@ export default function TicketVaultScreen() {
   const cardWidth = Math.min(Math.round(width * 0.78), 360);
   const sidePadding = (width - cardWidth) / 2;
   const activeTicket = tickets[activeIndex] ?? tickets[0];
+
+  const handleShare = useCallback(async (ticket: Ticket) => {
+    try {
+      const data = await apiGetQuests();
+      const quest = data.quests.find((q) => q.name === TICKET_QUEST);
+      if (quest) {
+        await apiBumpQuestProgress(quest.id);
+      }
+    } catch {
+      // Keeps the count unchanged; the bump did not go through.
+    }
+    try {
+      await Share.share({
+        message: `${ticket.title}\n${ticket.date}\n${ticket.venue}\nJoin me on Wuzy!`,
+      });
+    } catch {
+      // Share sheet dismissed or not supported; nothing to do.
+    }
+  }, []);
 
   const handleMomentumScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const index = Math.round(event.nativeEvent.contentOffset.x / (cardWidth + CARD_GAP));
@@ -51,7 +74,11 @@ export default function TicketVaultScreen() {
             ItemSeparatorComponent={() => <View style={{ width: CARD_GAP }} />}
             onMomentumScrollEnd={handleMomentumScrollEnd}
             getItemLayout={(_, index) => ({ length: cardWidth + CARD_GAP, offset: (cardWidth + CARD_GAP) * index, index })}
-            renderItem={({ item }) => <TicketCard ticket={item} width={cardWidth} />}
+            renderItem={({ item }) => (
+              <Pressable onPress={() => handleShare(item)} accessibilityRole="button" className="active:opacity-80">
+                <TicketCard ticket={item} width={cardWidth} />
+              </Pressable>
+            )}
           />
         </View>
       </SafeAreaView>

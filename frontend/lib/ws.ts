@@ -19,12 +19,58 @@ export type ChatThread = { kind: 'dm' | 'group'; id: number };
 
 export type ChatListener = (m: ChatMessage) => void;
 
+/** A live referral notice routed over the same socket. Not chat: no thread or
+ * cache write, just an inbox refresh signal for the notifications screen. */
+export type ReferralFrame = {
+  type: 'referral';
+  request_id: number;
+  sender_id: number;
+  referred_id: number;
+  target_id: number;
+  sender_name: string | null;
+  target_name: string | null;
+  status: string;
+  created_at: string;
+};
+
+/** A live referral response, routed to the sender so their refer screen can
+ * reflect an accept/decline while it is open. */
+export type ReferralResponseFrame = {
+  type: 'referral_response';
+  request_id: number;
+  sender_id: number;
+  referred_id: number;
+  target_id: number;
+  referred_name: string | null;
+  target_name: string | null;
+  status: string;
+};
+
 let socket: WebSocket | null = null;
 let socketUserId: number | null = null;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 let reconnectDelay = 1000;
 let holds = 0;
 const listeners = new Set<ChatListener>();
+
+const referralListeners = new Set<(f: ReferralFrame) => void>();
+const referralResponseListeners = new Set<(f: ReferralResponseFrame) => void>();
+
+/** Subscribe to live referral frames. Returns an unsubscribe handle. */
+export function subscribeReferrals(listener: (f: ReferralFrame) => void): () => void {
+  referralListeners.add(listener);
+  return () => {
+    referralListeners.delete(listener);
+  };
+}
+
+/** Subscribe to live referral response frames (accept/decline from the person referred). */
+export function subscribeReferralResponses(listener: (f: ReferralResponseFrame) => void): () => void {
+  referralResponseListeners.add(listener);
+  return () => {
+    referralResponseListeners.delete(listener);
+  };
+}
 
 /**
  * One shared socket per logged-in user (WhatsApp-style): the app never opens a
@@ -77,7 +123,15 @@ async function connectSocket(userId: number): Promise<void> {
 
   ws.onmessage = (event) => {
     try {
-      const data = JSON.parse(event.data) as ChatMessage;
+      const data = JSON.parse(event.data) as ChatMessage | ReferralFrame | ReferralResponseFrame;
+      if (data?.type === 'referral') {
+        for (const listener of referralListeners) listener(data);
+        return;
+      }
+      if (data?.type === 'referral_response') {
+        for (const listener of referralResponseListeners) listener(data);
+        return;
+      }
       if (data?.type !== 'message') return;
       const kind: ThreadKind = data.group_id != null ? 'group' : 'dm';
       const threadId = kind === 'group' ? data.group_id : data.conversation_id;

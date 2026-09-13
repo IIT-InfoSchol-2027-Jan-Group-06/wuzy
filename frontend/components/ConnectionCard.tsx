@@ -17,6 +17,8 @@ interface ConnectionCardProps {
   connection: Connection;
   /** Taller with action buttons below the interests; overlays the wheel slot. */
   expanded?: boolean;
+  /** Explicit expanded height (e.g. the approved referral card with its QR). */
+  heightOverride?: number;
   onAvatarPress?: () => void;
   /** Opens the connection's profile; only wired when the card is expanded. */
   onProfilePress?: () => void;
@@ -30,6 +32,7 @@ interface ConnectionCardProps {
 export function ConnectionCard({
   connection,
   expanded = false,
+  heightOverride,
   onAvatarPress,
   onProfilePress,
   onReferPress,
@@ -42,7 +45,10 @@ export function ConnectionCard({
   }, [expanded, expandedSV]);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    height: withTiming(expandedSV.value ? EXPANDED_HEIGHT : COMPRESSED_HEIGHT, { duration: 250 }),
+    height: withTiming(
+      expandedSV.value ? heightOverride ?? EXPANDED_HEIGHT : COMPRESSED_HEIGHT,
+      { duration: 250 },
+    ),
     // Both sides of the comparison are explicit: neighbours sit low, the expanded card sits clearly higher.
     zIndex: expandedSV.value ? 100 : 1,
     elevation: expandedSV.value ? 100 : 1,
@@ -102,16 +108,20 @@ export function ConnectionCard({
         <TagSection tags={connection.tags} />
       </View>
       {expanded && (expandedContent ?? (
-        <View className="flex-row" style={{ gap: wuzyLayout.itemGap, marginTop: 25 }}>
+        <View className="flex-row" style={{ gap: wuzyLayout.itemGap, marginTop: 35 }}>
           <GlassNavButton
             onPress={onProfilePress ?? (() => {})}
             style={{ flex: 1, height: wuzyLayout.control }}
+            tintColor="rgba(255, 255, 255, 0.1)"
             accessibilityLabel={`Go to ${connection.name}'s profile`}>
             <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.small, color: wuzyColors.yellow }}>
               Go to profile
             </Text>
           </GlassNavButton>
-          <GlassNavButton onPress={onReferPress ?? (() => {})} style={{ flex: 1, height: wuzyLayout.control }}>
+          <GlassNavButton
+            onPress={onReferPress ?? (() => {})}
+            style={{ flex: 1, height: wuzyLayout.control }}
+            tintColor="rgba(255, 255, 255, 0.1)">
             <Text
               numberOfLines={2}
               style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.small, color: wuzyColors.yellow, textAlign: 'center' }}>

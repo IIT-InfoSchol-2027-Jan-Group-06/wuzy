@@ -16,8 +16,13 @@ interface ConnectionListProps {
   emptyLabel: string;
   /** Running count under the search bar. The refer screen hides it. */
   showCount?: boolean;
-  /** Rendered inside an expanded card instead of the action buttons. */
-  expandedContent?: ReactNode;
+  /** Controlled expansion: the refer screen lifts this so it can collapse a card. */
+  expandedId?: string | null;
+  onExpandedChange?: (id: string | null) => void;
+  /** Expanded height per card; e.g. the approved referral card grows to fit its QR. */
+  heightFor?: (c: Connection) => number | undefined;
+  /** Rendered inside an expanded card instead of the action buttons; receives that card. */
+  expandedContent?: (c: Connection) => ReactNode;
   /** Wired to the expanded card's "Go to profile" button. */
   onProfilePress?: (c: Connection) => void;
   /** Wired to the expanded card's "Refer to a friend" button. */
@@ -30,13 +35,21 @@ export function ConnectionList({
   loading,
   emptyLabel,
   showCount = true,
+  expandedId: expandedIdProp,
+  onExpandedChange,
+  heightFor,
   expandedContent,
   onProfilePress,
   onReferPress,
 }: ConnectionListProps) {
   const [query, setQuery] = useState('');
   // Only one card is expanded at a time; the wheel paints it above the others via frontIndex.
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [internalExpandedId, setInternalExpandedId] = useState<string | null>(null);
+  const expandedId = expandedIdProp !== undefined ? expandedIdProp : internalExpandedId;
+  const setExpandedId = (id: string | null) => {
+    if (onExpandedChange) onExpandedChange(id);
+    else setInternalExpandedId(id);
+  };
 
   // Memoised so the wheel only resets when the results actually change.
   const filtered = useMemo(() => {
@@ -89,10 +102,11 @@ export function ConnectionList({
               <ConnectionCard
                 connection={c}
                 expanded={expandedId === c.id}
-                onAvatarPress={() => setExpandedId((prev) => (prev === c.id ? null : c.id))}
+                heightOverride={heightFor ? heightFor(c) : undefined}
+                onAvatarPress={() => setExpandedId(expandedId === c.id ? null : c.id)}
                 onProfilePress={onProfilePress ? () => onProfilePress(c) : undefined}
                 onReferPress={onReferPress ? () => onReferPress(c) : undefined}
-                expandedContent={expandedContent}
+                expandedContent={expandedContent ? expandedContent(c) : undefined}
               />
             )}
           />

@@ -5,6 +5,7 @@ serves uploaded media from the storage directory. The lifespan hook creates
 tables on startup for local dev; Alembic handles migrated schemas elsewhere.
 """
 
+import asyncio
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -12,13 +13,14 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.api.v1 import auth, chat, feed, groups, posts, quests, upload, users, ws
+from app.api.v1 import auth, chat, feed, groups, posts, quests, referrals, upload, users, ws
 from app.db.session import init_db
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Initialize the database tables on startup."""
+    """Initialize the database tables and remember the event loop on startup."""
+    ws.set_app_loop(asyncio.get_running_loop())
     init_db()
     yield
 
@@ -37,6 +39,7 @@ app.include_router(posts.router, prefix="/posts", tags=["posts"])
 app.include_router(feed.router, prefix="/feed", tags=["feed"])
 app.include_router(chat.router, prefix="/chat", tags=["chat"])
 app.include_router(groups.router, prefix="/groups", tags=["groups"])
+app.include_router(referrals.router, prefix="/referrals", tags=["referrals"])
 app.include_router(upload.router, prefix="/upload", tags=["upload"])
 app.include_router(ws.router, prefix="/ws", tags=["ws"])
 app.include_router(quests.router, prefix="/quests", tags=["quests"])

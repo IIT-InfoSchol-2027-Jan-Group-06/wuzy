@@ -19,15 +19,17 @@ import 'react-native-reanimated';
 import { AuthProvider, useAuth } from '@/context/auth';
 import { ChatUnreadProvider } from '@/context/chat-unread';
 import { wuzyColors } from '@/constants/wuzy-theme';
+import { respondReferral } from '@/lib/api';
 import { configureNotifications, loadNotifications } from '@/lib/push';
 
-import type { Notification } from 'expo-notifications';
+import type { Notification, NotificationResponse } from 'expo-notifications';
 
 export const unstable_settings = {
   anchor: '(tabs)',
 };
 
-// Open the chat thread a push notification points at when the user taps it.
+// Open the chat thread a push notification points at when the user taps it,
+// and act on the referral banner's Accept/Decline actions.
 function useNotificationObserver() {
   useEffect(() => {
     let unsub: { remove(): void } | null = null;
@@ -42,12 +44,24 @@ function useNotificationObserver() {
         }
       };
 
-      const last = mod.getLastNotificationResponse();
-      if (last?.notification) redirect(last.notification);
+      const handleResponse = (response: NotificationResponse) => {
+        const data = response.notification.request.content.data ?? {};
+        const referralId = typeof data.referralId === 'number' ? data.referralId : null;
+        if (
+          referralId !== null &&
+          (response.actionIdentifier === 'referral_accept' ||
+            response.actionIdentifier === 'referral_decline')
+        ) {
+          respondReferral(referralId, response.actionIdentifier === 'referral_accept')
+            .catch((error) => console.error('[push] referral response failed', error));
+        }
+        redirect(response.notification);
+      };
 
-      unsub = mod.addNotificationResponseReceivedListener((response) =>
-        redirect(response.notification),
-      );
+      const last = mod.getLastNotificationResponse();
+      if (last?.notification) handleResponse(last);
+
+      unsub = mod.addNotificationResponseReceivedListener(handleResponse);
     })();
     return () => unsub?.remove();
   }, []);

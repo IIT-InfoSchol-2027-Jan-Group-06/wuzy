@@ -16,7 +16,7 @@ interface ReferActionProps {
   onSend?: () => void;
   /** Approved flow: opens the referral QR screen for the approving user. */
   onQr?: () => void;
-  /** Declined flow: fired once the 3s "Referral Denied!" flash completes. */
+  /** Declined flow: fired once the 1s "Referral Denied!" flash completes. */
   onAutoCollapse?: () => void;
 }
 
@@ -41,17 +41,17 @@ export function ReferAction({
   onAutoCollapse,
 }: ReferActionProps) {
   // Keep the latest collapse callback in a ref so a parent re-render (e.g. a
-  // live response refreshing the list) cannot restart the 3s denied flash.
+  // live response refreshing the list) cannot restart the 1s denied flash.
   const onAutoCollapseRef = useRef(onAutoCollapse);
   useEffect(() => {
     onAutoCollapseRef.current = onAutoCollapse;
   }, [onAutoCollapse]);
 
-  // A declined card flashes its note for a full 3 seconds, then collapses
-  // itself. The effect only restarts when the state actually changes.
+  // A declined card flashes its note for 1 second, then collapses itself. The
+  // effect only restarts when the state actually changes.
   useEffect(() => {
     if (outcome !== 'declined' || collapsing) return;
-    const timer = setTimeout(() => onAutoCollapseRef.current?.(), 3000);
+    const timer = setTimeout(() => onAutoCollapseRef.current?.(), 1000);
     return () => clearTimeout(timer);
   }, [outcome, collapsing]);
 

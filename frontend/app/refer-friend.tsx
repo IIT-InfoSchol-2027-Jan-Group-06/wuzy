@@ -15,8 +15,6 @@ import { isReferralConsumedLocally, markReferralConsumedLocally } from '@/lib/re
 import { acquireChat, subscribeReferralResponses } from '@/lib/ws';
 
 const COMPRESSED_HEIGHT = 132;
-// How long a resolved card holds on the Send Request pill before it starts shrinking.
-const PILL_HOLD_MS = 2000;
 // The card collapse animation duration, so navigation happens after it settles.
 const COLLAPSE_MS = 260;
 
@@ -33,7 +31,7 @@ export default function ReferFriendScreen() {
 
   // Lifted from the list so the resolved flows (done / denied) can close a card.
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  // Shows the Send Request pill while a resolved card waits to compress.
+  // Shows the Send Request pill while a resolved card compresses in place.
   const [collapsingId, setCollapsingId] = useState<string | null>(null);
   // Drives the height shrink itself, so the pill can hold at full size first.
   const [shrinkingId, setShrinkingId] = useState<string | null>(null);
@@ -137,26 +135,24 @@ export default function ReferFriendScreen() {
 
   // Compress the card (content switches back to the Send Request pill while it
   // shrinks), then optionally leave the screen the same way the header back
-  // button does. The pill replaces the outcome text first, holds for 2 seconds,
-  // and only then does the card begin to collapse.
+  // button does. The outcome has already been seen by the time this runs, so
+  // the pill and the shrink start together instead of holding on screen.
   const collapseCard = useCallback(
     (targetId: string, navigateBack: boolean) => {
       setCollapsingId(targetId);
+      setShrinkingId(targetId);
       setTimeout(() => {
-        setShrinkingId(targetId);
-        setTimeout(() => {
-          setExpandedId((cur) => (cur === targetId ? null : cur));
-          setCollapsingId((cur) => (cur === targetId ? null : cur));
-          setShrinkingId((cur) => (cur === targetId ? null : cur));
-          if (navigateBack) router.back();
-        }, COLLAPSE_MS);
-      }, PILL_HOLD_MS);
+        setExpandedId((cur) => (cur === targetId ? null : cur));
+        setCollapsingId((cur) => (cur === targetId ? null : cur));
+        setShrinkingId((cur) => (cur === targetId ? null : cur));
+        if (navigateBack) router.back();
+      }, COLLAPSE_MS);
     },
     [router],
   );
 
-  // Denied flow: after the 3s flash the card consumes the referral, then
-  // compresses and returns to Connections, all in one visit.
+  // Denied flow: after the 1s flash the card consumes the referral and then
+  // compresses in place, staying on this screen so a new request can be sent.
   const handleAutoCollapse = useCallback(
     (targetId: string) => {
       const resolved = resolvedFor(Number(targetId));
@@ -164,7 +160,7 @@ export default function ReferFriendScreen() {
         markReferralConsumedLocally(resolved.id);
         consumeReferral(resolved.id).catch((error) => console.error('[refer] consume failed', error));
       }
-      collapseCard(targetId, true);
+      collapseCard(targetId, false);
     },
     [resolvedFor, collapseCard],
   );
@@ -181,9 +177,9 @@ export default function ReferFriendScreen() {
   );
 
   // When Done on the QR screen consumes the referral, the expanded card drops
-  // straight back to the Send Request pill; compress it and leave, the same
-  // way the declined flash does. `prevExpanded` remembers which card the prior
-  // state belonged to so switching cards cannot trigger a false collapse.
+  // straight back to the Send Request pill; compress it and head back to
+  // Connections. `prevExpanded` remembers which card the prior state belonged
+  // to so switching cards cannot trigger a false collapse.
   const prevExpanded = useRef<{ id: string | null; state: ReferState | null }>({ id: null, state: null });
   useEffect(() => {
     if (expandedId === null) {

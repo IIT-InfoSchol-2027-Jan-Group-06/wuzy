@@ -16,6 +16,11 @@ interface ConnectCardProps {
   qrValue: string;
   onBack: () => void;
   backgroundImage?: ImageSourcePropType;
+  /** Set false to hide the back button row entirely (the referral QR screen). */
+  showBack?: boolean;
+  /** When set, replaces the mode toggle with a single "Done" pill. */
+  doneLabel?: string;
+  onDone?: () => void;
 }
 
 // The inactive icon needs to read against the translucent glass half; the active one uses wuzyColors.bg.
@@ -78,7 +83,15 @@ function ModeToggle({ camera, onToggle }: { camera: boolean; onToggle: (camera: 
 }
 
 /** Full-screen QR card over a blurred copy of the profile photo. Composes its own shell because the backdrop is full-bleed. */
-export function ConnectCard({ username, qrValue, onBack, backgroundImage }: ConnectCardProps) {
+export function ConnectCard({
+  username,
+  qrValue,
+  onBack,
+  backgroundImage,
+  showBack = true,
+  doneLabel,
+  onDone,
+}: ConnectCardProps) {
   // The toggle pill flips the glass card between the owner's QR and the scanner.
   const [showCamera, setShowCamera] = useState(false);
 
@@ -106,7 +119,7 @@ export function ConnectCard({ username, qrValue, onBack, backgroundImage }: Conn
     <>
       <QrScanner />
       <Text style={{ fontFamily: wuzyFonts.body, fontSize: wuzyType.body, color: wuzyColors.white, opacity: 0.7 }}>
-        Point at another user&apos;s code
+        Point at another user&apos;s QR code
       </Text>
     </>
   );
@@ -123,18 +136,32 @@ export function ConnectCard({ username, qrValue, onBack, backgroundImage }: Conn
       />
 
       <SafeAreaView edges={['top', 'bottom']} className="flex-1">
-        <View style={{ paddingTop: wuzyLayout.top, paddingHorizontal: wuzyLayout.side, flexDirection: 'row', justifyContent: 'space-between' }}>
-          <GlassNavButton icon="arrow-back" onPress={onBack} accessibilityLabel="Back" />
-        </View>
+        {showBack && (
+          <View style={{ paddingTop: wuzyLayout.top, paddingHorizontal: wuzyLayout.side, flexDirection: 'row', justifyContent: 'space-between' }}>
+            <GlassNavButton icon="arrow-back" onPress={onBack} accessibilityLabel="Back" />
+          </View>
+        )}
 
         <View className="flex-1 items-center justify-center" style={{ paddingHorizontal: wuzyLayout.side }}>
           <View style={{ alignItems: 'center', width: '100%', maxWidth: 400, gap: 40 }}>
-            <ModeToggle
-              camera={showCamera}
-              onToggle={(toCamera) => {
-                if (toCamera !== showCamera) setShowCamera(toCamera);
-              }}
-            />
+            {doneLabel ? (
+              <GlassNavButton
+                onPress={onDone ?? (() => {})}
+                accessibilityLabel={doneLabel}
+                style={{ width: (wuzyLayout.glass + 30) * 2 + 1, height: wuzyLayout.control + 5 }}>
+                <Text
+                  style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.small, color: wuzyColors.yellow }}>
+                  {doneLabel}
+                </Text>
+              </GlassNavButton>
+            ) : (
+              <ModeToggle
+                camera={showCamera}
+                onToggle={(toCamera) => {
+                  if (toCamera !== showCamera) setShowCamera(toCamera);
+                }}
+              />
+            )}
             <GlassPanel>
               {connectTitle}
               {showCamera ? cameraSide : qrSide}

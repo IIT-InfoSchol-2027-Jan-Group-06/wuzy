@@ -199,6 +199,49 @@ export function apiClaimQuest(questId: number): Promise<ApiQuest> {
   return apiPost<ApiQuest>(`/quests/${questId}/claim`, {});
 }
 
+/** A referral request: the sender introduced `referred` to `target`. */
+export interface ApiReferralRequest {
+  id: number;
+  sender_id: number;
+  referred_id: number;
+  target_id: number;
+  status: string;
+  /** True once the sender finished the resolved-state UI (Done / declined flash). */
+  consumed: boolean;
+  created_at: string;
+  sender_name: string | null;
+  target_name: string | null;
+  sender_avatar_url: string | null;
+}
+
+/** Refer the given user to the given target. Idempotent per sender/referred/target. */
+export function createReferral(referredId: number, targetId: number): Promise<ApiReferralRequest> {
+  return apiPost<ApiReferralRequest>('/referrals', { referred_id: referredId, target_id: targetId });
+}
+
+export function getOutgoingReferrals(): Promise<ApiReferralRequest[]> {
+  return apiGet<ApiReferralRequest[]>('/referrals/outgoing');
+}
+
+/** The Connections (mutual follows) of an arbitrary user. The refer screen uses this to hide people the referred user already knows. */
+export function getUserConnections(userId: number): Promise<ApiUser[]> {
+  return apiGet<ApiUser[]>(`/users/${userId}/connections`);
+}
+
+export function getInboxReferrals(): Promise<ApiReferralRequest[]> {
+  return apiGet<ApiReferralRequest[]>('/referrals/inbox');
+}
+
+/** Accept or decline a referral. Only the referred user can respond. */
+export function respondReferral(id: number, accept: boolean): Promise<ApiReferralRequest> {
+  return apiPost<ApiReferralRequest>(`/referrals/${id}/respond`, { accept });
+}
+
+/** Tell the sender a resolved referral has been seen, so its card returns to the Send Request pill. Idempotent. */
+export function consumeReferral(id: number): Promise<ApiReferralRequest> {
+  return apiPost<ApiReferralRequest>(`/referrals/${id}/consume`, {});
+}
+
 /** Compact "ago" label: 5m, 2h, 1d, 12 Aug. Empty for missing timestamps. */
 export function relativeTime(iso: string | null | undefined): string {
   if (!iso) return '';

@@ -3,15 +3,17 @@ import { useCallback, useState } from 'react';
 import { ImageSourcePropType, Text, View } from 'react-native';
 
 import { CategoryFilter } from '@/components/CategoryFilter';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { ReferralNotificationCard } from '@/components/ReferralNotificationCard';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { UserRow } from '@/components/UserRow';
 import { notifications, type Notification } from '@/constants/notification-data';
 import { wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 import { useAuth } from '@/context/auth';
-import { relativeTime } from '@/lib/api';
+import { assetUrl, getInboxReferrals, relativeTime, respondReferral, type ApiReferralRequest } from '@/lib/api';
 import { getUnreadNotifications } from '@/lib/chat-db';
-import { acquireChat, subscribeChat } from '@/lib/ws';
+import { acquireChat, subscribeChat, subscribeReferrals } from '@/lib/ws';
 
 const defaultAvatar = require('@/assets/images/avatar1.jpg');
 
@@ -40,6 +42,8 @@ export default function NotificationsScreen() {
   const { user } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState<string | number>('all');
   const [liveMessages, setLiveMessages] = useState<LiveMessage[]>([]);
+  const [referrals, setReferrals] = useState<ApiReferralRequest[]>([]);
+  const [pendingConfirm, setPendingConfirm] = useState<{ request: ApiReferralRequest; accept: boolean } | null>(null);
 
   const refreshMessages = useCallback(async () => {
     if (!user) return;
@@ -55,21 +59,48 @@ export default function NotificationsScreen() {
     );
   }, [user]);
 
+  const refreshReferrals = useCallback(async () => {
+    try {
+      setReferrals(await getInboxReferrals());
+    } catch {
+      setReferrals([]);
+    }
+  }, []);
+
+  const resolveReferral = useCallback(
+    async (request: ApiReferralRequest, accept: boolean) => {
+      // Resolved referrals vanish from the list; only pending ones stay.
+      setReferrals((rows) => rows.filter((r) => r.id !== request.id));
+      try {
+        await respondReferral(request.id, accept);
+      } catch (error) {
+        console.error('[notifications] referral response failed', error);
+      }
+      refreshReferrals();
+    },
+    [refreshReferrals],
+  );
+
   useFocusEffect(
     useCallback(() => {
       if (!user) return;
       // Open the shared chat socket while notifications are on screen so new
-      // messages land here live; incoming frames refresh the list.
+      // messages and referrals land here live; incoming frames refresh the lists.
       const release = acquireChat(user.id);
       const unsubscribe = subscribeChat(() => {
         refreshMessages();
       });
+      const unsubscribeReferrals = subscribeReferrals(() => {
+        refreshReferrals();
+      });
       refreshMessages();
+      refreshReferrals();
       return () => {
+        unsubscribeReferrals();
         unsubscribe();
         release();
       };
-    }, [user, refreshMessages]),
+    }, [user, refreshMessages, refreshReferrals]),
   );
 
   const visible =
@@ -85,12 +116,26 @@ export default function NotificationsScreen() {
       {groups.map(({ key, title }) => {
         const items = visible.filter((n) => n.group === key);
         const showLive = key === 'new' && liveMessages.length > 0;
-        if (items.length === 0 && !showLive) return null;
+        const pendingReferrals = key === 'new' ? referrals.filter((r) => r.status === 'pending') : [];
+        const showReferrals = pendingReferrals.length > 0;
+        if (items.length === 0 && !showLive && !showReferrals) return null;
         return (
           <View key={key} style={{ gap: wuzyLayout.itemGap }}>
             <Text className="text-wuzy-yellow" style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.section }}>
               {title}
             </Text>
+            {showReferrals &&
+              pendingReferrals.map((r) => (
+                  <ReferralNotificationCard
+                    key={`referral-${r.id}`}
+                    avatar={r.sender_avatar_url ? { uri: assetUrl(r.sender_avatar_url) } : defaultAvatar}
+                    senderName={r.sender_name ?? 'Someone'}
+                    targetName={r.target_name ?? 'a friend'}
+                    timestamp={relativeTime(r.created_at)}
+                    onAccept={() => setPendingConfirm({ request: r, accept: true })}
+                    onDecline={() => setPendingConfirm({ request: r, accept: false })}
+                  />
+                ))}
             {showLive &&
               liveMessages.map((m) => (
                 <UserRow key={m.key} avatar={m.avatar} name={m.name} label={m.label} timestamp={m.timestamp} />
@@ -101,6 +146,23 @@ export default function NotificationsScreen() {
           </View>
         );
       })}
+
+      <ConfirmDialog
+        visible={pendingConfirm !== null}
+        title={pendingConfirm?.accept ? 'Accept Referral?' : 'Decline Referral?'}
+        message={
+          pendingConfirm
+            ? `${pendingConfirm.accept ? 'Accept' : 'Decline'} the referral from ${pendingConfirm.request.sender_name ?? 'this person'} to send drinks through ${pendingConfirm.request.target_name ?? 'this shop'}?`
+            : ''
+        }
+        confirmLabel={pendingConfirm?.accept ? 'Accept' : 'Decline'}
+        onCancel={() => setPendingConfirm(null)}
+        onConfirm={() => {
+          if (!pendingConfirm) return;
+          setPendingConfirm(null);
+          resolveReferral(pendingConfirm.request, pendingConfirm.accept);
+        }}
+      />
     </Screen>
   );
 }

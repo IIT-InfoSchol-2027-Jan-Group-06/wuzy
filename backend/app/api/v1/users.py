@@ -4,12 +4,13 @@ POST /users/                 - Register a new account
 GET  /users/                 - List all users (used for explore / search)
 GET  /users/by-username/{username} - Resolve a Wuzy profile QR to a user
 POST /users/{id}/connect     - Turn a scanned QR into a Connection (mutual follow)
+GET  /users/{id}/connections - List a user's Connections (mutual follows)
 GET  /users/{id}             - Fetch a single user's profile
 """
 
 import bcrypt
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session, select
+from sqlmodel import Session, col, select
 
 from app.core.auth import get_current_user_id
 from app.db.session import get_session
@@ -54,6 +55,32 @@ def read_user_by_username(username: str, session: Session = Depends(get_session)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
+
+
+@router.get("/{user_id}/connections", response_model=list[UserRead])
+def read_user_connections(user_id: int, session: Session = Depends(get_session)):
+    """A user's Connections (mutual follows). The refer screen fetches this so
+    it can hide the referred user's existing connections from its list.
+    """
+    user = session.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    following = {
+        f.followed_id
+        for f in session.exec(
+            select(Follow).where(Follow.follower_id == user_id)
+        ).all()
+    }
+    followed_back = {
+        f.follower_id
+        for f in session.exec(
+            select(Follow).where(Follow.followed_id == user_id)
+        ).all()
+    }
+    connection_ids = following & followed_back
+    if not connection_ids:
+        return []
+    return session.exec(select(User).where(col(User.id).in_(connection_ids))).all()
 
 
 @router.post("/{user_id}/connect", response_model=UserRead)

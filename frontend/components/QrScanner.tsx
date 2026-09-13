@@ -4,12 +4,12 @@ import { CameraView, useCameraPermissions, type BarcodeScanningResult } from 'ex
 
 import { Chip } from '@/components/Chip';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
-import { apiGet, apiPost, type ApiUser } from '@/lib/api';
+import { apiGet, apiPost, type ApiPerson, type ApiUser } from '@/lib/api';
 
 // A Wuzy QR encodes the owner's profile URL (https://wuzy.app/profile/<username>).
 const PROFILE_PATTERN = /\/profile\/([^/?#]+)/;
 
-type Phase = 'camera' | 'looking' | 'found' | 'missing';
+type Phase = 'camera' | 'looking' | 'found' | 'missing' | 'already';
 
 const SCAN_BOX: ViewStyle = {
   width: '100%',
@@ -41,9 +41,9 @@ export function QrScanner() {
     setPhase(next);
   }, []);
 
-  // "Connected!" is brief feedback; the camera returns to scanning on its own.
+  // "Connected!" and "Already Connected!" are brief feedback; the camera returns to scanning on its own.
   useEffect(() => {
-    if (phase !== 'found') return;
+    if (phase !== 'found' && phase !== 'already') return;
     const timer = setTimeout(() => go('camera'), 1500);
     return () => clearTimeout(timer);
   }, [phase, go]);
@@ -62,6 +62,13 @@ export function QrScanner() {
       go('looking');
       try {
         const user = await apiGet<ApiUser>(`/users/by-username/${username}`);
+        // The connection list is fetched fresh at scan time so an already-seen
+        // code reads correctly even before the Connections screen refetches.
+        const people = await apiGet<ApiPerson[]>('/chat/people');
+        if (people.some((p) => p.user.id === user.id)) {
+          go('already');
+          return;
+        }
         try {
           // The mutual follow is what makes them a Connection and turns the count up.
           await apiPost(`/users/${user.id}/connect`, {});
@@ -95,11 +102,11 @@ export function QrScanner() {
     );
   }
 
-  if (phase === 'found') {
+  if (phase === 'found' || phase === 'already') {
     return (
       <ScanBox>
         <Text className="uppercase" style={{ fontFamily: wuzyFonts.display, fontSize: wuzyType.title, letterSpacing: 2, color: wuzyColors.yellow }}>
-          Connected!
+          {phase === 'already' ? 'Already Connected!' : 'Connected!'}
         </Text>
       </ScanBox>
     );

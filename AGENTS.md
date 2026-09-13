@@ -35,6 +35,8 @@ Run from `backend/`:
 docker compose up --build    # starts api + postgres, runs migrations + seed
 docker compose down -v       # tear down (no volume persists)
 alembic upgrade head         # apply migrations manually
+# after adding a migration, re-apply it: `docker compose restart api` re-runs
+# `alembic upgrade head` at startup; uvicorn --reload only swaps code, never DB
 alembic revision --autogenerate -m "msg"  # new migration
 ```
 
@@ -81,6 +83,7 @@ backend/
 | `GET` | `/users/{id}` | No | Get user by ID |
 | `GET` | `/users/by-username/{username}` | No | Resolve a user by username (from a scanned QR) |
 | `POST` | `/users/{id}/connect` | Yes | Connect with a user: mutual follow, idempotent (increments the Connections count) |
+| `GET` | `/users/{id}/connections` | No | A user's Connections (mutual follows), used to filter the refer list |
 | `POST` | `/posts/` | Yes | Create post (X-User-Id header) |
 | `POST` | `/posts/{id}/pin-to-profile` | Yes | Promote ephemeral to permanent (author only) |
 | `GET` | `/feed/discover` | Yes | Ephemeral posts alive for this session (X-Session-Id) + all permanent posts |

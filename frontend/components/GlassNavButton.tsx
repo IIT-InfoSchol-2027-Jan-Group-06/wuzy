@@ -15,6 +15,8 @@ export interface GlassNavButtonProps {
   /** Replaces the icon. Pair with a width/height in style for a pill. */
   children?: ReactNode;
   accessibilityLabel?: string;
+  /** Tint layer color, default the frosted yellow (e.g. white for a neutral pill). */
+  tintColor?: string;
 }
 
 export function GlassNavButton({
@@ -25,6 +27,7 @@ export function GlassNavButton({
   style,
   children,
   accessibilityLabel,
+  tintColor = 'rgba(244, 196, 0, 0.1)',
 }: GlassNavButtonProps) {
   const { width: screenWidth } = useWindowDimensions();
   const baseSize = size ?? Math.round((50 / 375) * screenWidth);
@@ -45,7 +48,7 @@ export function GlassNavButton({
           <View className="absolute inset-0 rounded-full" style={{ backgroundColor: wuzyColors.surface, opacity: 0.85 }} />
         )}
         <View className="absolute inset-0 rounded-full" style={{ backgroundColor: wuzyColors.glassFill }} />
-        <View className="absolute inset-0 rounded-full" style={{ backgroundColor: 'rgba(244, 196, 0, 0.1)' }} />
+        <View className="absolute inset-0 rounded-full" style={{ backgroundColor: tintColor }} />
         <LinearGradient
           colors={['rgba(255,255,255,0.15)', 'rgba(255,255,255,0.03)', 'rgba(0,0,0,0.1)']}
           start={{ x: 0, y: 0 }}

@@ -50,6 +50,31 @@ router = APIRouter()
 # user_id -> active WebSocket. In-process only; fine for a single API container.
 _sockets: dict[int, WebSocket] = {}
 
+# The app's main event loop, captured at startup. Sync endpoints run on a
+# thread pool with no running loop, so they hand ws sends to this loop instead.
+_app_loop: asyncio.AbstractEventLoop | None = None
+
+
+def set_app_loop(loop: asyncio.AbstractEventLoop) -> None:
+    """Remember the app's main loop for scheduling socket sends from threads."""
+    global _app_loop
+    _app_loop = loop
+
+
+def _deliver_socket(recipient: WebSocket, payload: dict) -> None:
+    """Best-effort live frame to a connected socket from any thread.
+
+    Works both inside async websocket handlers (running loop present) and from
+    sync FastAPI endpoints (bounces onto the app loop via a threadsafe call).
+    """
+    frame = json.dumps(payload)
+    try:
+        asyncio.get_running_loop()
+        asyncio.create_task(recipient.send_text(frame))
+    except RuntimeError:
+        if _app_loop is not None:
+            asyncio.run_coroutine_threadsafe(recipient.send_text(frame), _app_loop)
+
 
 def _verify_token(token: str) -> int | None:
     """Decode the JWT and return its user id, or None if invalid."""
@@ -127,6 +152,19 @@ def _notify_push(recipient_id: int, message: dict) -> None:
     ).start()
 
 
+def deliver_live(user_id: int, payload: dict) -> None:
+    """Push a live frame to an open socket, or queue it for replay if away.
+
+    Non-chat frames (e.g. referral notifications) reuse the same socket and
+    offline mailbox as messages; the client forwards them to listeners.
+    """
+    recipient = _sockets.get(user_id)
+    if recipient is not None:
+        _deliver_socket(recipient, payload)
+    elif not is_online(user_id):
+        queue_offline(user_id, payload)
+
+
 def _send_or_queue(payload: dict, recipient_id: int) -> None:
     """Deliver a payload to a live socket, else queue it for the offline mailbox.
 
@@ -136,7 +174,7 @@ def _send_or_queue(payload: dict, recipient_id: int) -> None:
     recipient = _sockets.get(recipient_id)
     if recipient is not None:
         # Fire-and-forget to avoid blocking this reader on a slow client.
-        asyncio.create_task(recipient.send_text(json.dumps(payload)))
+        _deliver_socket(recipient, payload)
     elif not is_online(recipient_id):
         queue_offline(recipient_id, payload)
         _notify_push(recipient_id, payload)

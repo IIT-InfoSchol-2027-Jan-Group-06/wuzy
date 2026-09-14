@@ -41,7 +41,7 @@ export function ConfirmDialog({
           </Text>
           <Text
             style={{
-              fontFamily: wuzyFonts.regular,
+              fontFamily: wuzyFonts.body,
               fontSize: wuzyType.small,
               color: 'rgba(255, 255, 255, 0.7)',
               textAlign: 'center',

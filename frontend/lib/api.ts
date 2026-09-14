@@ -69,6 +69,46 @@ export function recordView(postId: number): Promise<void> {
   return apiPostNoContent(`/feed/${postId}/view`);
 }
 
+/** Why a recommendation engine put this event where it did. The UI labels a
+ * card with the dominant signal so a user can see their own interests and
+ * tribe heat in action. */
+export interface ApiRecommendationReason {
+  /** Which streak label to render: "matched" when Interest wins, "trending"
+   * when tribe heat does, "discover" for popularity/freshness with no match. */
+  reason: 'interest' | 'trending' | 'discover';
+  /** Blended 0..1 rank weight. Not shown on the card but useful for tests. */
+  score: number;
+}
+
+/** One event from GET /events/recommended, with the engine's per-user ranking. */
+export interface ApiRecommendedEvent {
+  id: number;
+  title: string;
+  description: string | null;
+  image_url: string | null;
+  host_name: string | null;
+  host_avatar_url: string | null;
+  category: string;
+  tags: string[];
+  venue: string | null;
+  location: string | null;
+  price: string | null;
+  start_time: string;
+  created_at: string;
+  score: number;
+  reason: 'interest' | 'trending' | 'discover';
+}
+
+/** Personalized, ranked event feed for the current user. */
+export function apiGetRecommendedEvents(): Promise<ApiRecommendedEvent[]> {
+  return apiGet<ApiRecommendedEvent[]>('/events/recommended');
+}
+
+/** Record a view or a "going" RSVP. Idempotent; feeds the recommendation heat. */
+export function apiEngageEvent(eventId: number, kind: 'view' | 'going'): Promise<void> {
+  return apiPostNoContent(`/events/${eventId}/engage`, { kind });
+}
+
 export interface AuthSession {
   access_token: string;
   token_type: string;

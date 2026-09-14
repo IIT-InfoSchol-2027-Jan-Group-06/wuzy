@@ -1,7 +1,8 @@
 import { ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Image } from 'expo-image';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
 
 import { CategoryFilter } from '@/components/CategoryFilter';
 import { FeaturedEventCard } from '@/components/events/FeaturedEventCard';
@@ -10,22 +11,59 @@ import { GlassNavButton } from '@/components/GlassNavButton';
 import { Screen } from '@/components/Screen';
 import { SearchBar } from '@/components/SearchBar';
 import { TabHeader } from '@/components/TabHeader';
-import { exploreCategories, featuredEvents, upcomingEvents } from '@/constants/event-data';
+import { exploreCategories } from '@/constants/event-data';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
+import {
+  apiEngageEvent,
+  apiGetRecommendedEvents,
+  assetUrl,
+  type ApiRecommendedEvent,
+} from '@/lib/api';
+
+const TAG_BY_REASON: Record<string, string> = {
+  interest: 'For you',
+  trending: 'Hot',
+  discover: 'Discover',
+};
 
 export default function ExploreScreen() {
   const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState<string | number>('all');
   const [searchText, setSearchText] = useState('');
+  const [events, setEvents] = useState<ApiRecommendedEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(() => {
+    setLoading(true);
+    apiGetRecommendedEvents()
+      .then(setEvents)
+      .finally(() => setLoading(false));
+  }, []);
+
+  useFocusEffect(useCallback(() => load(), [load]));
 
   const q = searchText.trim().toLowerCase();
   const inCategory = (category: string) => selectedCategory === 'all' || category === selectedCategory;
-  const featured = featuredEvents.filter(
-    (e) => inCategory(e.category) && (!q || [e.title, e.location, e.tagLabel].some((s) => s.toLowerCase().includes(q))),
+  const listed = events.filter(
+    (e) =>
+      inCategory(e.category) &&
+      (!q || [e.title, e.host_name ?? '', e.venue ?? ''].some((s) => s.toLowerCase().includes(q))),
   );
-  const upcoming = upcomingEvents.filter(
-    (e) => inCategory(e.category) && (!q || [e.title, e.hostName].some((s) => s.toLowerCase().includes(q))),
-  );
+
+  const today = new Date();
+  const featured = listed.filter((e) => new Date(e.start_time).getDate() === today.getDate());
+  const upcoming = listed.filter((e) => new Date(e.start_time).getDate() !== today.getDate());
+
+  const eventTime = (iso: string) =>
+    new Date(iso).toLocaleString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+
+  const going = (id: number) => apiEngageEvent(id, 'going');
 
   const sectionTitle = { fontFamily: wuzyFonts.semibold, fontSize: wuzyType.section, color: wuzyColors.yellow };
 
@@ -46,6 +84,8 @@ export default function ExploreScreen() {
         <CategoryFilter options={exploreCategories} selectedId={selectedCategory} onSelect={setSelectedCategory} />
       </View>
 
+      {loading && <Text style={sectionTitle}>Loading…</Text>}
+
       <View style={{ gap: wuzyLayout.itemGap }}>
         <Text style={sectionTitle}>Today</Text>
         <ScrollView
@@ -55,7 +95,23 @@ export default function ExploreScreen() {
           style={{ marginHorizontal: -wuzyLayout.side }}
           contentContainerStyle={{ paddingHorizontal: wuzyLayout.side, gap: wuzyLayout.itemGap }}>
           {featured.map((event) => (
-            <FeaturedEventCard key={event.id} event={event} onVisit={() => router.push('/event-details')} />
+            <FeaturedEventCard
+              key={event.id}
+              event={{
+                id: String(event.id),
+                title: event.title,
+                time: eventTime(event.start_time),
+                location: event.location ?? event.venue ?? '',
+                price: event.price ?? 'Free',
+                imageUri: { uri: assetUrl(event.image_url ?? '') },
+                tagLabel: TAG_BY_REASON[event.reason] ?? 'Discover',
+                category: event.category,
+              }}
+              onVisit={() => {
+                void going(event.id);
+                router.push('/event-details');
+              }}
+            />
           ))}
         </ScrollView>
       </View>
@@ -63,7 +119,23 @@ export default function ExploreScreen() {
       <View style={{ gap: wuzyLayout.itemGap }}>
         <Text style={sectionTitle}>Up coming</Text>
         {upcoming.map((event) => (
-          <UpcomingEventCard key={event.id} event={event} onPress={() => router.push('/event-details')} />
+          <UpcomingEventCard
+            key={event.id}
+            event={{
+              id: String(event.id),
+              title: event.title,
+              hostName: event.host_name ?? 'Wuzy',
+              hostAvatar: { uri: assetUrl(event.host_avatar_url ?? '') },
+              dateDay: String(new Date(event.start_time).getDate()),
+              dateMonth: new Date(event.start_time).toLocaleString('en-US', { month: 'short' }).toUpperCase(),
+              imageUri: { uri: assetUrl(event.image_url ?? '') },
+              category: event.category,
+            }}
+            onPress={() => {
+              void going(event.id);
+              router.push('/event-details');
+            }}
+          />
         ))}
       </View>
 

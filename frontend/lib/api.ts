@@ -104,6 +104,22 @@ export function apiGetRecommendedEvents(): Promise<ApiRecommendedEvent[]> {
   return apiGet<ApiRecommendedEvent[]>('/events/recommended');
 }
 
+/** A single event, for the details and ticket screens. */
+export function apiGetEvent(eventId: number): Promise<ApiRecommendedEvent> {
+  return apiGet<ApiRecommendedEvent>(`/events/${eventId}`);
+}
+
+/** One category pill for the explore filter bar, ranked to the user's interests. */
+export interface ApiEventCategory {
+  id: string;
+  label: string;
+}
+
+/** Category pills for the current user; the feed filters on the id. */
+export function apiGetEventCategories(): Promise<ApiEventCategory[]> {
+  return apiGet<ApiEventCategory[]>('/events/categories');
+}
+
 /** Record a view or a "going" RSVP. Idempotent; feeds the recommendation heat. */
 export function apiEngageEvent(eventId: number, kind: 'view' | 'going'): Promise<void> {
   return apiPostNoContent(`/events/${eventId}/engage`, { kind });

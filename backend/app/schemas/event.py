@@ -14,6 +14,18 @@ class EventEngageCreate(BaseModel):
     kind: str = "view"
 
 
+class EventCategory(BaseModel):
+    """One category pill for the explore filter bar.
+
+    id is the raw category string the feed filters on; label is what the chip
+    shows. The list is ranked for the current user so their interests surface
+    first.
+    """
+
+    id: str
+    label: str
+
+
 class EventRead(BaseModel):
     """An event plus why the recommendation engine ranked it where it did.
 

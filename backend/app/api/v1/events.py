@@ -32,7 +32,7 @@ from app.core.auth import get_current_user_id
 from app.db.session import get_session
 from app.models.event import Event, EventEngagement
 from app.models.user import User
-from app.schemas.event import EventEngageCreate, EventRead
+from app.schemas.event import EventCategory, EventEngageCreate, EventRead
 
 router = APIRouter()
 
@@ -180,6 +180,81 @@ def recommended_events(
 
     results.sort(key=lambda r: r.score, reverse=True)
     return results
+
+
+@router.get("/categories", response_model=list[EventCategory])
+def suggested_categories(
+    current_user_id: int = Depends(get_current_user_id),
+    session: Session = Depends(get_session),
+):
+    """Category pills for the explore filter bar, ordered for this user.
+
+    A category qualifies when at least one live event in it overlaps the
+    user's hobbies (the same vocabulary the feed ranks on), so the pills
+    mirror their interests. Categories with no overlap are skipped entirely;
+    when nothing matches, the whole catalog is shown by event count rather
+    than an empty filter bar.
+    """
+    user = session.get(User, current_user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    interests = _normalize(user.hobbies)
+
+    now = datetime.now(UTC).replace(tzinfo=None)
+    start_of_today = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    events = session.exec(
+        select(Event).where(col(Event.start_time) >= start_of_today)
+    ).all()
+
+    per_category: dict[str, list[Event]] = {}
+    for event in events:
+        per_category.setdefault(event.category, []).append(event)
+
+    # How well a category fits the user: the strongest interest overlap among
+    # all of its live events, matching the feed's per-event scoring.
+    def best_match(category: str, category_events: list[Event]) -> float:
+        return max(
+            _jaccard(interests, _normalize(ev.tags) | {ev.category})
+            for ev in category_events
+        )
+
+    if interests:
+        ordered = [
+            category
+            for category, category_events in per_category.items()
+            if best_match(category, category_events) > 0
+        ]
+        ordered.sort(
+            key=lambda category: best_match(category, per_category[category]),
+            reverse=True,
+        )
+        if not ordered:
+            ordered = sorted(
+                per_category,
+                key=lambda category: len(per_category[category]),
+                reverse=True,
+            )
+    else:
+        ordered = sorted(
+            per_category,
+            key=lambda category: len(per_category[category]),
+            reverse=True,
+        )
+
+    return [EventCategory(id=category, label=category.capitalize()) for category in ordered]
+
+
+@router.get("/{event_id}", response_model=EventRead)
+def get_event(
+    event_id: int,
+    session: Session = Depends(get_session),
+):
+    """A single event for the details and ticket screens."""
+    event = session.get(Event, event_id)
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    return event
 
 
 @router.post("/{event_id}/engage", status_code=204)

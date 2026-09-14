@@ -1,44 +1,60 @@
 import { Image, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { Image as SvgImage } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useState } from 'react';
-import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { GlassNavButton } from '@/components/GlassNavButton';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
-import { mockEvent } from '@/constants/event-data';
+import { TagSection } from '@/components/TagSection';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
-import { apiBumpQuestProgress, apiGetQuests } from '@/lib/api';
+import {
+  apiBumpQuestProgress,
+  apiGetEvent,
+  apiGetQuests,
+  apiGetRecommendedEvents,
+  assetUrl,
+  type ApiRecommendedEvent,
+} from '@/lib/api';
 
-const AVATAR = 36;
-const AVATAR_OVERLAP = 12;
+const HOST_AVATAR = 36;
 const ACTION_HEIGHT = wuzyLayout.control;
 
 export default function EventDetailsScreen() {
   const router = useRouter();
+  const { id } = useLocalSearchParams<{ id?: string }>();
   const { width } = useWindowDimensions();
+  const [event, setEvent] = useState<ApiRecommendedEvent | null>(null);
+  const [loading, setLoading] = useState(true);
   const [isLiked, setIsLiked] = useState(false);
   const [showMore, setShowMore] = useState(false);
 
-  const e = mockEvent;
+  // Awards pushes /event-details without an id: fall back to the top pick.
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const found = id
+          ? await apiGetEvent(Number(id))
+          : (await apiGetRecommendedEvents())[0];
+        if (active) setEvent(found ?? null);
+      } catch {
+        if (active) setEvent(null);
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [id]);
+
   // Explicit capped heights: Yoga narrows an aspectRatio box when maxHeight clamps it.
   const heroHeight = Math.min(Math.round(width * 0.95), 400);
-  const mapHeight = Math.min(Math.round((width - 2 * wuzyLayout.side) * 0.6), 260);
-  const description = showMore || e.description.length <= 180 ? e.description : `${e.description.slice(0, 180).trimEnd()}...`;
 
-  const avatarStyle = (index: number) => ({
-    width: AVATAR,
-    height: AVATAR,
-    borderRadius: AVATAR / 2,
-    borderWidth: 2,
-    borderColor: wuzyColors.bg,
-    marginLeft: index === 0 ? 0 : -AVATAR_OVERLAP,
-    zIndex: 10 - index,
-  });
-
-  // Buying a ticket is the "attend" action, so each purchase counts toward the task.
   const handleBuyTicket = async () => {
+    if (!event) return;
     try {
       const data = await apiGetQuests();
       const quest = data.quests.find((q) => q.name === 'Attend Live Events');
@@ -48,8 +64,40 @@ export default function EventDetailsScreen() {
     } catch {
       // Keeps the count unchanged; the bump did not go through.
     }
-    router.push('/ticket');
+    router.push({ pathname: '/ticket', params: { id: String(event.id) } });
   };
+
+  if (loading) {
+    return (
+      <Screen>
+        <ScreenHeader title="" />
+        <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.section, color: wuzyColors.yellow }}>
+          Loading…
+        </Text>
+      </Screen>
+    );
+  }
+
+  if (!event) {
+    return (
+      <Screen>
+        <ScreenHeader title="" />
+        <Text style={{ fontFamily: wuzyFonts.body, fontSize: wuzyType.body, color: wuzyColors.gray }}>
+          This event is no longer available.
+        </Text>
+      </Screen>
+    );
+  }
+
+  const text = event.description ?? '';
+  const description = showMore || text.length <= 180 ? text : `${text.slice(0, 180).trimEnd()}...`;
+
+  const start = new Date(event.start_time);
+  const date = start
+    .toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+    .toUpperCase();
+  const time = start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  const hostName = event.host_name ?? 'Host';
 
   return (
     <Screen
@@ -63,7 +111,7 @@ export default function EventDetailsScreen() {
         </View>
       }>
       <View style={{ height: heroHeight }}>
-        <Image source={e.image} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+        <Image source={{ uri: assetUrl(event.image_url ?? '') }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
         <LinearGradient
           colors={['transparent', 'rgba(10,15,23,0.4)', 'rgba(10,15,23,0.8)', wuzyColors.bg]}
           locations={[0, 0.3, 0.7, 1]}
@@ -73,7 +121,7 @@ export default function EventDetailsScreen() {
           <Text
             className="flex-1 text-wuzy-yellow"
             style={{ fontFamily: wuzyFonts.display, fontSize: wuzyType.display, lineHeight: Math.round(wuzyType.display * 1.05) }}>
-            {e.title}
+            {event.title}
           </Text>
           <GlassNavButton
             icon={isLiked ? 'heart' : 'heart-outline'}
@@ -88,7 +136,7 @@ export default function EventDetailsScreen() {
           <Text style={{ fontFamily: wuzyFonts.body, fontSize: wuzyType.body, lineHeight: Math.round(wuzyType.body * 1.5), color: wuzyColors.white }}>
             {description}
           </Text>
-          {e.description.length > 180 && (
+          {text.length > 180 && (
             <Pressable onPress={() => setShowMore((v) => !v)} accessibilityRole="button">
               <Text className="text-wuzy-yellow" style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.body }}>
                 {showMore ? 'Show less' : 'Show more'}
@@ -99,37 +147,22 @@ export default function EventDetailsScreen() {
 
         <View className="flex-row items-start justify-between" style={{ gap: wuzyLayout.gap }}>
           <View className="flex-1" style={{ gap: wuzyLayout.itemGap }}>
-            <View className="flex-row items-center">
-              {e.attendees.slice(0, 3).map((attendee, index) => (
-                <Image key={attendee.id} source={attendee.avatar} style={avatarStyle(index)} resizeMode="cover" />
-              ))}
-              {e.attendees.length > 3 && (
-                <View className="items-center justify-center" style={[avatarStyle(3), { backgroundColor: wuzyColors.yellowDim }]}>
-                  <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.caption, color: wuzyColors.yellow }}>
-                    +{e.attendees.length - 3}
-                  </Text>
-                </View>
-              )}
+            <View className="flex-row items-center" style={{ gap: wuzyLayout.itemGap }}>
+              <Image source={{ uri: assetUrl(event.host_avatar_url ?? '') }} style={{ width: HOST_AVATAR, height: HOST_AVATAR, borderRadius: HOST_AVATAR / 2 }} resizeMode="cover" />
+              <View>
+                <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.small, color: wuzyColors.yellow }}>{hostName}</Text>
+                <Text style={{ fontFamily: wuzyFonts.body, fontSize: wuzyType.small, color: wuzyColors.yellowSoft }}>{event.venue}</Text>
+              </View>
             </View>
-            <View>
-              <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.small, color: wuzyColors.yellow }}>{e.venue}</Text>
-              <Text style={{ fontFamily: wuzyFonts.body, fontSize: wuzyType.small, color: wuzyColors.yellowSoft }}>{e.location}</Text>
-            </View>
+            <Text style={{ fontFamily: wuzyFonts.body, fontSize: wuzyType.small, color: wuzyColors.yellowSoft }}>{event.location}</Text>
           </View>
           <View className="items-end">
-            <Text style={{ fontFamily: wuzyFonts.display, fontSize: wuzyType.title, color: wuzyColors.white }}>{e.date}</Text>
-            <Text style={{ fontFamily: wuzyFonts.display, fontSize: wuzyType.title, color: wuzyColors.white }}>{e.time}</Text>
+            <Text style={{ fontFamily: wuzyFonts.display, fontSize: wuzyType.title, color: wuzyColors.white }}>{date}</Text>
+            <Text style={{ fontFamily: wuzyFonts.display, fontSize: wuzyType.title, color: wuzyColors.white }}>{time}</Text>
           </View>
         </View>
 
-        <View style={{ gap: wuzyLayout.itemGap }}>
-          <Text className="text-wuzy-yellow" style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.section }}>
-            Location
-          </Text>
-          <View style={{ borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: wuzyColors.glassBorder }}>
-            <Image source={e.mapImage} style={{ width: '100%', height: mapHeight }} resizeMode="cover" />
-          </View>
-        </View>
+        {event.tags.length > 0 && <TagSection tags={event.tags} />}
 
         <View className="flex-row items-center" style={{ gap: wuzyLayout.itemGap }}>
           <Pressable
@@ -145,7 +178,9 @@ export default function EventDetailsScreen() {
             accessibilityRole="button"
             className="flex-1 items-center justify-center rounded-full active:opacity-80"
             style={{ height: ACTION_HEIGHT, backgroundColor: wuzyColors.yellow }}>
-            <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.body, color: wuzyColors.bg }}>Buy ticket</Text>
+            <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.body, color: wuzyColors.bg }}>
+              Buy ticket · {event.price ?? 'Free'}
+            </Text>
           </Pressable>
         </View>
       </View>

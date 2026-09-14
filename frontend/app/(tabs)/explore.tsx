@@ -4,17 +4,17 @@ import { Image } from 'expo-image';
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 
-import { CategoryFilter } from '@/components/CategoryFilter';
+import { CategoryFilter, type CategoryFilterOption } from '@/components/CategoryFilter';
 import { FeaturedEventCard } from '@/components/events/FeaturedEventCard';
 import { UpcomingEventCard } from '@/components/events/UpcomingEventCard';
 import { GlassNavButton } from '@/components/GlassNavButton';
 import { Screen } from '@/components/Screen';
 import { SearchBar } from '@/components/SearchBar';
 import { TabHeader } from '@/components/TabHeader';
-import { exploreCategories } from '@/constants/event-data';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 import {
   apiEngageEvent,
+  apiGetEventCategories,
   apiGetRecommendedEvents,
   assetUrl,
   type ApiRecommendedEvent,
@@ -31,12 +31,23 @@ export default function ExploreScreen() {
   const [selectedCategory, setSelectedCategory] = useState<string | number>('all');
   const [searchText, setSearchText] = useState('');
   const [events, setEvents] = useState<ApiRecommendedEvent[]>([]);
+  const [categories, setCategories] = useState<CategoryFilterOption[]>([]);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(() => {
     setLoading(true);
-    apiGetRecommendedEvents()
-      .then(setEvents)
+    Promise.all([apiGetRecommendedEvents(), apiGetEventCategories()])
+      .then(([eventList, categoryList]) => {
+        setEvents(eventList);
+        const options: CategoryFilterOption[] = [
+          { id: 'all', label: 'All' },
+          ...categoryList.map((category) => ({ id: category.id, label: category.label })),
+        ];
+        setCategories(options);
+        setSelectedCategory((current) =>
+          current !== 'all' && !options.some((option) => option.id === current) ? 'all' : current,
+        );
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -81,7 +92,7 @@ export default function ExploreScreen() {
           }
         />
         <SearchBar value={searchText} onChangeText={setSearchText} placeholder="Search events" />
-        <CategoryFilter options={exploreCategories} selectedId={selectedCategory} onSelect={setSelectedCategory} />
+        <CategoryFilter options={categories} selectedId={selectedCategory} onSelect={setSelectedCategory} />
       </View>
 
       {loading && <Text style={sectionTitle}>Loading…</Text>}
@@ -109,7 +120,7 @@ export default function ExploreScreen() {
               }}
               onVisit={() => {
                 void going(event.id);
-                router.push('/event-details');
+                router.push({ pathname: '/event-details', params: { id: String(event.id) } });
               }}
             />
           ))}
@@ -133,7 +144,7 @@ export default function ExploreScreen() {
             }}
             onPress={() => {
               void going(event.id);
-              router.push('/event-details');
+              router.push({ pathname: '/event-details', params: { id: String(event.id) } });
             }}
           />
         ))}

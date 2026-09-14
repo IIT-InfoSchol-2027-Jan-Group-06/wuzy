@@ -148,7 +148,7 @@ Full-bleed content inside a padded screen uses `marginHorizontal: -wuzyLayout.si
 - Home feed card, fills the gutter width at a 335:418 aspect ratio. Avatar and name (`body`) with location (`small`) at top-left. Double tap pops a heart.
 
 ### FeaturedEventCard and UpcomingEventCard
-- Explore. Featured: 300 wide poster at a 0.75:1.05 aspect ratio, `StatusBadge` tag and `GlassNavButton` heart on top, time (`caption`), title (`section` bold), location (`small` yellowSoft), price and a selected Visit `Chip` at the bottom. Upcoming: 120 tall banner, title (`body` bold), 28 host avatar, white 64 date badge with bg-colored text.
+- Explore. Featured: 300 wide poster at a 0.75:1.05 aspect ratio, `StatusBadge` tag and `GlassNavButton` heart on top, time (`caption`), title (`section` bold), location (`small` yellowSoft), price and a selected Visit `Chip` at the bottom. Upcoming: 120 tall banner, title (`body` bold), 28 host avatar, white 64 date badge with bg-colored text. The `CategoryFilter` options are fetched per user from `GET /events/categories` (ranked by the same interest vocabulary as the feed) so each user's pills reflect their hobbies; cards push `/event-details` with the event `id`.
 
 ### TicketCard
 - Radius 24, 13 notch radius, dashed `glassBorder` divider, dark photo backdrop, white QR. Height is 1.58 x the width prop; type is `title` and `small`.
@@ -194,7 +194,7 @@ Tab roots (Home, Explore, Awards, Messages, Profile) open with `TabHeader`. Push
 - Connect: full-bleed blurred profile photo behind a frosted card. Back `GlassNavButton` on the left of the top row. A centered glass pill (`ModeToggle` in `ConnectCard.tsx`, built on `LiquidGlass`): `glass` wide halves at `control` tall with a yellow 1px vertical divider down the middle. The active half is solid `wuzy-yellow` with a `wuzy-bg` icon; the inactive half is translucent with a `#282F36` icon. It sits 40 above the card and flips the single frosted card (blur, glass tint, hairline border, "Connect" title) between the owner's QR and the scanner. Same card border, radius, and positioning in both states. `ConnectCard` takes two optional overrides used by the referral QR screen: `showBack={false}` hides the back button row entirely, and `doneLabel`/`onDone` replace the mode toggle with a single Done pill the size of the toggle.
 - Ticket vault: blurred active-ticket art fills the screen behind a `ScreenHeader` and a snapping horizontal carousel (card 78% of width capped at 360, gap 16).
 - Chat thread: `ChatHeader`, inverted message list with a date `Chip` at the top, `MessageBar` in normal flow under the list inside a `KeyboardAvoidingView`.
-- Event details: full-bleed hero with the Bebas title and a like button at its foot, floating `ScreenHeader` with a share button, then description, attendees, venue, date and time, map, gift and Buy ticket actions.
+- Event details: full-bleed hero with the Bebas title and a like button at its foot, floating `ScreenHeader` with a share button, then description, host and venue, date and time, interest tags, gift and Buy ticket actions. The screen loads the real event by `id` from `GET /events/{id}` (pushed from the explore cards); when pushed without an id (the Awards "Attend" action) it falls back to the top recommended pick. The ticket screen (`app/ticket.tsx`) fetches the same event by id, so its art, title, date, venue, and price all come from the backend.
 
 ## Push notifications
 

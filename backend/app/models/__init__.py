@@ -6,6 +6,7 @@ imports the package (e.g. app.db.session imports app.models).
 """
 
 from app.models.conversation import Conversation, ConversationMember
+from app.models.event import Event, EventEngagement
 from app.models.follow import Follow
 from app.models.group import Group, GroupMember
 from app.models.post import Post
@@ -28,5 +29,7 @@ __all__ = [
     "Quest",
     "QuestSubtask",
     "QuestSubtaskProgress",
+    "Event",
+    "EventEngagement",
     "ReferralRequest",
 ]

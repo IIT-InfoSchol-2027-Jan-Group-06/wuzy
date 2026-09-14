@@ -14,9 +14,10 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    # Apply migrations, seed data, then start server
+    # Ensure the database exists (stale postgres volumes skip init), then
+    # apply migrations, seed data, and start the server
     command: >
-      sh -c "alembic upgrade head && python seed.py && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+      sh -c "python docker/ensure-db.py && alembic upgrade head && python seed.py && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
 
   db:
     image: postgres:16-alpine

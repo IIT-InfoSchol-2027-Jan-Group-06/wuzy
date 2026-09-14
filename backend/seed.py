@@ -2,6 +2,7 @@
 # Tables are created by alembic migrations before this runs
 
 import shutil
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import bcrypt
@@ -9,6 +10,7 @@ from sqlmodel import Session, delete, func, select
 
 from app.db.session import engine
 from app.models.conversation import Conversation, ConversationMember
+from app.models.event import Event, EventEngagement
 from app.models.follow import Follow
 from app.models.group import Group, GroupMember
 from app.models.post import Post
@@ -136,6 +138,158 @@ POSTS = {
 # Connections: every pair is a DM thread. Messages themselves are ephemeral
 # (WebSocket/Redis only), so threads carry membership but no stored content.
 
+# Events on the Explore page. Each tuple is
+# (title, description, host, category, tags, venue, location, price,
+#  starts_in_days, starts_in_hours). Tags are the interest vocabulary the
+# recommendation engine matches against a user's hobbies, so they mirror the
+# demo accounts' hobbies (Tech, Music, Gaming, Fitness, Sports, Travel, Art,
+# Design, Reading, Food, Photography, Dance, Movies).
+EVENTS = [
+    ("Lagos Afrobeat Night", "Afrobeats and highlife with a live band on the rooftop.", "The Velvet Room", "music", ["music", "dance"], "88 Plams", "Lekki, Lagos", "₦15,000", 0, 6),
+    ("Indie Rock Night", "Three local indie bands, one sticky floor, hometown crowd.", "The Velvet Room", "music", ["music", "nightlife"], "Garden Bar", "Galle Face, Colombo", "₦8,000", 1, 20),
+    ("DJ Sunset Set", "House set that rides the sun down over the water.", "Charuki C.", "music", ["music", "dance", "travel"], "Beach Deck", "Mount Lavinia", "₦5,000", 2, 17),
+    ("Startup Pitch Night", "Founders get five minutes each; the room picks a winner.", "Innovation Hub", "tech", ["tech", "design"], "WTC Auditorium", "Bourbon Street, Lagos", "$20", 0, 9),
+    ("Tech Conference", "Keynotes and workshops on the stack that pays the bills.", "DevFest Lagos", "tech", ["tech", "startups"], "Landmark Centre", "Victoria Island, Lagos", "$89", 5, 9),
+    ("Hackathon Weekend", "48 hours, one theme, whatever you can build by Sunday.", "HackClub", "tech", ["tech", "gaming"], "Hub Space", "Colombo", "Free", 3, 9),
+    ("Esports Arena Finals", "Grand finals night for the city's ranked teams.", "Arena 300", "sports", ["gaming", "sports"], "Arena 300", "Galle Road, Colombo", "₦7,000", 1, 18),
+    ("Morning Beach Run", "Sunrise 5k along the shoreline, all paces welcome.", "Run Club", "sports", ["fitness", "sports", "travel"], "Beach Road", "Mount Lavinia", "Free", 0, 6),
+    ("Sunrise Yoga", "Slow vinyasa on a terrace before the heat kicks in.", "Flow Studio", "sports", ["fitness", "wellness"], "Sky Lounge", "Colombo", "₦3,000", 2, 6),
+    ("Gallery Opening Night", "New collection of painterly realism, wine and all.", "Sethuki K.", "art", ["art", "design", "photography"], "Lumen Gallery", "Kandy", "Free", 1, 19),
+    ("Print Making Workshop", "Hand-carve a block and pull your own edition.", "Paper & Press", "art", ["art", "design"], "Old Town Studio", "Colombo", "₦4,500", 4, 10),
+    ("Book Nook Meetup", "This month's read plus a round of barely book talk.", "The Reading Room", "art", ["reading", "art"], "Barefoot Cafe", "Colombo", "Free", 6, 17),
+    ("Food & Wine Expo", "Tastings, pairings, and a whole row of street food.", "Gourmet Collective", "food", ["food", "wine"], "Convention Centre", "Victoria Island, Lagos", "₦10,000", 3, 12),
+    ("Street Food Fest", "Two dozen stalls, chopsticks at the ready.", "City Eats", "food", ["food", "photography"], "Havelock Town", "Colombo", "₦2,000", 2, 19),
+    ("Movie Night Premiere", "Opening night screening followed by a Q&A.", "CineClub", "movies", ["movies", "cinema"], "Regal Theatre", "Colombo", "₦5,000", 0, 21),
+    ("Comedy Open Mic", "Local comedians testing their best material on you.", "Laugh Factory", "movies", ["movies", "comedy"], "The Comedy Cellar", "Lekki, Lagos", "₦6,000", 4, 20),
+    ("Sunday Gospel Brunch", "Live gospel and soul over bottomless iced tea.", "The Velvet Room", "music", ["music", "food"], "Garden Bar", "Galle Face, Colombo", "₦7,000", 0, 10),
+    ("Afro Pop Afterparty", "The DJ keeps the Afrobeat groove going past midnight.", "Charuki C.", "music", ["music", "dance"], "The Cellar", "Galle Face, Colombo", "₦4,000", 3, 22),
+    ("Vinyl Listening Session", "Bring a record, spin a story, listen with strangers.", "Sound Archive", "music", ["music", "reading"], "Old Town Studio", "Colombo", "₦2,000", 7, 18),
+    ("Backend Builds Cafe", "Brown-bag lunch, whiteboard talks, long-lived threads.", "Innovation Hub", "tech", ["tech", "design"], "Hub Space", "Colombo", "Free", 0, 12),
+    ("Indie Game Jams", "Weekend sprint to ship one tiny playable game.", "Game Bloc", "tech", ["gaming", "tech"], "Arena 300", "Victoria Island, Lagos", "$15", 6, 9),
+    ("AI Studio Hours", "Open lab: fine-tune, test, break, and retry models.", "DevFest Lagos", "tech", ["tech", "startups"], "Landmark Centre", "Victoria Island, Lagos", "$10", 9, 10),
+    ("Night T20 Tournament", "Floodlit cricket, loud stands, local derby energy.", "City Strikers", "sports", ["sports", "gaming"], "Oval Grounds", "Colombo", "₦3,000", 2, 18),
+    ("Trail Run Challenge", "Scrambles, river crossings, and a finisher medal.", "Run Club", "sports", ["fitness", "sports"], "Beach Road", "Mount Lavinia", "₦5,000", 8, 6),
+    ("Iron Yoga & Brews", "Sunrise flexibility, then a cold-brew hang.", "Flow Studio", "sports", ["fitness", "wellness"], "Sky Lounge", "Colombo", "₦4,000", 11, 7),
+    ("Clay & Coffee", "Wheel-throwing workshop with a stoneware gallery.", "Paper & Press", "art", ["art", "design"], "Old Town Studio", "Colombo", "₦6,500", 0, 14),
+    ("Silk Screen Saturdays", "Pull limited-edition prints by hand.", "Print Social", "art", ["art", "reading"], "Hub Space", "Colombo", "₦5,000", 5, 11),
+    ("Zine Fair", "Risky, radical, and self-published pages everywhere.", "The Reading Room", "art", ["reading", "art"], "Barefoot Cafe", "Colombo", "₦2,500", 10, 12),
+    ("Chocolate & Wine Pairing", "Single-origin bars meeting a flight of reds.", "Gourmet Collective", "food", ["food", "wine"], "Convention Centre", "Victoria Island, Lagos", "₦8,000", 0, 17),
+    ("Ramen Night Market", "Midnight bowls, charcoal grills, cash only.", "City Eats", "food", ["food", "photography"], "Havelock Town", "Colombo", "₦3,000", 4, 21),
+    ("Sci-Fi Double Feature", "Two cult classics back to back on 35mm.", "CineClub", "movies", ["movies", "cinema"], "Regal Theatre", "Colombo", "₦6,000", 0, 20),
+    ("Producers Circle Screening", "Early cut, live feedback, snacks at the back.", "CineClub", "movies", ["movies", "tech"], "The Comedy Cellar", "Lekki, Lagos", "$12", 12, 19),
+]
+
+# Demo engagement heat for the recommendation engine. Each entry is
+# (event index into EVENTS, username, kind). These mimic what real users
+# would log through POST /events/{id}/engage, so the collaborative "people
+# like you are into this" signal is visible on the very first seed: music and
+# movies light up via charuki for abhiruk, art via sethuki, food via azma,
+# fitness and sports via ravindu644.
+EVENT_ENGAGEMENTS = [
+    (0, "charuki", "going"),
+    (0, "azma", "view"),
+    (1, "charuki", "view"),
+    (2, "charuki", "going"),
+    (2, "azma", "view"),
+    (3, "sethuki", "view"),
+    (4, "sethuki", "view"),
+    (5, "sethuki", "view"),
+    (6, "ravindu644", "view"),
+    (6, "charuki", "view"),
+    (7, "ravindu644", "going"),
+    (7, "azma", "view"),
+    (8, "ravindu644", "going"),
+    (9, "sethuki", "going"),
+    (9, "azma", "view"),
+    (10, "sethuki", "going"),
+    (11, "sethuki", "view"),
+    (12, "azma", "going"),
+    (12, "sethuki", "view"),
+    (13, "azma", "going"),
+    (13, "sethuki", "view"),
+    (14, "charuki", "going"),
+    (15, "charuki", "view"),
+    (16, "charuki", "going"),
+    (16, "azma", "view"),
+    (17, "charuki", "going"),
+    (17, "azma", "view"),
+    (18, "sethuki", "view"),
+    (18, "charuki", "view"),
+    (19, "abhiruk", "going"),
+    (19, "sethuki", "view"),
+    (20, "abhiruk", "going"),
+    (20, "ravindu644", "view"),
+    (21, "abhiruk", "view"),
+    (21, "sethuki", "view"),
+    (22, "ravindu644", "going"),
+    (22, "abhiruk", "view"),
+    (23, "ravindu644", "going"),
+    (23, "azma", "view"),
+    (24, "ravindu644", "view"),
+    (24, "sethuki", "view"),
+    (25, "sethuki", "going"),
+    (25, "abhiruk", "view"),
+    (26, "sethuki", "going"),
+    (26, "charuki", "view"),
+    (27, "sethuki", "view"),
+    (27, "azma", "view"),
+    (28, "azma", "going"),
+    (28, "sethuki", "view"),
+    (29, "azma", "going"),
+    (29, "ravindu644", "view"),
+    (30, "charuki", "going"),
+    (30, "abhiruk", "view"),
+    (31, "charuki", "view"),
+    (31, "abhiruk", "view"),
+]
+
+
+def seed_events(session: Session) -> None:
+    """Seed events plus demo engagement heat if the catalog is empty.
+
+    Skips when events already exist so a container restart never wipes the
+    engagement history the recommendation engine learns from. "going" beats
+    "view" for the same (user, event) pair in ranking weight, not in rows.
+    """
+    if session.exec(select(Event)).first():
+        return
+
+    usernames = {u.username: u.id for u in session.exec(select(User)).all()}
+    event_ids = []
+    base = datetime.now(UTC)
+    for index in range(len(EVENTS)):
+        title, description, host, category, tags, venue, location, price, days, hours = EVENTS[index]
+        event = Event(
+            title=title,
+            description=description,
+            image_url=f"https://picsum.photos/seed/event{index + 1}/400/600",
+            host_name=host,
+            host_avatar_url=f"https://picsum.photos/seed/host{index + 1}/50/50",
+            category=category,
+            tags=tags,
+            venue=venue,
+            location=location,
+            price=price,
+            start_time=base + timedelta(days=days, hours=hours),
+        )
+        session.add(event)
+        session.flush()
+        event_ids.append(event.id)
+
+    for event_step, username, kind in EVENT_ENGAGEMENTS:
+        user_id = usernames.get(username)
+        if user_id is None:
+            continue
+        session.add(
+            EventEngagement(
+                user_id=user_id,
+                event_id=event_ids[event_step],
+                kind=kind,
+            )
+        )
+    session.commit()
+    print(f"Created events: {len(event_ids)}")
+
 def seed():
     seed_media()
     with Session(engine) as session:
@@ -201,6 +355,8 @@ def seed():
             )
 
         session.commit()
+
+        seed_events(session)
 
         post_count = session.exec(select(Post)).all().__len__()
         conversation_count = session.exec(select(Conversation)).all().__len__()
@@ -383,6 +539,27 @@ def _run_quest_seed() -> None:
 
 seed_quests_if_present = _run_quest_seed
 
+
+def _run_events_seed() -> None:
+    """Seed events + demo engagement heat on any start where users exist.
+
+    Mirrors _run_quest_seed so already-seeded databases (whose main seed()
+    short-circuits) still get the event catalog the first time they boot with
+    this code.
+    """
+    from sqlmodel import Session as _Session
+
+    from app.db.session import engine as _engine
+
+    with _Session(_engine) as _session:
+        count = _session.exec(select(func.count(User.id))).one()
+        if count > 0:
+            seed_events(_session)
+
+
+seed_events_if_present = _run_events_seed
+
 if __name__ == "__main__":
     seed()
     seed_quests_if_present()
+    seed_events_if_present()

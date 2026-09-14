@@ -199,24 +199,28 @@ export function apiClaimQuest(questId: number): Promise<ApiQuest> {
   return apiPost<ApiQuest>(`/quests/${questId}/claim`, {});
 }
 
-/** A referral request: the sender introduced `referred` to `target`. */
+/** A referral request: the sender introduced two users to each other. */
 export interface ApiReferralRequest {
   id: number;
   sender_id: number;
-  referred_id: number;
-  target_id: number;
+  first_user_id: number;
+  second_user_id: number;
+  /** Overall: 'pending' until both sides resolve, then 'accepted' or 'declined'. */
   status: string;
-  /** True once the sender finished the resolved-state UI (Done / declined flash). */
+  first_status: string;
+  second_status: string;
+  /** True once the sender finished the resolved-state UI (the 1s outcome flash). */
   consumed: boolean;
   created_at: string;
   sender_name: string | null;
-  target_name: string | null;
+  first_name: string | null;
+  second_name: string | null;
   sender_avatar_url: string | null;
 }
 
-/** Refer the given user to the given target. Idempotent per sender/referred/target. */
-export function createReferral(referredId: number, targetId: number): Promise<ApiReferralRequest> {
-  return apiPost<ApiReferralRequest>('/referrals', { referred_id: referredId, target_id: targetId });
+/** Refer two users to each other. Idempotent per sender/pair while pending. */
+export function createReferral(firstUserId: number, secondUserId: number): Promise<ApiReferralRequest> {
+  return apiPost<ApiReferralRequest>('/referrals', { first_user_id: firstUserId, second_user_id: secondUserId });
 }
 
 export function getOutgoingReferrals(): Promise<ApiReferralRequest[]> {
@@ -228,6 +232,7 @@ export function getUserConnections(userId: number): Promise<ApiUser[]> {
   return apiGet<ApiUser[]>(`/users/${userId}/connections`);
 }
 
+/** Every referral naming me, newest first. Resolved ones are included so the notifications screen can pop their outcome once per session. */
 export function getInboxReferrals(): Promise<ApiReferralRequest[]> {
   return apiGet<ApiReferralRequest[]>('/referrals/inbox');
 }

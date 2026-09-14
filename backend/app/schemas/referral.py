@@ -6,32 +6,36 @@ from pydantic import BaseModel
 
 
 class ReferralCreate(BaseModel):
-    """A referral: who is being introduced (referred) and who to (target)."""
+    """A referral: the two users being introduced to each other (not the sender)."""
 
-    referred_id: int
-    target_id: int
+    first_user_id: int
+    second_user_id: int
 
 
 class ReferralRead(BaseModel):
-    """A referral request as the client sees it, with resolved display names.
+    """A referral as the client sees it, with resolved display names.
 
-    Names are denormalized in because the recipient may not know the target,
-    and the refer screen shows who the pending note is waiting on.
+    Both recipients and both statuses are included because every viewer renders
+    a different sentence: each recipient sees themselves referred to the other,
+    and the sender sees who has already responded and who it is still waiting on.
     """
 
     id: int
     sender_id: int
-    referred_id: int
-    target_id: int
+    first_user_id: int
+    second_user_id: int
     status: str
+    first_status: str
+    second_status: str
     consumed: bool = False
     created_at: datetime
     sender_name: str | None = None
-    target_name: str | None = None
+    first_name: str | None = None
+    second_name: str | None = None
     sender_avatar_url: str | None = None
 
 
 class ReferralRespond(BaseModel):
-    """How the referred user replied to a pending referral."""
+    """How one recipient replied to a pending referral."""
 
     accept: bool

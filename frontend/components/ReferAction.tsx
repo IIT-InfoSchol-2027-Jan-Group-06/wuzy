@@ -4,19 +4,26 @@ import { StyleSheet, Text, View } from 'react-native';
 import { GlassNavButton } from '@/components/GlassNavButton';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 
+export type ReferCardState = {
+  /** The latest referral's overall state for this card pair. */
+  overall: 'pending' | 'accepted' | 'declined' | 'idle';
+  /** First recipient's reply status, or null when no referral exists yet. */
+  aStatus: 'pending' | 'accepted' | 'declined' | null;
+  /** Second recipient's reply status, or null when no referral exists yet. */
+  bStatus: 'pending' | 'accepted' | 'declined' | null;
+};
+
 interface ReferActionProps {
-  /** The user being referred; named in the sent-request note. */
+  /** The first recipient's full name (the person whose card was expanded). */
   name: string;
-  /** A pending request already exists for this card, so the button stays locked. */
-  pending: boolean;
-  /** The most recent referral for this card was accepted or declined. */
-  outcome: 'approved' | 'declined' | null;
+  /** The second recipient's full name (this card). */
+  otherName: string;
+  /** Latest referral state for this card pair. */
+  state: ReferCardState;
   /** True while the card is collapsing to compressed size; show the Send Request pill. */
   collapsing: boolean;
   onSend?: () => void;
-  /** Approved flow: opens the referral QR screen for the approving user. */
-  onQr?: () => void;
-  /** Declined flow: fired once the 1s "Referral Denied!" flash completes. */
+  /** Fired once the 1s outcome flash (Connection made / Referral Denied) completes. */
   onAutoCollapse?: () => void;
 }
 
@@ -30,30 +37,31 @@ const outcomeTextStyle = StyleSheet.create({
 });
 
 /** Expanded-card action on the refer screen: the Send Request pill, the yellow
- * pending note, the approved note with its QR-code button, or the declined flash. */
+ * awaiting note (both or whichever recipient has not responded yet), or the
+ * 1s outcome flash (Connection made / Referral Denied). */
 export function ReferAction({
   name,
-  pending,
-  outcome,
+  otherName,
+  state,
   collapsing,
   onSend,
-  onQr,
   onAutoCollapse,
 }: ReferActionProps) {
   // Keep the latest collapse callback in a ref so a parent re-render (e.g. a
-  // live response refreshing the list) cannot restart the 1s denied flash.
+  // live response refreshing the list) cannot restart the 1s outcome flash.
   const onAutoCollapseRef = useRef(onAutoCollapse);
   useEffect(() => {
     onAutoCollapseRef.current = onAutoCollapse;
   }, [onAutoCollapse]);
 
-  // A declined card flashes its note for 1 second, then collapses itself. The
-  // effect only restarts when the state actually changes.
+  // A resolved card flashes its outcome for 1 second, then collapses itself.
+  // The effect only restarts when the overall state actually changes.
+  const resolved = state.overall === 'accepted' || state.overall === 'declined';
   useEffect(() => {
-    if (outcome !== 'declined' || collapsing) return;
+    if (!resolved || collapsing) return;
     const timer = setTimeout(() => onAutoCollapseRef.current?.(), 1000);
     return () => clearTimeout(timer);
-  }, [outcome, collapsing]);
+  }, [resolved, collapsing]);
 
   const sendPill = (
     <GlassNavButton
@@ -66,44 +74,31 @@ export function ReferAction({
     </GlassNavButton>
   );
 
-  if (collapsing) {
+  let note = '';
+  if (state.overall === 'accepted') {
+    note = 'Connection made!';
+  } else if (state.overall === 'declined') {
+    note = 'Referral Denied!';
+  } else {
+    // One accepted already; name whoever is still deciding.
+    if (state.aStatus === 'accepted') {
+      note = `Awaiting for ${otherName}'s response!`;
+    } else if (state.bStatus === 'accepted') {
+      note = `Awaiting for ${name}'s response!`;
+    } else {
+      note = `Awaiting for ${name}'s & ${otherName}'s response!`;
+    }
+  }
+
+  if (collapsing || state.overall === 'idle') {
     return <View style={{ marginTop: 35, alignItems: 'center' }}>{sendPill}</View>;
   }
 
-  if (pending) {
-    return (
-      <View style={{ marginTop: 35, alignItems: 'center' }}>
-        <Text numberOfLines={2} style={outcomeTextStyle.outcome}>
-          Request sent to {name}, Awaiting Response
-        </Text>
-      </View>
-    );
-  }
-
-  if (outcome === 'approved') {
-    return (
-      <View style={{ marginTop: 35, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: wuzyLayout.itemGap }}>
-        <Text numberOfLines={2} style={outcomeTextStyle.outcome}>
-          The referral was approved!
-        </Text>
-        <GlassNavButton
-          icon="qr-code"
-          onPress={onQr ?? (() => {})}
-          accessibilityLabel="Open the approved referral QR code"
-        />
-      </View>
-    );
-  }
-
-  if (outcome === 'declined') {
-    return (
-      <View style={{ marginTop: 35, alignItems: 'center' }}>
-        <Text numberOfLines={2} style={outcomeTextStyle.outcome}>
-          Referral Denied!
-        </Text>
-      </View>
-    );
-  }
-
-  return <View style={{ marginTop: 35, alignItems: 'center' }}>{sendPill}</View>;
+  return (
+    <View style={{ marginTop: 35, alignItems: 'center' }}>
+      <Text numberOfLines={2} style={outcomeTextStyle.outcome}>
+        {note}
+      </Text>
+    </View>
+  );
 }

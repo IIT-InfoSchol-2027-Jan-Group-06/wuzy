@@ -25,24 +25,27 @@ export type ReferralFrame = {
   type: 'referral';
   request_id: number;
   sender_id: number;
-  referred_id: number;
-  target_id: number;
+  first_user_id: number;
+  second_user_id: number;
   sender_name: string | null;
-  target_name: string | null;
+  first_name: string | null;
+  second_name: string | null;
   status: string;
   created_at: string;
 };
 
 /** A live referral response, routed to the sender so their refer screen can
- * reflect an accept/decline while it is open. */
+ * reflect a recipient's accept/decline while it is open. */
 export type ReferralResponseFrame = {
   type: 'referral_response';
   request_id: number;
   sender_id: number;
-  referred_id: number;
-  target_id: number;
-  referred_name: string | null;
-  target_name: string | null;
+  first_user_id: number;
+  second_user_id: number;
+  first_name: string | null;
+  second_name: string | null;
+  first_status: string;
+  second_status: string;
   status: string;
 };
 

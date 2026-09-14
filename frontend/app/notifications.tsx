@@ -1,15 +1,16 @@
 import { useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
-import { ImageSourcePropType, Text, View } from 'react-native';
+import { useCallback, useRef, useState } from 'react';
+import { ImageSourcePropType, Modal, Text, View } from 'react-native';
 
 import { CategoryFilter } from '@/components/CategoryFilter';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { GlassNavButton } from '@/components/GlassNavButton';
 import { ReferralNotificationCard } from '@/components/ReferralNotificationCard';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { UserRow } from '@/components/UserRow';
 import { notifications, type Notification } from '@/constants/notification-data';
-import { wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
+import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 import { useAuth } from '@/context/auth';
 import { assetUrl, getInboxReferrals, relativeTime, respondReferral, type ApiReferralRequest } from '@/lib/api';
 import { getUnreadNotifications } from '@/lib/chat-db';
@@ -38,12 +39,35 @@ type LiveMessage = {
   timestamp: string;
 };
 
+type RecipientStatus = 'pending' | 'accepted' | 'declined';
+
 export default function NotificationsScreen() {
   const { user } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState<string | number>('all');
   const [liveMessages, setLiveMessages] = useState<LiveMessage[]>([]);
   const [referrals, setReferrals] = useState<ApiReferralRequest[]>([]);
   const [pendingConfirm, setPendingConfirm] = useState<{ request: ApiReferralRequest; accept: boolean } | null>(null);
+  // The resolution popup: the yellow message text, shown until tapped away.
+  const [popup, setPopup] = useState<string | null>(null);
+  // Referrals whose resolution popup has already shown this session, so the
+  // same outcome never pops twice across refetches and live frames.
+  const shownPopups = useRef(new Set<number>());
+
+  const myId = user?.id;
+
+  /** My own reply in a referral: recipient ids are stored sorted. */
+  const myStatus = useCallback(
+    (r: ApiReferralRequest): RecipientStatus =>
+      (r.first_user_id === myId ? r.first_status : r.second_status) as RecipientStatus,
+    [myId],
+  );
+
+  /** The other recipient's full name, who my notification forwards to. */
+  const otherNameFor = useCallback(
+    (r: ApiReferralRequest): string | null =>
+      r.first_user_id === myId ? r.second_name : r.first_name,
+    [myId],
+  );
 
   const refreshMessages = useCallback(async () => {
     if (!user) return;
@@ -61,24 +85,47 @@ export default function NotificationsScreen() {
 
   const refreshReferrals = useCallback(async () => {
     try {
-      setReferrals(await getInboxReferrals());
+      const rows = await getInboxReferrals();
+      // A referral that fully resolved shows its outcome popup once, then the
+      // row is dropped from the list by the pending-only filter below.
+      for (const r of rows) {
+        if (r.status === 'accepted' || r.status === 'declined') {
+          if (shownPopups.current.has(r.id)) continue;
+          shownPopups.current.add(r.id);
+          const other = otherNameFor(r);
+          setPopup(r.status === 'accepted' ? `Connection made with ${other ?? 'them'}!` : 'Referral Denied!');
+        }
+      }
+      setReferrals(rows);
     } catch {
       setReferrals([]);
     }
-  }, []);
+  }, [otherNameFor]);
 
   const resolveReferral = useCallback(
     async (request: ApiReferralRequest, accept: boolean) => {
-      // Resolved referrals vanish from the list; only pending ones stay.
-      setReferrals((rows) => rows.filter((r) => r.id !== request.id));
       try {
-        await respondReferral(request.id, accept);
+        const updated = await respondReferral(request.id, accept);
+        // Swap the row in place so the card flips to the waiting note, or pops
+        // the outcome if this reply resolved the whole referral.
+        setReferrals((rows) => rows.map((r) => (r.id === updated.id ? updated : r)));
+        if (updated.status === 'accepted' || updated.status === 'declined') {
+          if (!shownPopups.current.has(updated.id)) {
+            shownPopups.current.add(updated.id);
+            const other = otherNameFor(updated);
+            setPopup(
+              updated.status === 'accepted'
+                ? `Connection made with ${other ?? 'them'}!`
+                : 'Referral Denied!',
+            );
+          }
+        }
       } catch (error) {
         console.error('[notifications] referral response failed', error);
       }
       refreshReferrals();
     },
-    [refreshReferrals],
+    [refreshReferrals, otherNameFor],
   );
 
   useFocusEffect(
@@ -125,17 +172,25 @@ export default function NotificationsScreen() {
               {title}
             </Text>
             {showReferrals &&
-              pendingReferrals.map((r) => (
+              pendingReferrals.map((r) => {
+                const mine = myStatus(r);
+                const other = otherNameFor(r) ?? 'a friend';
+                // Once I replied, that side is locked: the pills disappear and
+                // the card shows the yellow note while the other side decides.
+                const canRespond = mine === 'pending';
+                return (
                   <ReferralNotificationCard
                     key={`referral-${r.id}`}
                     avatar={r.sender_avatar_url ? { uri: assetUrl(r.sender_avatar_url) } : defaultAvatar}
                     senderName={r.sender_name ?? 'Someone'}
-                    targetName={r.target_name ?? 'a friend'}
+                    otherName={other}
                     timestamp={relativeTime(r.created_at)}
-                    onAccept={() => setPendingConfirm({ request: r, accept: true })}
-                    onDecline={() => setPendingConfirm({ request: r, accept: false })}
+                    waitingName={mine === 'accepted' ? other : undefined}
+                    onAccept={canRespond ? () => setPendingConfirm({ request: r, accept: true }) : undefined}
+                    onDecline={canRespond ? () => setPendingConfirm({ request: r, accept: false }) : undefined}
                   />
-                ))}
+                );
+              })}
             {showLive &&
               liveMessages.map((m) => (
                 <UserRow key={m.key} avatar={m.avatar} name={m.name} label={m.label} timestamp={m.timestamp} />
@@ -152,7 +207,9 @@ export default function NotificationsScreen() {
         title={pendingConfirm?.accept ? 'Accept Referral?' : 'Decline Referral?'}
         message={
           pendingConfirm
-            ? `${pendingConfirm.accept ? 'Accept' : 'Decline'} the referral from ${pendingConfirm.request.sender_name ?? 'this person'} to send drinks through ${pendingConfirm.request.target_name ?? 'this shop'}?`
+            ? `${pendingConfirm.accept ? 'Accept' : 'Decline'} the referral from ${
+                pendingConfirm.request.sender_name ?? 'this person'
+              } to connect with ${otherNameFor(pendingConfirm.request) ?? 'them'}?`
             : ''
         }
         confirmLabel={pendingConfirm?.accept ? 'Accept' : 'Decline'}
@@ -163,6 +220,36 @@ export default function NotificationsScreen() {
           resolveReferral(pendingConfirm.request, pendingConfirm.accept);
         }}
       />
+
+      {/* Outcome popup: the whole message is one yellow line, no subtitle, with
+          a single OK pill. Same box shape as ConfirmDialog but only one action. */}
+      <Modal transparent visible={popup !== null} animationType="fade" onRequestClose={() => setPopup(null)}>
+        <View className="flex-1 items-center justify-center" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
+          <View
+            style={{
+              width: 300,
+              borderRadius: 20,
+              padding: 20,
+              gap: 14,
+              backgroundColor: 'rgba(24, 24, 24, 0.92)',
+              borderWidth: 1,
+              borderColor: 'rgba(255, 231, 131, 0.12)',
+            }}>
+            <Text
+              style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.body, color: wuzyColors.yellow, textAlign: 'center' }}>
+              {popup}
+            </Text>
+            <GlassNavButton
+              onPress={() => setPopup(null)}
+              style={{ width: 120, height: wuzyLayout.control, alignSelf: 'center' }}>
+              <Text
+                style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.small, color: wuzyColors.yellow, textAlign: 'center' }}>
+                OK
+              </Text>
+            </GlassNavButton>
+          </View>
+        </View>
+      </Modal>
     </Screen>
   );
 }

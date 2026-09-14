@@ -28,7 +28,7 @@ interface ConnectionCardProps {
   expandedContent?: ReactNode;
 }
 
-/** Connection card: name on the left, avatar with online dot on the right, interest tags below. Tapping the avatar expands it. */
+/** Connection card: name on the left, avatar with online dot on the right, interest tags below. Tapping the card surface expands it; the avatar also collapses it while open. */
 export function ConnectionCard({
   connection,
   expanded = false,
@@ -65,23 +65,8 @@ export function ConnectionCard({
     />
   );
 
-  return (
-    <Animated.View
-      needsOffscreenAlphaCompositing={expanded}
-      renderToHardwareTextureAndroid={expanded}
-      style={[
-        animatedStyle,
-        {
-          justifyContent: 'center',
-          borderRadius: 24,
-          padding: 16,
-          backgroundColor: wuzyColors.surface,
-          shadowColor: '#000000',
-          shadowOpacity: 0.4,
-          shadowRadius: 12,
-          shadowOffset: { width: 0, height: 10 },
-        },
-      ]}>
+  const cardContent = (
+    <>
       <View className="flex-row items-center justify-between" style={{ gap: wuzyLayout.itemGap }}>
         <View className="flex-1">
           <Text numberOfLines={1} style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.body, color: wuzyColors.yellow }}>
@@ -130,6 +115,38 @@ export function ConnectionCard({
           </GlassNavButton>
         </View>
       ))}
+    </>
+  );
+
+  // Collapsed: the whole card surface is the expand trigger. Expanded: the
+  // surface stops responding so the inner buttons keep their own taps, and
+  // collapse stays with the avatar tap or an outside tap.
+  return (
+    <Animated.View
+      needsOffscreenAlphaCompositing={expanded}
+      renderToHardwareTextureAndroid={expanded}
+      style={[
+        animatedStyle,
+        {
+          borderRadius: 24,
+          backgroundColor: wuzyColors.surface,
+          shadowColor: '#000000',
+          shadowOpacity: 0.4,
+          shadowRadius: 12,
+          shadowOffset: { width: 0, height: 10 },
+        },
+      ]}>
+      {onAvatarPress && !expanded ? (
+        <Pressable
+          onPress={onAvatarPress}
+          accessibilityRole="button"
+          accessibilityLabel={`Expand ${connection.name}`}
+          style={{ flex: 1, justifyContent: 'center', padding: 16 }}>
+          {cardContent}
+        </Pressable>
+      ) : (
+        <View style={{ flex: 1, justifyContent: 'center', padding: 16 }}>{cardContent}</View>
+      )}
     </Animated.View>
   );
 }

@@ -12,7 +12,7 @@ import {
   ViewStyle,
 } from 'react-native';
 
-import { assetUrl, ApiPost } from '@/lib/api';
+import { assetUrl, likePost, ApiPost } from '@/lib/api';
 import { wuzyFonts, wuzyType } from '@/constants/wuzy-theme';
 import { Avatar, CardShell } from './shared';
 
@@ -38,7 +38,7 @@ export function PostCard({
   onUserPress,
   style,
 }: PostCardProps) {
-  const [liked, setLiked] = useState(false);
+  const [liked, setLiked] = useState(post.liked_by_me);
   // Corner like heart: 40 on the 375 px reference, scaled with the screen.
   const { width } = useWindowDimensions();
   const likeIconSize = Math.round((40 / 375) * width);
@@ -157,6 +157,10 @@ export function PostCard({
     } else {
       triggerBreak();
     }
+    // Optimistic: the heart already flipped; settle on the server's answer.
+    likePost(post.id)
+      .then((r) => setLiked(r.liked))
+      .catch(() => setLiked(liked));
   };
 
   const handlePress = () => {

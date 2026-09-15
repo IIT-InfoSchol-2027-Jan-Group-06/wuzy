@@ -9,7 +9,7 @@ Expo ~57, expo-router ~57, React 19.2, React Native 0.86, TypeScript, NativeWind
 Expo HAS CHANGED. Read the versioned docs at https://docs.expo.dev/versions/v57.0.0/ before writing Expo code. Do not trust training-data Expo patterns.
 
 ## Commands
-
+add
 Run from `frontend/`:
 
 ```

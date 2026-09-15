@@ -155,7 +155,7 @@ export default function EventDetailsScreen() {
 
         <View className="flex-row items-center" style={{ gap: wuzyLayout.itemGap }}>
           <Pressable
-            onPress={() => {}}
+            onPress={() => router.push({ pathname: '/gift-ticket', params: { id: String(event.id) } })}
             accessibilityRole="button"
             accessibilityLabel="Gift a ticket"
             className="items-center justify-center rounded-full active:opacity-80"

@@ -84,6 +84,23 @@ def _claimed_steps(subtasks: list[QuestSubtask], user_id: int, session: Session)
     return count
 
 
+def bump_quest_for(user_id: int, quest_name: str, session: Session) -> None:
+    """Increment a named quest's active subtask counter by one.
+
+    Used by routers that re-create a quest's counted action elsewhere (a new
+    connection, say). No-op when the quest is unknown or out of subtasks.
+    """
+    quest = session.exec(select(Quest).where(Quest.name == quest_name)).first()
+    if quest is None:
+        return
+    _, active, progress, _ = _active_step(quest, user_id, session)
+    if active is None or progress is None:
+        return
+    if progress.current_progress < active.target_count:
+        progress.current_progress += 1
+        session.add(progress)
+
+
 def _read(
     quest: Quest,
     subtasks: list[QuestSubtask],

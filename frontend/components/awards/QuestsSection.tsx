@@ -62,7 +62,7 @@ export function QuestsSection({ quests, onClaimed, completedTasks, onClaimTask, 
           if (taskNames.includes(name)) {
             const isPurchaseTicket = name === 'Purchase Ticket';
             const purchaseCount = Math.min(5, ticketCount ?? 0);
-            const isDone = isPurchaseTicket ? purchaseCount >= 5 : (completedTasks?.has(name) ?? false);
+            const isDone = completedTasks?.has(name) ?? false;
             const action = actionFor[name];
             const actionLabel = action?.label ?? (name === 'Purchase Ticket' ? 'Purchase' : 'Complete');
             return (
@@ -90,7 +90,7 @@ export function QuestsSection({ quests, onClaimed, completedTasks, onClaimTask, 
                 actionLabel={actionLabel}
                 onAction={action ? () => router.push(action.route as never) : undefined}
                 onClaimed={onClaimed}
-                onClaimCustom={action ? undefined : onClaimTask?.(name)}
+                onClaimCustom={onClaimTask?.(name)}
               />
             );
           }

@@ -18,6 +18,7 @@ export default function ConnectScreen() {
       username={name.split(' ')[0]}
       qrValue={qrValue}
       onBack={() => router.back()}
+      onConnected={() => router.back()}
       backgroundImage={extra.backgroundImage}
     />
   );

@@ -127,6 +127,12 @@ def connect_user(
         session.add(Follow(follower_id=current_user_id, followed_id=user_id))
     if user_id not in followed_back:
         session.add(Follow(follower_id=user_id, followed_id=current_user_id))
+    if new:
+        from app.api.v1.quests import bump_quest_for
+        # A fresh mutual follow is a connection for both sides, so each party's
+        # Social Network quest advances alike wherever it is tracked.
+        bump_quest_for(current_user_id, "Social Network", session)
+        bump_quest_for(user_id, "Social Network", session)
     session.commit()
     session.refresh(other)
     if new:

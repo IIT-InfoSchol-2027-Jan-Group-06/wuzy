@@ -121,7 +121,7 @@ export function QuestCard({ quest, actionLabel, onAction, onClaimed, onClaimCust
     <View className="rounded-3xl bg-wuzy-surface p-4" style={done ? { opacity: 0.5 } : undefined}>
       <View className="flex-row items-center gap-[12px]">
         <View className="flex-1">
-          <Text numberOfLines={1} style={{ fontFamily: wuzyFonts.semibold, fontSize: 15, color: wuzyColors.white }}>
+          <Text numberOfLines={1} style={{ fontFamily: wuzyFonts.semibold, fontSize: 15, color: done ? wuzyColors.gray : wuzyColors.white, textDecorationLine: done ? 'line-through' : 'none' }}>
             {quest.name}
           </Text>
           {!done && sub && (

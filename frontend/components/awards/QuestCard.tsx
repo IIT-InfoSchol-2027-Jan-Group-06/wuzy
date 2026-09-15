@@ -77,10 +77,12 @@ export function QuestCard({ quest, action, claiming, onClaim }: QuestCardProps) 
     }
     setCelebrate(true);
     pop.value = withSequence(withSpring(1.12, { damping: 12, stiffness: 280 }), withSpring(1, { damping: 16, stiffness: 240 })); // eslint-disable-line react-hooks/immutability
-    burst.value = 0;
-    burst.value = withTiming(1, { duration: BURST_MS }, (finished) => { // eslint-disable-line react-hooks/immutability
-      if (finished) runOnJS(setCelebrate)(false);
-    });
+    burst.value = withSequence( // eslint-disable-line react-hooks/immutability
+      withTiming(0, { duration: 0 }),
+      withTiming(1, { duration: BURST_MS }, (finished) => {
+        if (finished) runOnJS(setCelebrate)(false);
+      }),
+    );
   };
 
   let control;

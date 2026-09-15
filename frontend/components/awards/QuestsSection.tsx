@@ -20,7 +20,7 @@ const ACTIONS: Record<string, { label: string; route: Href }> = {
   ticket_holder: { label: 'Buy', route: '/ticket' },
   ticket_sharing: { label: 'Share', route: '/ticket-vault' },
   gift_giver: { label: 'Gift', route: '/(tabs)/explore' },
-  complete_profile: { label: 'Edit', route: '/(tabs)/profile' },
+  complete_profile: { label: 'Edit', route: '/edit-profile' },
 };
 
 interface QuestsSectionProps {

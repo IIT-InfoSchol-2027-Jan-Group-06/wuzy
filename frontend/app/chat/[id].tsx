@@ -1,9 +1,10 @@
 import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { ChatBubble } from '@/components/chat/ChatBubble';
 import { ChatHeader } from '@/components/chat/ChatHeader';
+import { GalleryPopup } from '@/components/chat/GalleryPopup';
 import { MessageBar } from '@/components/chat/MessageBar';
 import { Chip } from '@/components/Chip';
 import { Screen } from '@/components/Screen';
@@ -13,6 +14,7 @@ import { useChatUnread } from '@/context/chat-unread';
 import { apiGet, assetUrl, type ApiUser } from '@/lib/api';
 import { markThreadActive } from '@/lib/chat-activity';
 import { getMessages, type ThreadKind } from '@/lib/chat-db';
+import { setPendingPhoto } from '@/lib/media';
 import { acquireChat, sendDm, sendGroup, subscribeChat, type ChatMessage } from '@/lib/ws';
 
 const defaultAvatar = require('@/assets/images/avatar1.jpg');
@@ -32,6 +34,16 @@ export default function ChatViewScreen() {
   const [otherUserId, setOtherUserId] = useState<number | null>(null);
   const [memberCount, setMemberCount] = useState(0);
   const [loading, setLoading] = useState(true);
+
+  // Attach sheet and photo-gallery overlay, owned here so the chat route can
+  // keep both up while the gallery send frame is stacked on top and close them
+  // together on the X button.
+  const [attachOpen, setAttachOpen] = useState(false);
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const [selectedGalleryId, setSelectedGalleryId] = useState<string | null>(null);
+  // Set only when the gallery pushes its send frame, so a focus return there
+  // is told apart from the camera flow (which collapses the sheet).
+  const galleryReturnRef = useRef(false);
 
   // Reload the thread's locally-cached history from disk. Runs on first focus
   // and on every return, so a photo sent from the camera flow shows up in the
@@ -56,6 +68,15 @@ export default function ChatViewScreen() {
   useFocusEffect(
     useCallback(() => {
       reloadHistory();
+      // Returning from the gallery send frame keeps the attach sheet and the
+      // gallery overlay up (only the pick is cleared); any other return, e.g.
+      // the camera flow, lands on the thread with the sheet closed.
+      if (galleryReturnRef.current) {
+        galleryReturnRef.current = false;
+        setSelectedGalleryId(null);
+      } else {
+        setAttachOpen(false);
+      }
     }, [reloadHistory]),
   );
 
@@ -127,6 +148,33 @@ export default function ChatViewScreen() {
     [user, isGroup, threadId, threadKind, otherUserId],
   );
 
+  const openGallery = () => {
+    setSelectedGalleryId(null);
+    // The attach sheet stays open beneath the overlay so closing the gallery
+    // can dismiss both together.
+    setGalleryOpen(true);
+  };
+
+  const closeGallery = () => {
+    setGalleryOpen(false);
+    setAttachOpen(false);
+  };
+
+  const selectGalleryImage = (galleryId: string, uri: string) => {
+    // The resolved file path goes out-of-band like the camera's pending photo.
+    setPendingPhoto(uri);
+    galleryReturnRef.current = true;
+    setSelectedGalleryId(galleryId);
+    router.push({
+      pathname: '/send-gallery',
+      params: {
+        id: String(threadId),
+        kind: threadKind,
+        otherUserId: otherUserId != null ? String(otherUserId) : '',
+      },
+    });
+  };
+
   if (loading) {
     return (
       <Screen>
@@ -182,9 +230,20 @@ export default function ChatViewScreen() {
             threadId={threadId}
             threadKind={threadKind}
             otherUserId={otherUserId ?? undefined}
+            attachOpen={attachOpen}
+            onAttachOpenChange={setAttachOpen}
+            onOpenGallery={openGallery}
           />
         </View>
       </KeyboardAvoidingView>
+
+      {galleryOpen && (
+        <GalleryPopup
+          selectedId={selectedGalleryId}
+          onSelect={selectGalleryImage}
+          onClose={closeGallery}
+        />
+      )}
     </Screen>
   );
 }

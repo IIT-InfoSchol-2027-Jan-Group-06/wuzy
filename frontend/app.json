@@ -52,6 +52,13 @@
           "recordAudioAndroid": false
         }
       ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Allow Wuzy to access your photos",
+          "granularPermissions": ["photo"]
+        }
+      ],
       "./plugins/withCleartext.js",
       "expo-sqlite",
       [

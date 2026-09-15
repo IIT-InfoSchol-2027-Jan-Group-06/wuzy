@@ -5,13 +5,23 @@ import { useRouter } from 'expo-router';
 import { GlassNavButton } from '@/components/GlassNavButton';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 
-/** Header for the camera capture flow: optional back button left, "CAMERA"
- * title vertically centered on the same row, optional action on the right.
- * Exactly one GlassNavButton tall, mirroring ScreenHeader but with the title
- * in Poppins. The confirm frame sets showBack={false}: its only way out is the
- * retake button below the photo. "CAMERA" is Poppins semibold `section` in
- * `wuzy-yellow`, a step up from the connection-name style it started as. */
-export function CameraHeader({ right, showBack = true }: { right?: ReactNode; showBack?: boolean }) {
+/** Header for the photo capture/send flows: optional back button left, a
+ * label (the flow's title, e.g. "CAMERA" or "GALLERY") vertically centered on
+ * the same row, optional action on the right. Exactly one GlassNavButton tall,
+ * mirroring ScreenHeader but with the title in Poppins. The confirm frame sets
+ * showBack={false}: its only way out is the retake button below the photo. The
+ * label is Poppins semibold `section` in `wuzy-yellow`, a step up from the
+ * connection-name style it started as. */
+export function CameraHeader({
+  right,
+  showBack = true,
+  title = 'CAMERA',
+}: {
+  right?: ReactNode;
+  showBack?: boolean;
+  /** The frame's caption, e.g. "CAMERA" on the camera send frame and "GALLERY" on the gallery one. */
+  title?: string;
+}) {
   const router = useRouter();
   const height = wuzyLayout.glass;
 
@@ -31,7 +41,7 @@ export function CameraHeader({ right, showBack = true }: { right?: ReactNode; sh
             color: wuzyColors.yellow,
             includeFontPadding: false,
           }}>
-          CAMERA
+          {title}
         </Text>
       </View>
       <View className="items-end justify-center">{right}</View>

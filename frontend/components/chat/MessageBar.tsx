@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pressable, TextInput, View } from 'react-native';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import Animated, { Easing, interpolate, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { GlassNavButton } from '@/components/GlassNavButton';
@@ -12,13 +12,22 @@ export function MessageBar({
   threadId,
   threadKind,
   otherUserId,
+  attachOpen,
+  onAttachOpenChange,
+  onOpenGallery,
 }: {
   onSend?: (text: string) => void;
-  /** The thread this bar is attached to; the Camera flow sends back into it. */
+  /** The thread this bar is attached to; the camera flow sends back into it. */
   threadId: number;
   threadKind: ThreadKind;
   /** DM recipient, needed so the camera flow can address the message. */
   otherUserId?: number;
+  /** Controlled attach-sheet visibility: the chat route owns it so it can keep
+   * the sheet open under the gallery overlay and close both together. */
+  attachOpen: boolean;
+  onAttachOpenChange: (open: boolean) => void;
+  /** The Gallery attachment opens a full-screen photo overlay above the sheet. */
+  onOpenGallery: () => void;
 }) {
   const router = useRouter();
   const iconSize = 20;
@@ -27,15 +36,6 @@ export function MessageBar({
 
   const [text, setText] = React.useState('');
   const hasText = text.length > 0;
-  const [attachOpen, setAttachOpen] = React.useState(false);
-
-  // Returning from the camera flow (or anywhere else) lands back on the thread
-  // with the attach sheet closed, not silently floating over the bar.
-  useFocusEffect(
-    React.useCallback(() => {
-      setAttachOpen(false);
-    }, []),
-  );
 
   // 0 = only attach and mic, 1 = send button revealed at their right
   const progress = useSharedValue(0);
@@ -75,7 +75,7 @@ export function MessageBar({
   }));
 
   const openCamera = () => {
-    setAttachOpen(false);
+    onAttachOpenChange(false);
     router.push({
       pathname: '/camera',
       params: {
@@ -112,22 +112,17 @@ export function MessageBar({
             padding: wuzyLayout.itemGap,
           }}>
           <GlassNavButton icon="camera-outline" tintColor={wuzyColors.yellowDim} onPress={openCamera} accessibilityLabel="Camera" />
-          <GlassNavButton
-            icon="images-outline"
-            tintColor={wuzyColors.yellowDim}
-            onPress={() => setAttachOpen(false)}
-            accessibilityLabel="Photos"
-          />
+          <GlassNavButton icon="images-outline" tintColor={wuzyColors.yellowDim} onPress={onOpenGallery} accessibilityLabel="Gallery" />
           <GlassNavButton
             icon="location-outline"
             tintColor={wuzyColors.yellowDim}
-            onPress={() => setAttachOpen(false)}
+            onPress={() => onAttachOpenChange(false)}
             accessibilityLabel="Location"
           />
           <GlassNavButton
             icon="calendar-outline"
             tintColor={wuzyColors.yellowDim}
-            onPress={() => setAttachOpen(false)}
+            onPress={() => onAttachOpenChange(false)}
             accessibilityLabel="Calendar"
           />
         </View>
@@ -163,7 +158,7 @@ export function MessageBar({
         <Animated.View
           style={[{ flexDirection: 'row', alignItems: 'center', gap, overflow: 'hidden' }, iconsStyle]}>
           <Pressable
-            onPress={() => setAttachOpen((o) => !o)}
+            onPress={() => onAttachOpenChange(!attachOpen)}
             hitSlop={10}
             accessibilityRole="button"
             accessibilityLabel="Attach"

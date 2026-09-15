@@ -13,6 +13,7 @@ import bcrypt
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, col, select
 
+from app.api.v1.ws import notify
 from app.core.auth import get_current_user_id
 from app.db.session import get_session
 from app.models.follow import Follow
@@ -121,12 +122,25 @@ def connect_user(
             select(Follow).where(Follow.followed_id == current_user_id)
         ).all()
     }
+    new = user_id not in follows or user_id not in followed_back
     if user_id not in follows:
         session.add(Follow(follower_id=current_user_id, followed_id=user_id))
     if user_id not in followed_back:
         session.add(Follow(follower_id=user_id, followed_id=current_user_id))
     session.commit()
     session.refresh(other)
+    if new:
+        # Only the scanned user hears about it; the scanner is looking at the result.
+        me = session.get(User, current_user_id)
+        notify(
+            session,
+            user_id,
+            "connection",
+            actor=me,
+            entity_id=me.id,
+            url=f"/profile/{me.id}",
+            body=f"{me.display_name or me.username} connected with you",
+        )
     return other
 
 

@@ -22,8 +22,8 @@ def test_accept_flow(client):
 
     assert [r["id"] for r in client.get("/referrals/outgoing", headers=sh).json()] == [ref["id"]]
     inbox = client.get("/notifications", headers=xh).json()
-    assert [(n["type"], n["entity_id"]) for n in inbox] == [("referral", ref["id"])]
-    assert client.get("/notifications", headers=sh).json() == []
+    assert [n["entity_id"] for n in inbox if n["type"] == "referral"] == [ref["id"]]
+    assert "referral" not in {n["type"] for n in client.get("/notifications", headers=sh).json()}
 
     res = client.post(f"/referrals/{ref['id']}/respond", json={"accept": True}, headers=xh)
     assert res.json()["status"] == "pending"

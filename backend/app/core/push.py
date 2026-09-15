@@ -12,8 +12,19 @@ import urllib.request
 EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send"
 
 
-def send_push(token: str, title: str, body: str, data: dict) -> None:
-    """Fire one Expo push notification. Never raises."""
+def send_push(
+    token: str,
+    title: str,
+    body: str,
+    data: dict,
+    channel: str | None = None,
+    category: str | None = None,
+) -> None:
+    """Fire one Expo push notification. Never raises.
+
+    channel picks the Android channel the client registered; category adds the
+    action buttons (e.g. referral accept/decline) the client defined for it.
+    """
     request = {
         "to": token,
         "title": title,
@@ -21,6 +32,10 @@ def send_push(token: str, title: str, body: str, data: dict) -> None:
         "sound": "default",
         "data": data,
     }
+    if channel:
+        request["channelId"] = channel
+    if category:
+        request["categoryId"] = category
     encoded = json.dumps(request).encode()
     req = urllib.request.Request(
         EXPO_PUSH_URL,

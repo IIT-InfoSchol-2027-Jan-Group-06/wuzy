@@ -24,7 +24,6 @@ def client():
 @pytest.fixture(autouse=True)
 def no_push(monkeypatch):
     """Never call Expo from a test; pushes fire on daemon threads."""
-    monkeypatch.setattr("app.api.v1.referrals.send_push", lambda *a, **k: None)
     monkeypatch.setattr("app.api.v1.ws.send_push", lambda *a, **k: None)
 
 

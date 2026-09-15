@@ -20,6 +20,7 @@ from app.api.v1 import (
     events,
     feed,
     groups,
+    notifications,
     posts,
     quests,
     referrals,
@@ -60,6 +61,7 @@ app.include_router(quests.router, prefix="/quests", tags=["quests"])
 app.include_router(events.router, prefix="/events", tags=["events"])
 app.include_router(tickets.router, prefix="/tickets", tags=["tickets"])
 app.include_router(awards.router, prefix="/awards", tags=["awards"])
+app.include_router(notifications.router, prefix="/notifications", tags=["notifications"])
 
 # Serve uploaded files from the storage directory so /uploads/* URLs resolve.
 storage_dir = Path("storage")

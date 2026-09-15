@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { BlurView } from 'expo-blur';
-import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Pressable, StyleSheet, Text, View, useWindowDimensions, type ImageSourcePropType } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 
 import { GlassNavButton } from '@/components/GlassNavButton';
@@ -8,11 +8,26 @@ import { ProfileGrid, ProfileHero } from '@/components/profile';
 import { Screen } from '@/components/Screen';
 import { TagSection } from '@/components/TagSection';
 import { accountFor } from '@/constants/accounts';
+import { questArtForUser } from '@/constants/awards-data';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 import { useAuth } from '@/context/auth';
-import { apiGet, type ApiPost } from '@/lib/api';
+import { apiGet, apiGetAwards, apiGetQuests, type ApiAwardRead, type ApiPost, type ApiQuest } from '@/lib/api';
 
 const GRID_GAP = 2;
+
+const AWARD_ORDER = [
+  'Daily Login',
+  'Attend Live Events',
+  'Social Network',
+  'Purchase Ticket',
+  'Complete Profile',
+  'Ticket Sharing',
+];
+
+interface EarnedAward {
+  name: string;
+  image: ImageSourcePropType;
+}
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -22,6 +37,9 @@ export default function ProfileScreen() {
 
   const [photos, setPhotos] = useState<ApiPost[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
+  const [awards, setAwards] = useState<ApiAwardRead[]>([]);
+  const [quests, setQuests] = useState<ApiQuest[]>([]);
+  const [awardsLoaded, setAwardsLoaded] = useState(false);
 
   const loadPhotos = useCallback(async () => {
     if (!user) return;
@@ -35,11 +53,40 @@ export default function ProfileScreen() {
     }
   }, [user?.id]);
 
+  const loadAwardsInfo = useCallback(async () => {
+    if (!user) return;
+    try {
+      const [awardList, questData] = await Promise.all([apiGetAwards(), apiGetQuests()]);
+      setAwards(awardList);
+      setQuests(questData.quests);
+    } catch {
+      setAwards([]);
+      setQuests([]);
+    } finally {
+      setAwardsLoaded(true);
+    }
+  }, [user?.id]);
+
   useFocusEffect(
     useCallback(() => {
       loadPhotos();
-    }, [loadPhotos]),
+      loadAwardsInfo();
+    }, [loadPhotos, loadAwardsInfo]),
   );
+
+  const earnedAwards: EarnedAward[] = [];
+  const purchaseDone = awards.some((a) => a.award_type === 'ticket_purchase');
+  const profileDone = awards.some((a) => a.award_type === 'profile_complete');
+  const userId = user?.id ?? 0;
+  if (purchaseDone) earnedAwards.push({ name: 'Purchase Ticket', image: questArtForUser(userId, 'Purchase Ticket')! });
+  if (profileDone) earnedAwards.push({ name: 'Complete Profile', image: questArtForUser(userId, 'Complete Profile')! });
+  for (const quest of quests) {
+    if (quest.active_subtask === null) {
+      const image = questArtForUser(userId, quest.name);
+      if (image) earnedAwards.push({ name: quest.name, image });
+    }
+  }
+  earnedAwards.sort((a, b) => AWARD_ORDER.indexOf(a.name) - AWARD_ORDER.indexOf(b.name));
 
   if (!user) return null;
 
@@ -69,7 +116,8 @@ export default function ProfileScreen() {
       <ProfileHero
         background={extra.backgroundImage}
         name={user.display_name ?? user.username}
-        awardsCount={extra.awardsCount}
+        awardsCount={awardsLoaded ? earnedAwards.length : extra.awardsCount}
+        awards={awardsLoaded ? earnedAwards : undefined}
         bio={user.bio}
         height={heroHeight}
         actions={

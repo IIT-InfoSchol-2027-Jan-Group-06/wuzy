@@ -19,15 +19,17 @@ interface QuestsSectionProps {
   onClaimed?: () => void;
   completedTasks?: Set<string>;
   onClaimTask?: (name: string) => () => Promise<void>;
+  /** How many tickets the user has bought; drives the Purchase Ticket progress. */
+  ticketCount?: number;
 }
 
 /** Tasks header, then the task cards including quests and custom tasks. */
-export function QuestsSection({ quests, onClaimed, completedTasks, onClaimTask }: QuestsSectionProps) {
+export function QuestsSection({ quests, onClaimed, completedTasks, onClaimTask, ticketCount }: QuestsSectionProps) {
   const router = useRouter();
 
   const taskNames = ['Purchase Ticket', 'Complete Profile'];
   const taskDescriptions: Record<string, string> = {
-    'Purchase Ticket': 'Buy a ticket to earn 50 XP',
+    'Purchase Ticket': 'Buy 5 tickets to fill the bar',
     'Complete Profile': 'Fill in your profile to earn 100 XP',
   };
 
@@ -61,7 +63,8 @@ export function QuestsSection({ quests, onClaimed, completedTasks, onClaimTask }
         {taskOrder.map((name) => {
           if (taskNames.includes(name)) {
             const isPurchaseTicket = name === 'Purchase Ticket';
-            const isDone = !isPurchaseTicket && (completedTasks?.has(name) ?? false);
+            const purchaseCount = Math.min(5, ticketCount ?? 0);
+            const isDone = isPurchaseTicket ? purchaseCount >= 5 : (completedTasks?.has(name) ?? false);
             const action = actionFor[name];
             const actionLabel = action?.label ?? (name === 'Purchase Ticket' ? 'Purchase' : 'Complete');
             return (
@@ -71,7 +74,17 @@ export function QuestsSection({ quests, onClaimed, completedTasks, onClaimTask }
                   id: name === 'Complete Profile' ? -2 : -1,
                   name,
                   description: taskDescriptions[name],
-                  active_subtask: isDone ? null : { id: 0, quest_id: 0, name: name, description: taskDescriptions[name], target_count: 1, progress_unit: 'once', reward_xp: name === 'Purchase Ticket' ? 50 : 100, reward_sticker: false, current_progress: 0, claimed: false },
+                  active_subtask: isDone ? null : {
+                    id: 0,
+                    name,
+                    description: taskDescriptions[name],
+                    target_count: isPurchaseTicket ? 5 : 1,
+                    progress_unit: isPurchaseTicket ? 'times' : 'once',
+                    reward_xp: name === 'Purchase Ticket' ? 50 : 100,
+                    reward_sticker: false,
+                    current_progress: isPurchaseTicket ? purchaseCount : 0,
+                    claimed: false,
+                  },
                   subtask_step: 1,
                   subtask_total: 1,
                   claimed_steps: isDone ? 1 : 0,

@@ -269,6 +269,10 @@ export function apiGetQuests(): Promise<ApiQuestsDashboard> {
   return apiGet<ApiQuestsDashboard>('/quests/');
 }
 
+export function apiGetUserQuests(userId: number): Promise<ApiQuestsDashboard> {
+  return apiGet<ApiQuestsDashboard>(`/quests/user/${userId}`);
+}
+
 export function apiBumpQuestProgress(questId: number): Promise<ApiQuest> {
   return apiPost<ApiQuest>(`/quests/${questId}/progress`, {});
 }
@@ -339,6 +343,10 @@ export async function apiCompleteProfile(): Promise<ApiAwardRead> {
 
 export async function apiGetAwards(): Promise<ApiAwardRead[]> {
   return apiGet<ApiAwardRead[]>('/awards/');
+}
+
+export async function apiGetUserAwards(userId: number): Promise<ApiAwardRead[]> {
+  return apiGet<ApiAwardRead[]>(`/awards/user/${userId}`);
 }
 
 export interface UserXpData {

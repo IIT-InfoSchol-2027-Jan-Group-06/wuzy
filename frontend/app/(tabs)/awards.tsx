@@ -1,57 +1,69 @@
 import { useFocusEffect } from 'expo-router';
-import { useCallback, useState, useEffect } from 'react';
-import { Alert, ImageSourcePropType, Pressable, Text, View, Animated } from 'react-native';
+import { useCallback, useMemo, useRef, useState, useEffect } from 'react';
+import { Alert, ImageSourcePropType, Text, View, Animated } from 'react-native';
 
 import { Screen } from '@/components/Screen';
 import { TabHeader } from '@/components/TabHeader';
 import { QuestsSection } from '@/components/awards/QuestsSection';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
-import { apiCompleteProfile, apiGetAwards, apiGetQuests, apiGetUserXp, apiPurchaseTicket, apiRecordDailyLogin, type ApiAwardRead, type ApiQuest, type UserXpData } from '@/lib/api';
+import { boardDeckFor } from '@/constants/awards-data';
+import { useAuth } from '@/context/auth';
+import { apiCompleteProfile, apiGetAwards, apiGetQuests, apiGetTickets, apiPurchaseTicket, apiRecordDailyLogin, type ApiAwardRead, type ApiQuest, type ApiTicketRead } from '@/lib/api';
 
-const RANKS = [
-  { threshold: 0, label: 'Bronze', badge: require('@/assets/badges/img1.png') },
-  { threshold: 100, label: 'Silver', badge: require('@/assets/badges/img3.png') },
-  { threshold: 250, label: 'Gold', badge: require('@/assets/badges/img6.png') },
-  { threshold: 500, label: 'Diamond', badge: require('@/assets/badges/img12.png') },
-] as const;
-
-function getRank(totalXp: number) {
-  let rank = RANKS[0];
-  for (const r of RANKS) {
-    if (totalXp >= r.threshold) rank = r;
-  }
-  return rank;
-}
-
-function getProgressData(totalXp: number) {
-  const rank = getRank(totalXp);
-  const currentThreshold = rank.threshold;
-  const nextRank = RANKS.find((r) => r.threshold > currentThreshold);
-  const xpInRank = totalXp - currentThreshold;
-  const xpToNext = nextRank ? nextRank.threshold - currentThreshold : 0;
-  const progressPct = xpToNext > 0 ? Math.min(100, Math.round((xpInRank / xpToNext) * 100)) : 100;
-  return { rank, nextRank, progressPct, xpInRank, xpToNext };
-}
+const MAX_XP = 600;
 
 export default function AwardsScreen() {
+  const { user } = useAuth();
+  const boardImages = useMemo(() => boardDeckFor(user?.id ?? 0), [user?.id]);
+
   const [quests, setQuests] = useState<ApiQuest[]>([]);
   const [awards, setAwards] = useState<ApiAwardRead[]>([]);
   const [processing, setProcessing] = useState<string | null>(null);
   const [completedTasks, setCompletedTasks] = useState<Set<string>>(new Set());
-  const [xpData, setXpData] = useState<UserXpData | null>(null);
-  const [prevRank, setPrevRank] = useState(RANKS[0].label);
+  const [displayIndex, setDisplayIndex] = useState(1);
   const [leaveAnim] = useState(new Animated.Value(0));
   const [enterAnim] = useState(new Animated.Value(1));
   const [enterY] = useState(new Animated.Value(0));
-  const [boardImage, setBoardImage] = useState<ImageSourcePropType>(RANKS[0].badge);
+  const [glowOpacity] = useState(new Animated.Value(0.4));
+  const [barProgress] = useState(new Animated.Value(0));
+  const [tickets, setTickets] = useState<ApiTicketRead[]>([]);
+  const [boardImage, setBoardImage] = useState<ImageSourcePropType>(boardImages[0]);
+  const hasAnimated = useRef(false);
 
-  const totalXp = xpData?.total_xp ?? awards.reduce((sum, a) => sum + a.reward_xp, 0);
-  const progress = xpData ? { rank: getRank(xpData.total_xp), progressPct: xpData.progress_pct, nextRank: xpData.next_rank, xpInRank: xpData.xp_in_rank, xpToNext: xpData.xp_to_next } : getProgressData(totalXp);
+  const purchaseDone =
+    completedTasks.has('Purchase Ticket') || awards.some((a) => a.award_type === 'ticket_purchase');
+  const profileDone =
+    completedTasks.has('Complete Profile') || awards.some((a) => a.award_type === 'profile_complete');
+  // The badge only moves when a whole quest is done (every subtask claimed) or
+  // a custom task is done. Each finished quest advances the board toward img15.
+  const questsReady = quests.length > 0;
+  const doneCount = questsReady
+    ? quests.filter((q) => q.active_subtask === null).length + (purchaseDone ? 1 : 0) + (profileDone ? 1 : 0)
+    : 0;
+  const totalQuests = questsReady ? quests.length + 2 : 1;
+  const earnedXp = Math.round((doneCount / totalQuests) * MAX_XP);
+  const barPct = Math.min(100, Math.round((doneCount / totalQuests) * 100));
+  const maxRank = questsReady && doneCount >= totalQuests;
+  const targetIndex = Math.min(
+    boardImages.length,
+    1 + Math.round((doneCount / totalQuests) * (boardImages.length - 1)),
+  );
 
+  // Snap to the current rank once real quest data is in, and never animate
+  // that initial jump. Only completions made after this screen is open play
+  // the enter/exit sequence.
   useEffect(() => {
-    const newRank = progress.rank.label;
-    if (newRank !== prevRank) {
-      const newBadge = RANKS.find((r) => r.label === newRank)?.badge ?? RANKS[0].badge;
+    if (!questsReady) return;
+    if (!hasAnimated.current) {
+      hasAnimated.current = true;
+      setDisplayIndex(targetIndex);
+      setBoardImage(boardImages[targetIndex - 1]);
+      return;
+    }
+    if (targetIndex <= displayIndex) return;
+    let cancelled = false;
+    const stepThrough = (step: number) => {
+      if (cancelled || step > targetIndex) return;
       leaveAnim.setValue(1);
       enterAnim.setValue(0);
       enterY.setValue(60);
@@ -60,14 +72,47 @@ export default function AwardsScreen() {
         duration: 260,
         useNativeDriver: true,
       }).start(() => {
-        setBoardImage(newBadge);
+        if (cancelled) return;
+        setBoardImage(boardImages[step - 1]);
         Animated.parallel([
           Animated.timing(enterAnim, { toValue: 1, duration: 380, useNativeDriver: true }),
           Animated.spring(enterY, { toValue: 0, friction: 7, tension: 50, useNativeDriver: true }),
-        ]).start(() => setPrevRank(newRank));
+        ]).start(() => {
+          if (cancelled) return;
+          if (step < targetIndex) stepThrough(step + 1);
+          else setDisplayIndex(targetIndex);
+        });
       });
+    };
+    stepThrough(displayIndex + 1);
+    return () => {
+      cancelled = true;
+    };
+  }, [targetIndex, displayIndex, questsReady, leaveAnim, enterAnim, enterY, boardImages]);
+
+  // The XP bar eases to its new width instead of snapping.
+  useEffect(() => {
+    Animated.timing(barProgress, {
+      toValue: barPct,
+      duration: 500,
+      useNativeDriver: false,
+    }).start();
+  }, [barPct, barProgress]);
+
+  useEffect(() => {
+    if (!maxRank) {
+      glowOpacity.setValue(0.4);
+      return;
     }
-  }, [progress.rank.label, prevRank, leaveAnim, enterAnim, enterY]);
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(glowOpacity, { toValue: 0.15, duration: 1200, useNativeDriver: true }),
+        Animated.timing(glowOpacity, { toValue: 0.55, duration: 1200, useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [maxRank, glowOpacity]);
 
   const loadQuests = useCallback(() => {
     apiRecordDailyLogin()
@@ -82,25 +127,29 @@ export default function AwardsScreen() {
       .catch(() => setAwards([]));
   }, []);
 
-  const loadXp = useCallback(() => {
-    apiGetUserXp()
-      .then((data) => setXpData(data))
-      .catch(() => setXpData(null));
+  const loadTickets = useCallback(() => {
+    apiGetTickets()
+      .then((data) => setTickets(data))
+      .catch(() => setTickets([]));
   }, []);
 
   const markTaskComplete = useCallback((name: string) => {
     setCompletedTasks((prev) => new Set(prev).add(name));
   }, []);
 
+  const handleQuestClaimed = useCallback(() => {
+    loadQuests();
+  }, [loadQuests]);
+
   const handlePurchaseTicket = async () => {
     setProcessing('ticket');
     try {
       await apiPurchaseTicket();
-      Alert.alert('Award', 'Ticket purchased! +50 XP earned');
+      Alert.alert('Award', 'Ticket purchased! +100 XP earned');
       markTaskComplete('Purchase Ticket');
       loadQuests();
       loadAwards();
-      loadXp();
+      loadTickets();
     } catch {
       Alert.alert('Error', 'Failed to purchase ticket');
     } finally {
@@ -115,7 +164,6 @@ export default function AwardsScreen() {
       Alert.alert('Award', 'Profile complete! +100 XP earned');
       markTaskComplete('Complete Profile');
       loadAwards();
-      loadXp();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : '';
       if (message.includes('already claimed')) {
@@ -142,8 +190,8 @@ export default function AwardsScreen() {
     useCallback(() => {
       loadQuests();
       loadAwards();
-      loadXp();
-    }, [loadQuests, loadAwards, loadXp]),
+      loadTickets();
+    }, [loadQuests, loadAwards, loadTickets]),
   );
 
   return (
@@ -165,6 +213,18 @@ export default function AwardsScreen() {
             Complete a task to earn its badge
           </Text>
           <View style={{ width: 260, height: 260, alignItems: 'center', justifyContent: 'center' }}>
+            {maxRank && (
+              <Animated.View
+                style={{
+                  position: 'absolute',
+                  width: 300,
+                  height: 300,
+                  borderRadius: 150,
+                  backgroundColor: wuzyColors.yellow,
+                  opacity: glowOpacity,
+                }}
+              />
+            )}
             <Animated.Image
               source={boardImage}
               style={{ position: 'absolute', width: 260, height: 260, resizeMode: 'contain', opacity: leaveAnim }}
@@ -183,15 +243,22 @@ export default function AwardsScreen() {
           </View>
           <View style={{ marginTop: 16, alignItems: 'center', gap: 8 }}>
             <View style={{ width: 200, height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.1)', overflow: 'hidden' }}>
-              <Animated.View style={{ height: '100%', width: `${progress.progressPct}%`, backgroundColor: wuzyColors.yellow, borderRadius: 4 }} />
+              <Animated.View
+                style={{
+                  height: '100%',
+                  width: barProgress.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] }),
+                  backgroundColor: wuzyColors.yellow,
+                  borderRadius: 4,
+                }}
+              />
             </View>
             <Text style={{ fontFamily: wuzyFonts.body, fontSize: wuzyType.small, color: wuzyColors.gray }}>
-              {totalXp} XP{progress.nextRank ? ` — ${progress.xpToNext - progress.xpInRank} to ${progress.nextRank}` : ' — Max rank'}
+              {maxRank ? `${MAX_XP} XP — Max rank` : `${earnedXp} XP — ${MAX_XP - earnedXp} XP to max rank`}
             </Text>
           </View>
         </View>
 
-        <QuestsSection quests={quests} onClaimed={loadQuests} completedTasks={completedTasks} onClaimTask={onClaimTask} />
+        <QuestsSection quests={quests} onClaimed={handleQuestClaimed} completedTasks={completedTasks} onClaimTask={onClaimTask} ticketCount={tickets.length} />
       </View>
     </Screen>
   );

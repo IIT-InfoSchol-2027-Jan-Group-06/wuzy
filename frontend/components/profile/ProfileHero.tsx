@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ImageBackground, StyleSheet, Text, View, type ImageSourcePropType } from 'react-native';
+import { Image, ImageBackground, StyleSheet, Text, View, type ImageSourcePropType } from 'react-native';
 
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 
@@ -10,6 +10,7 @@ export function ProfileHero({
   background,
   name,
   awardsCount,
+  awards,
   bio,
   height,
   actions,
@@ -17,12 +18,15 @@ export function ProfileHero({
   background: ImageSourcePropType;
   name: string;
   awardsCount: number;
+  awards?: { name?: string; image: ImageSourcePropType }[];
   bio?: string | null;
   height: number;
   actions?: ReactNode;
 }) {
   const [firstName, ...rest] = name.split(' ');
   const lastName = rest.join(' ');
+
+  const hasStickers = awards && awards.length > 0;
 
   return (
     <ImageBackground source={background} style={{ height }} imageStyle={{ resizeMode: 'cover' }}>
@@ -54,14 +58,29 @@ export function ProfileHero({
               </Text>
             )}
           </View>
-          <View className="items-center" style={{ gap: 2 }}>
-            <View className="flex-row items-center" style={{ gap: 4 }}>
-              {Array.from({ length: awardsCount }, (_, i) => (
-                <Ionicons key={i} name="medal" size={wuzyType.body} color={wuzyColors.yellowSoft} />
-              ))}
+          {hasStickers ? (
+            <View className="items-center" style={{ gap: 2 }}>
+              <View className="flex-row items-center" style={{ gap: 4 }}>
+                {awards.map((award) => (
+                  <Image
+                    key={award.name ?? award.image}
+                    source={award.image}
+                    style={{ width: 32, height: 32, resizeMode: 'contain' }}
+                  />
+                ))}
+              </View>
+              <Text style={{ fontFamily: wuzyFonts.body, fontSize: wuzyType.caption, color: wuzyColors.yellowSoft }}>awards</Text>
             </View>
-            <Text style={{ fontFamily: wuzyFonts.body, fontSize: wuzyType.caption, color: wuzyColors.gray }}>awards</Text>
-          </View>
+          ) : (
+            <View className="items-center" style={{ gap: 2 }}>
+              <View className="flex-row items-center" style={{ gap: 4 }}>
+                {Array.from({ length: awardsCount }, (_, i) => (
+                  <Ionicons key={i} name="medal" size={wuzyType.body} color={wuzyColors.yellowSoft} />
+                ))}
+              </View>
+              <Text style={{ fontFamily: wuzyFonts.body, fontSize: wuzyType.caption, color: wuzyColors.gray }}>awards</Text>
+            </View>
+          )}
         </View>
         {bio && (
           <Text style={{ fontFamily: wuzyFonts.body, fontSize: wuzyType.body, lineHeight: Math.round(wuzyType.body * 1.5), color: wuzyColors.white }}>

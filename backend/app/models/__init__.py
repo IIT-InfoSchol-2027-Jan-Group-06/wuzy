@@ -11,6 +11,7 @@ from app.models.follow import Follow
 from app.models.group import Group, GroupMember
 from app.models.notification import Notification
 from app.models.post import Post
+from app.models.post_like import PostLike
 from app.models.post_view import PostView
 from app.models.push_token import PushToken
 from app.models.quest import Quest, QuestSubtask, QuestSubtaskProgress
@@ -21,6 +22,7 @@ from app.models.user import User
 __all__ = [
     "User",
     "Post",
+    "PostLike",
     "PostView",
     "Follow",
     "Conversation",

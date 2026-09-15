@@ -23,6 +23,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm import selectinload
 from sqlmodel import Session, col, select
 
+from app.api.v1.posts import with_likes
 from app.core.auth import get_current_user_id
 from app.db.session import get_session
 from app.models.follow import Follow
@@ -79,7 +80,7 @@ def discover_feed(
     )
 
     posts = session.exec(stmt.order_by(col(Post.created_at).desc())).all()
-    return posts
+    return with_likes(session, posts, current_user_id)
 
 
 @router.post("/{post_id}/view", status_code=204)
@@ -123,6 +124,7 @@ def record_view(
 @router.get("/profile/{user_id}", response_model=list[PostRead])
 def profile_feed(
     user_id: int,
+    current_user_id: int = Depends(get_current_user_id),
     session: Session = Depends(get_session),
 ):
     """Return all permanent profile posts for a given user, newest first.
@@ -136,4 +138,4 @@ def profile_feed(
         .where(Post.user_id == user_id, Post.save_to_profile == True)  # noqa: E712
         .order_by(col(Post.created_at).desc())
     ).all()
-    return posts
+    return with_likes(session, posts, current_user_id)

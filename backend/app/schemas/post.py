@@ -41,6 +41,8 @@ class PostRead(BaseModel):
     user_id: int
     created_at: datetime
     user: UserRead | None = None
+    like_count: int = 0
+    liked_by_me: bool = False
 
     model_config = {"from_attributes": True}
 

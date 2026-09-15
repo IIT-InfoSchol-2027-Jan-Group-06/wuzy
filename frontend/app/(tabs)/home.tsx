@@ -11,6 +11,7 @@ import { Screen } from '@/components/Screen';
 import { TabHeader } from '@/components/TabHeader';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 import { useFeed } from '@/hooks/useFeed';
+import { useNotifications } from '@/hooks/useNotifications';
 import { recordView } from '@/lib/api';
 
 const viewabilityConfig = { itemVisiblePercentThreshold: 50 };
@@ -19,6 +20,8 @@ export default function HomeScreen() {
   const router = useRouter();
   const { clearance } = useNavBarMetrics();
   const { posts, loading, error, refresh } = useFeed();
+  // ponytail: badge refreshes on focus only; no socket held open on the feed.
+  const { unread } = useNotifications();
   const recordedRef = useRef(new Set<number>());
 
   // Header hides on a downward scroll and slides back in on the first upward
@@ -63,7 +66,12 @@ const onViewableItemsChanged = useCallback(
     <Screen overlay={<Fab onPress={() => router.push('/upload')} />}>
       {/* Pinned bell: stays at the top-right while the title scrolls away */}
       <View style={{ position: 'absolute', top: wuzyLayout.top, right: wuzyLayout.side, zIndex: 3, elevation: 4 }}>
-        <GlassNavButton icon="notifications-outline" accessibilityLabel="Notifications" onPress={() => router.push('/notifications')} />
+        <GlassNavButton
+          icon="notifications-outline"
+          badge={unread}
+          accessibilityLabel="Notifications"
+          onPress={() => router.push('/notifications')}
+        />
       </View>
 
       {/* Title slides out with the feed and slides back in as soon as the user scrolls up a little */}

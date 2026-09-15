@@ -12,7 +12,7 @@ import { useConnections } from '@/hooks/useConnections';
 import { useOutgoingReferrals } from '@/hooks/useOutgoingReferrals';
 import { consumeReferral, getUserConnections, type ApiReferralRequest } from '@/lib/api';
 import { isReferralConsumedLocally, markReferralConsumedLocally } from '@/lib/referral-flow';
-import { acquireChat, subscribeReferralResponses } from '@/lib/ws';
+import { acquireChat, subscribeNotifications } from '@/lib/ws';
 
 const COMPRESSED_HEIGHT = 132;
 // The card collapse animation duration, so state settles after it finishes.
@@ -75,8 +75,8 @@ export default function ReferFriendScreen() {
     useCallback(() => {
       if (!user) return;
       const release = acquireChat(user.id);
-      const unsubscribe = subscribeReferralResponses(() => {
-        reload();
+      const unsubscribe = subscribeNotifications((n) => {
+        if (n.notification.type === 'referral_response') reload();
       });
       return () => {
         unsubscribe();

@@ -1,8 +1,7 @@
 import Constants from 'expo-constants';
-import { File, Paths } from 'expo-file-system';
 import { Alert, Linking, Platform } from 'react-native';
 
-import { apiPostNoContent, assetUrl } from '@/lib/api';
+import { apiPostNoContent } from '@/lib/api';
 
 /** expo-notifications has no web implementation, so load it only on native. */
 export function loadNotifications() {
@@ -133,61 +132,5 @@ export async function registerForPushNotifications(): Promise<void> {
     console.log('[push] registered Expo push token');
   } catch (error) {
     console.error('[push] push token registration failed', error);
-  }
-}
-
-/** iOS-only: download the sender's avatar into the cache so the banner can attach
- * it next to the title. Android has no notification-image API in
- * expo-notifications, so it never sends an attachment there. */
-async function prepareAvatarAttachment(
-  avatarUrl: string | null,
-  referralId: number,
-): Promise<{ identifier: string; url: string; type: string; typeHint: string }[] | undefined> {
-  if (Platform.OS !== 'ios' || !avatarUrl) return undefined;
-  try {
-    const file = new File(Paths.cache, `referral-avatar-${referralId}.jpg`);
-    await File.downloadFileAsync(assetUrl(avatarUrl), file, { idempotent: true });
-    return [{ identifier: 'referral-avatar', url: file.uri, type: 'image', typeHint: 'image' }];
-  } catch (error) {
-    console.warn('[push] avatar download failed; banner without the picture', error);
-    return undefined;
-  }
-}
-
-/** Show the referral as a real OS banner on this device. Called on Send Request
- * so the live notification is visible even where remote push cannot reach the
- * recipient (Expo Go builds without an EAS project). */
-export async function scheduleReferralNotification(
-  senderName: string,
-  targetName: string,
-  referralId: number,
-  senderAvatarUrl: string | null = null,
-): Promise<void> {
-  const mod = await loadNotifications();
-  if (!mod) return;
-  const permission = await requestNotificationPermission();
-  if (permission === 'denied') {
-    console.warn('[push] permission denied; showing settings prompt');
-    promptOpenNotificationSettings();
-    return;
-  }
-  if (permission !== 'granted') return;
-  try {
-    const id = await mod.scheduleNotificationAsync({
-      content: {
-        title: senderName,
-        body: `wants to refer you to ${targetName}`,
-        data: { url: '/notifications', referralId },
-        sound: 'default',
-        categoryIdentifier: 'referrals',
-        ...(Platform.OS === 'ios'
-          ? { attachments: await prepareAvatarAttachment(senderAvatarUrl, referralId) }
-          : {}),
-      },
-      trigger: { channelId: 'referrals' },
-    });
-    console.log('[push] scheduled referral notification', id);
-  } catch (error) {
-    console.error('[push] scheduleReferralNotification failed', error);
   }
 }

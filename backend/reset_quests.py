@@ -1,8 +1,7 @@
 """Reset quest progress for testing the claim flow.
 
-Restores every user's quest state to the fresh-seed demo: Attend Live
-Events has "Attend 1 Event" at 1/1 (claimable), Social Network has
-"Add 3 Friends" at 2/3 (in progress), Ticket Sharing has "Share 1
+Restores every user's quest state to the fresh-seed demo: Social Network
+has "Add 3 Friends" at 2/3 (in progress), Ticket Sharing has "Share 1
 Ticket" at 1/1 (claimable).  All progress rows are rebuilt from scratch.
 
 Usage:
@@ -21,7 +20,6 @@ from app.models.user import User
 # Task name -> subtasks to pre-seed with demo counters.
 # Rows for every other subtask are wiped.
 DEMO_PROGRESS = {
-    "Attend Live Events": [("Attend 1 Event", 1)],
     "Social Network": [("Add 3 Friends", 2)],
     "Ticket Sharing": [("Share 1 Ticket", 1)],
     "Daily Login": [("Day 1 Login", 1)],

@@ -138,7 +138,7 @@ def _notify_push(recipient_id: int, message: dict) -> None:
         return
 
     sender = message.get("from_name") or "Someone"
-    text = message.get("text", "")
+    text = message.get("text") or ("Photo" if message.get("media_url") else "New message")
     if message.get("group_id") is not None:
         thread_url = f"/chat/{message['group_id']}?kind=group"
     else:
@@ -203,7 +203,7 @@ async def websocket_endpoint(websocket: WebSocket, user_id: int, token: str):
                 message = json.loads(raw)
             except json.JSONDecodeError:
                 continue
-            if message.get("type") != "message":
+            if message.get("type") not in ("message", "voice_note"):
                 continue
 
             with Session(engine) as session:

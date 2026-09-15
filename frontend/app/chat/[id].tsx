@@ -1,9 +1,10 @@
 import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 
 import { ChatBubble } from '@/components/chat/ChatBubble';
 import { ChatHeader } from '@/components/chat/ChatHeader';
+import { GalleryPopup } from '@/components/chat/GalleryPopup';
 import { MessageBar } from '@/components/chat/MessageBar';
 import { Chip } from '@/components/Chip';
 import { Screen } from '@/components/Screen';
@@ -13,6 +14,7 @@ import { useChatUnread } from '@/context/chat-unread';
 import { apiGet, assetUrl, type ApiUser } from '@/lib/api';
 import { markThreadActive } from '@/lib/chat-activity';
 import { getMessages, type ThreadKind } from '@/lib/chat-db';
+import { setPendingPhoto } from '@/lib/media';
 import { acquireChat, sendDm, sendGroup, subscribeChat, type ChatMessage } from '@/lib/ws';
 
 const defaultAvatar = require('@/assets/images/avatar1.jpg');
@@ -33,6 +35,43 @@ export default function ChatViewScreen() {
   const [memberCount, setMemberCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
+  // Attach sheet and photo-gallery overlay, owned here so the chat route can
+  // compress both popups together once a gallery picture is picked (or on the
+  // gallery's X button).
+  const [attachOpen, setAttachOpen] = useState(false);
+  const [galleryOpen, setGalleryOpen] = useState(false);
+
+  // Reload the thread's locally-cached history from disk. Runs on first focus
+  // and on every return, so a photo sent from the camera flow shows up in the
+  // thread when the flow pops back here.
+  const reloadHistory = useCallback(async () => {
+    if (!user) return;
+    const history: ChatMessage[] = (await getMessages(user.id, threadKind, threadId)).map((m) => ({
+      type: m.audio_url ? 'voice_note' : 'message',
+      from: m.from,
+      from_name: m.from_name,
+      to: undefined,
+      conversation_id: m.kind === 'dm' ? m.thread_id : undefined,
+      group_id: m.kind === 'group' ? m.thread_id : undefined,
+      text: m.text,
+      media_url: m.media_url,
+      audio_url: m.audio_url,
+      duration_ms: m.duration_ms,
+      created_at: m.created_at,
+    }));
+    setMessages(history);
+    markThreadRead(threadKind, threadId);
+  }, [user, threadId, threadKind, markThreadRead]);
+
+  useFocusEffect(
+    useCallback(() => {
+      reloadHistory();
+      // Any return from a pushed flow (camera, gallery send) lands on the
+      // thread with the attach sheet collapsed.
+      setAttachOpen(false);
+    }, [reloadHistory]),
+  );
+
   useEffect(() => {
     if (!user || !Number.isFinite(threadId)) return;
 
@@ -50,21 +89,6 @@ export default function ChatViewScreen() {
 
     let active = true;
     (async () => {
-      // Load the thread's locally-cached history first.
-      const history = (await getMessages(user.id, threadKind, threadId)).map((m) => ({
-        type: 'message' as const,
-        from: m.from,
-        from_name: m.from_name,
-        to: undefined,
-        conversation_id: m.kind === 'dm' ? m.thread_id : undefined,
-        group_id: m.kind === 'group' ? m.thread_id : undefined,
-        text: m.text,
-        created_at: m.created_at,
-      }));
-      if (!active) return;
-      setMessages(history);
-      markThreadRead(threadKind, threadId);
-
       // Resolve the header from the right source: a 1:1 peer or the group.
       if (isGroup) {
         try {
@@ -116,6 +140,56 @@ export default function ChatViewScreen() {
     [user, isGroup, threadId, threadKind, otherUserId],
   );
 
+  const openGallery = () => {
+    // The attach sheet stays open beneath the overlay so the gallery's X can
+    // dismiss both together, but the sheet pops back down on the X tap (kept
+    // in sync by the overlay's onClose) or immediately on a pick.
+    setGalleryOpen(true);
+  };
+
+  const closeGallery = () => {
+    setGalleryOpen(false);
+    setAttachOpen(false);
+  };
+
+  const selectGalleryImage = (_galleryId: string, uri: string) => {
+    // Picking a picture compresses both popups on the spot, then the send
+    // frame pushes on top of the thread. The resolved file path goes
+    // out-of-band like the camera's pending photo.
+    setGalleryOpen(false);
+    setAttachOpen(false);
+    setPendingPhoto(uri);
+    router.push({
+      pathname: '/send-gallery',
+      params: {
+        id: String(threadId),
+        kind: threadKind,
+        otherUserId: otherUserId != null ? String(otherUserId) : '',
+      },
+    });
+  };
+
+  // Send a finished voice note: optimistic append into the thread, same shape
+  // as the gallery's photo-send callback in send-gallery.tsx.
+  const sendVoiceNote = useCallback(
+    (audioUrl: string, durationMs: number) => {
+      if (!user) return;
+      if (isGroup) {
+        setMessages((prev) => [
+          ...prev,
+          sendGroup(user.id, threadId, '', undefined, { audioUrl, durationMs }),
+        ]);
+      } else if (otherUserId) {
+        setMessages((prev) => [
+          ...prev,
+          sendDm(user.id, otherUserId, threadId, '', undefined, { audioUrl, durationMs }),
+        ]);
+      }
+      markThreadActive({ kind: threadKind, id: threadId });
+    },
+    [user, isGroup, threadId, threadKind, otherUserId],
+  );
+
   if (loading) {
     return (
       <Screen>
@@ -160,14 +234,30 @@ export default function ChatViewScreen() {
               text={item.text}
               outgoing={item.from === user?.id}
               name={isGroup && item.from !== user?.id ? item.from_name ?? undefined : undefined}
+              mediaUrl={item.media_url}
+              audioUrl={item.audio_url}
+              durationMs={item.duration_ms}
             />
           )}
         />
 
         <View style={{ paddingBottom: wuzyLayout.itemGap }}>
-          <MessageBar onSend={send} />
+          <MessageBar
+            onSend={send}
+            onSendVoiceNote={sendVoiceNote}
+            threadId={threadId}
+            threadKind={threadKind}
+            otherUserId={otherUserId ?? undefined}
+            attachOpen={attachOpen}
+            onAttachOpenChange={setAttachOpen}
+            onOpenGallery={openGallery}
+          />
         </View>
       </KeyboardAvoidingView>
+
+      {galleryOpen && (
+        <GalleryPopup onSelect={selectGalleryImage} onClose={closeGallery} />
+      )}
     </Screen>
   );
 }

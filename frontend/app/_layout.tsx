@@ -94,6 +94,10 @@ function RootNavigator() {
           <Stack.Screen name="new-group" />
           <Stack.Screen name="event-details" />
           <Stack.Screen name="post-preview" />
+          <Stack.Screen name="camera" />
+          <Stack.Screen name="camera-preview" />
+          <Stack.Screen name="camera-send" />
+          <Stack.Screen name="send-gallery" />
           <Stack.Screen name="profile/[id]" />
           <Stack.Screen name="ticket" />
           <Stack.Screen name="ticket-vault" />

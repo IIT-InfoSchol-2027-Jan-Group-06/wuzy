@@ -60,6 +60,12 @@
           "color": "#FFE783",
           "defaultChannel": "messages"
         }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Allow Wuzy to access your microphone to record voice notes."
+        }
       ]
     ],
     "experiments": {

@@ -3,15 +3,21 @@ import { getToken } from '@/lib/auth-token';
 import { getPendingMessages, markMessagesSent, saveMessage, type ThreadKind } from '@/lib/chat-db';
 
 /** A live chat frame. DMs carry `conversation_id`+`to`; group messages carry
- * `group_id`. The server fills in `from_name` so group bubbles can be labeled. */
+ * `group_id`. The server fills in `from_name` so group bubbles can be labeled.
+ * `media_url` is an optional photo URL; the caption text rides in `text`.
+ * Voice notes are `voice_note` frames with `audio_url` + `duration_ms` (no
+ * text); the server routes them exactly like messages. */
 export type ChatMessage = {
-  type: 'message';
+  type: 'message' | 'voice_note';
   from: number;
   from_name?: string | null;
   to?: number;
   conversation_id?: number;
   group_id?: number;
   text: string;
+  media_url?: string | null;
+  audio_url?: string | null;
+  duration_ms?: number | null;
   created_at: string;
 };
 
@@ -168,27 +174,53 @@ function disconnectSocket() {
   socketUserId = null;
 }
 
+/** Extra fields for a voice-note send: when `audioUrl` is set, the frame is a
+ * `voice_note` carrying the audio URL and its duration in milliseconds. */
+export type MessageExtras = {
+  audioUrl: string;
+  durationMs: number;
+};
+
 /** Build an outgoing frame, persist it locally, and send it if a socket is up.
  * Returns the message so the caller can render it optimistically. */
-export function sendDm(from: number, to: number, conversationId: number, text: string): ChatMessage {
+export function sendDm(
+  from: number,
+  to: number,
+  conversationId: number,
+  text: string,
+  mediaUrl?: string,
+  extras?: MessageExtras,
+): ChatMessage {
   const message: ChatMessage = {
-    type: 'message',
+    type: extras ? 'voice_note' : 'message',
     from,
     to,
     conversation_id: conversationId,
     text,
+    media_url: mediaUrl ?? null,
+    audio_url: extras?.audioUrl ?? null,
+    duration_ms: extras?.durationMs ?? null,
     created_at: new Date().toISOString(),
   };
   persistAndSend(from, 'dm', message);
   return message;
 }
 
-export function sendGroup(from: number, groupId: number, text: string): ChatMessage {
+export function sendGroup(
+  from: number,
+  groupId: number,
+  text: string,
+  mediaUrl?: string,
+  extras?: MessageExtras,
+): ChatMessage {
   const message: ChatMessage = {
-    type: 'message',
+    type: extras ? 'voice_note' : 'message',
     from,
     group_id: groupId,
     text,
+    media_url: mediaUrl ?? null,
+    audio_url: extras?.audioUrl ?? null,
+    duration_ms: extras?.durationMs ?? null,
     created_at: new Date().toISOString(),
   };
   persistAndSend(from, 'group', message);
@@ -210,9 +242,12 @@ async function flushPending(ownerId: number): Promise<void> {
   for (const m of pending) {
     if (!socket || socket.readyState !== WebSocket.OPEN) break;
     const frame: ChatMessage = {
-      type: 'message',
+      type: m.audio_url ? 'voice_note' : 'message',
       from: ownerId,
       text: m.text,
+      media_url: m.media_url ?? null,
+      audio_url: m.audio_url ?? null,
+      duration_ms: m.duration_ms ?? null,
       created_at: m.created_at,
       ...(m.kind === 'dm'
         ? { to: m.to_id ?? undefined, conversation_id: m.thread_id }

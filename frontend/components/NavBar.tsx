@@ -1,6 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useRef, useState } from 'react';
 import {
   GestureResponderEvent,
@@ -64,6 +63,8 @@ export function NavBar({ active = 'home', onItemPress, chatUnread = 0 }: NavBarP
     new Array(NAV_ITEMS.length).fill(null),
   );
   const bubbleX = useSharedValue(0);
+  const pillScale = useSharedValue(1);
+  const barScale = useSharedValue(1);
   const dragStart = useRef<{ x: number; pillLeft: number } | null>(null);
   const didDrag = useRef(false);
 
@@ -93,7 +94,11 @@ export function NavBar({ active = 'home', onItemPress, chatUnread = 0 }: NavBarP
   }, [activeCenter, activeIndex]);
 
   const bubbleStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: bubbleX.value }],
+    transform: [{ translateX: bubbleX.value }, { scale: pillScale.value }],
+  }));
+
+  const barStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: barScale.value }],
   }));
 
   // Drag: the pill follows the finger, then snaps to the nearest tab on
@@ -101,6 +106,8 @@ export function NavBar({ active = 'home', onItemPress, chatUnread = 0 }: NavBarP
   const onTouchStart = (e: GestureResponderEvent) => {
     dragStart.current = { x: e.nativeEvent.pageX, pillLeft: bubbleX.value };
     didDrag.current = false;
+    pillScale.value = withSpring(1.18, { damping: 9, stiffness: 180 });
+    barScale.value = withSpring(1.05, { damping: 9, stiffness: 180 });
   };
 
   const onTouchMove = (e: GestureResponderEvent) => {
@@ -109,13 +116,15 @@ export function NavBar({ active = 'home', onItemPress, chatUnread = 0 }: NavBarP
     const dx = e.nativeEvent.pageX - start.x;
     if (Math.abs(dx) >= 24) didDrag.current = true;
     const left = Math.min(barWidth - pillW, Math.max(0, start.pillLeft + dx));
-    bubbleX.value = withSpring(left, { damping: 30, stiffness: 300 });
+    bubbleX.value = left;
   };
 
   const endDrag = (e: GestureResponderEvent) => {
     const start = dragStart.current;
     dragStart.current = null;
     if (!start) return;
+    pillScale.value = withSpring(1, { damping: 16, stiffness: 280 });
+    barScale.value = withSpring(1, { damping: 16, stiffness: 280 });
     const center = itemCenters;
     let nearest = 0;
     let best = Infinity;
@@ -139,9 +148,12 @@ export function NavBar({ active = 'home', onItemPress, chatUnread = 0 }: NavBarP
 
   return (
     <View className="pointer-events-box-none absolute inset-x-0 items-center" style={{ bottom }}>
-      <View
+      <Animated.View
         className="overflow-hidden rounded-full border border-white/20 bg-[#F4C400]/10 shadow-lg shadow-black/40"
-        style={{ width: barWidth, height }}
+        style={[
+          barStyle,
+          { width: barWidth, height },
+        ]}
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={endDrag}
@@ -214,7 +226,7 @@ export function NavBar({ active = 'home', onItemPress, chatUnread = 0 }: NavBarP
             </Pressable>
           ))}
         </View>
-      </View>
+      </Animated.View>
     </View>
   );
 }

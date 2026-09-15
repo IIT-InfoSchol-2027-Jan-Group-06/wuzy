@@ -7,7 +7,6 @@ import type { ApiQuest } from '@/lib/api';
 
 /** Maps each task to its right-column action (or none). */
 const actionFor: Record<string, { label: string; route: string }> = {
-  'Attend Live Events': { label: 'Attend', route: '/event-details' },
   'Social Network': { label: 'Add', route: '/connect' },
   'Ticket Sharing': { label: 'Share', route: '/ticket-vault' },
   'Complete Profile': { label: 'Complete', route: '/(tabs)/profile' },
@@ -36,7 +35,6 @@ export function QuestsSection({ quests, onClaimed, completedTasks, onClaimTask, 
   // Display order: Daily Login leads the board, Ticket Sharing closes it.
   const taskOrder = [
     'Daily Login',
-    'Attend Live Events',
     'Social Network',
     'Purchase Ticket',
     'Complete Profile',

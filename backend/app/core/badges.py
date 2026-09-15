@@ -17,7 +17,6 @@ BADGE_COUNT = 15
 # every user; only *which* badge art that slot holds changes per user.
 AWARD_SLOTS = [
     "Daily Login",
-    "Attend Live Events",
     "Social Network",
     "Purchase Ticket",
     "Complete Profile",

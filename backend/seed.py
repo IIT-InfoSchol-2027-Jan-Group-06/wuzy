@@ -374,15 +374,6 @@ def seed():
 # Each entry: (task name, description, [(subtask name, target, unit, xp, sticker), ...])
 QUESTS = [
     (
-        "Attend Live Events",
-        "Go to live events and climb the table.",
-        [
-            ("Attend 1 Event", 1, "completed", 20, False),
-            ("Attend 3 Events", 3, "completed", 50, True),
-            ("Attend 5 Events", 5, "completed", 100, True),
-        ],
-    ),
-    (
         "Social Network",
         "Connect with people and grow your circle.",
         [
@@ -417,7 +408,6 @@ QUESTS = [
 # Rows are unclaimed on purpose so the claim flow can be run end to end.
 # Each entry: (task name, [(subtask name, current_progress), ...])
 QUEST_START_PROGRESS = [
-    ("Attend Live Events", [("Attend 1 Event", 1)]),
     ("Social Network", [("Add 3 Friends", 2)]),
     ("Ticket Sharing", [("Share 1 Ticket", 1)]),
     ("Daily Login", [("Day 1 Login", 1)]),

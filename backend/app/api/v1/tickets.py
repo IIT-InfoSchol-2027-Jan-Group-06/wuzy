@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
 from app.core.auth import get_current_user_id
+from app.core.badges import badge_id_for
 from app.db.session import get_session
 from app.models.ticket import Award, Ticket
 from app.models.user import User
@@ -37,6 +38,7 @@ def purchase_ticket(
         user_id=current_user_id,
         award_type="ticket_purchase",
         reward_xp=TICKET_AWARD_XP,
+        badge_id=badge_id_for(session, current_user_id, "ticket_purchase"),
     )
     session.add(award)
     user.total_xp += TICKET_AWARD_XP

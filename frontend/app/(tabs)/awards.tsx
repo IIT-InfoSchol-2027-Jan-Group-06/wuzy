@@ -6,15 +6,17 @@ import { Screen } from '@/components/Screen';
 import { TabHeader } from '@/components/TabHeader';
 import { QuestsSection } from '@/components/awards/QuestsSection';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
-import { boardDeckFor } from '@/constants/awards-data';
-import { useAuth } from '@/context/auth';
-import { apiCompleteProfile, apiGetAwards, apiGetQuests, apiGetTickets, apiPurchaseTicket, apiRecordDailyLogin, type ApiAwardRead, type ApiQuest, type ApiTicketRead } from '@/lib/api';
+import { deckImages } from '@/constants/awards-data';
+import { apiCompleteProfile, apiGetAwards, apiGetMyDeck, apiGetQuests, apiGetTickets, apiPurchaseTicket, apiRecordDailyLogin, type ApiAwardRead, type ApiQuest, type ApiTicketRead } from '@/lib/api';
 
 const MAX_XP = 600;
 
+// Identity deck shown while the persisted deck is loading.
+const FALLBACK_DECK = Array.from({ length: 15 }, (_, i) => i + 1);
+
 export default function AwardsScreen() {
-  const { user } = useAuth();
-  const boardImages = useMemo(() => boardDeckFor(user?.id ?? 0), [user?.id]);
+  const [deck, setDeck] = useState<number[] | null>(null);
+  const boardImages = useMemo(() => deckImages(deck ?? FALLBACK_DECK), [deck]);
 
   const [quests, setQuests] = useState<ApiQuest[]>([]);
   const [awards, setAwards] = useState<ApiAwardRead[]>([]);
@@ -36,7 +38,7 @@ export default function AwardsScreen() {
     completedTasks.has('Complete Profile') || awards.some((a) => a.award_type === 'profile_complete');
   // The badge only moves when a whole quest is done (every subtask claimed) or
   // a custom task is done. Each finished quest advances the board toward img15.
-  const questsReady = quests.length > 0;
+  const questsReady = quests.length > 0 && deck != null;
   const doneCount = questsReady
     ? quests.filter((q) => q.active_subtask === null).length + (purchaseDone ? 1 : 0) + (profileDone ? 1 : 0)
     : 0;
@@ -121,6 +123,12 @@ export default function AwardsScreen() {
       .catch(() => setQuests([]));
   }, []);
 
+  const loadDeck = useCallback(() => {
+    apiGetMyDeck()
+      .then(setDeck)
+      .catch(() => setDeck(FALLBACK_DECK));
+  }, []);
+
   const loadAwards = useCallback(() => {
     apiGetAwards()
       .then((data) => setAwards(data))
@@ -190,8 +198,9 @@ export default function AwardsScreen() {
     useCallback(() => {
       loadQuests();
       loadAwards();
+      loadDeck();
       loadTickets();
-    }, [loadQuests, loadAwards, loadTickets]),
+    }, [loadQuests, loadAwards, loadDeck, loadTickets]),
   );
 
   return (

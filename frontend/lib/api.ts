@@ -183,6 +183,7 @@ export interface ApiUser {
   is_active: boolean;
   created_at: string;
   total_xp: number;
+  badge_deck: number[] | null;
 }
 
 export interface ApiPost {
@@ -257,6 +258,7 @@ export interface ApiAwardRead {
   user_id: number;
   award_type: string;
   reward_xp: number;
+  badge_id: number | null;
   awarded_at: string;
 }
 
@@ -347,6 +349,16 @@ export async function apiGetAwards(): Promise<ApiAwardRead[]> {
 
 export async function apiGetUserAwards(userId: number): Promise<ApiAwardRead[]> {
   return apiGet<ApiAwardRead[]>(`/awards/user/${userId}`);
+}
+
+/** The current user's personal badge deck (persisted on the user row). */
+export function apiGetMyDeck(): Promise<number[]> {
+  return apiGet<number[]>('/awards/deck');
+}
+
+/** Any user's personal badge deck (public). */
+export function apiGetUserDeck(userId: number): Promise<number[]> {
+  return apiGet<number[]>(`/awards/user/${userId}/deck`);
 }
 
 export interface UserXpData {

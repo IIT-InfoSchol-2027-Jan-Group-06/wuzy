@@ -32,6 +32,7 @@ class User(SQLModel, table=True):
     is_active: bool = Field(default=True)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     total_xp: int = Field(default=0)
+    badge_deck: list[int] | None = Field(default=None, sa_column=Column(JSON))
 
     # Each relationship uses explicit foreign_keys because SQLAlchemy cannot
     # disambiguate multiple FK paths to the same target table (User) without help.

@@ -8,6 +8,7 @@ from pathlib import Path
 import bcrypt
 from sqlmodel import Session, delete, func, select
 
+from app.core.badges import badge_id_for, build_deck
 from app.db.session import engine
 from app.models.conversation import Conversation, ConversationMember
 from app.models.event import Event, EventEngagement
@@ -560,6 +561,15 @@ def seed_awards(session: Session) -> None:
     """Seed demo awards for users who have tickets."""
     users = session.exec(select(User)).all()
     for user in users:
+        if not user.badge_deck:
+            user.badge_deck = build_deck(user.id)
+            session.add(user)
+        # Backfill badge ids on awards created before the badge column existed.
+        for award in session.exec(
+            select(Award).where(Award.user_id == user.id, Award.badge_id.is_(None))
+        ).all():
+            award.badge_id = badge_id_for(session, user.id, award.award_type)
+            session.add(award)
         tickets = session.exec(
             select(Ticket).where(Ticket.user_id == user.id)
         ).all()
@@ -569,6 +579,7 @@ def seed_awards(session: Session) -> None:
                     user_id=user.id,
                     award_type="ticket_purchase",
                     reward_xp=50,
+                    badge_id=badge_id_for(session, user.id, "ticket_purchase"),
                 )
                 session.add(award)
                 ticket.award_granted = True
@@ -584,6 +595,7 @@ def seed_awards(session: Session) -> None:
                 user_id=user.id,
                 award_type="profile_complete",
                 reward_xp=100,
+                badge_id=badge_id_for(session, user.id, "profile_complete"),
             )
             session.add(award)
     session.commit()

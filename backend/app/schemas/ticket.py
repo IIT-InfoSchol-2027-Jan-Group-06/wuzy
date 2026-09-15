@@ -22,6 +22,7 @@ class AwardRead(BaseModel):
     user_id: int
     award_type: str
     reward_xp: int
+    badge_id: int | None = None
     awarded_at: datetime
 
     model_config = {"from_attributes": True}

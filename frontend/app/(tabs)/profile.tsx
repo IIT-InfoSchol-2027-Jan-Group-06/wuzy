@@ -8,7 +8,7 @@ import { ProfileGrid, ProfileHero } from '@/components/profile';
 import { Screen } from '@/components/Screen';
 import { TagSection } from '@/components/TagSection';
 import { accountFor } from '@/constants/accounts';
-import { questArtForUser } from '@/constants/awards-data';
+import { badgeImageForAward } from '@/constants/awards-data';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 import { useAuth } from '@/context/auth';
 import { apiGet, apiGetAwards, apiGetQuests, type ApiAwardRead, type ApiPost, type ApiQuest } from '@/lib/api';
@@ -77,12 +77,17 @@ export default function ProfileScreen() {
   const earnedAwards: EarnedAward[] = [];
   const purchaseDone = awards.some((a) => a.award_type === 'ticket_purchase');
   const profileDone = awards.some((a) => a.award_type === 'profile_complete');
-  const userId = user?.id ?? 0;
-  if (purchaseDone) earnedAwards.push({ name: 'Purchase Ticket', image: questArtForUser(userId, 'Purchase Ticket')! });
-  if (profileDone) earnedAwards.push({ name: 'Complete Profile', image: questArtForUser(userId, 'Complete Profile')! });
+  if (purchaseDone) {
+    const image = badgeImageForAward(awards, 'Purchase Ticket');
+    if (image) earnedAwards.push({ name: 'Purchase Ticket', image });
+  }
+  if (profileDone) {
+    const image = badgeImageForAward(awards, 'Complete Profile');
+    if (image) earnedAwards.push({ name: 'Complete Profile', image });
+  }
   for (const quest of quests) {
     if (quest.active_subtask === null) {
-      const image = questArtForUser(userId, quest.name);
+      const image = badgeImageForAward(awards, quest.name);
       if (image) earnedAwards.push({ name: quest.name, image });
     }
   }

@@ -1,8 +1,8 @@
 import type { ImageSourcePropType } from 'react-native';
 
-// All sticker art in the game, keyed by nothing: which image a user sees is
-// decided per user. The backend never knows about these PNGs; they are the
-// design's artwork.
+// All sticker art in the game. The backend stores only badge ids (1..15);
+// this array maps a badge id to its artwork. Which id a user earns for a
+// given task is decided by their persisted personal badge deck.
 export const BOARD_IMAGES: ImageSourcePropType[] = [
   require('@/assets/badges/img1.png'),
   require('@/assets/badges/img2.png'),
@@ -21,50 +21,24 @@ export const BOARD_IMAGES: ImageSourcePropType[] = [
   require('@/assets/badges/img15.png'),
 ];
 
-// Canonical slot order used to assign a quest/task name a sticker. Stable so
-// every user gets the same names in the same order, just different art.
-const AWARD_SLOT_ORDER = [
-  'Daily Login',
-  'Attend Live Events',
-  'Social Network',
-  'Purchase Ticket',
-  'Complete Profile',
-  'Ticket Sharing',
-];
-
-// Deterministic PRNG so a user's sticker deck is stable across app sessions.
-function mulberry32(seed: number): () => number {
-  let a = seed | 0;
-  return () => {
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
+/** The artwork for a stored badge id, or undefined when the id is out of range. */
+export function badgeImage(badgeId: number | null | undefined): ImageSourcePropType | undefined {
+  if (badgeId == null || badgeId < 1 || badgeId > BOARD_IMAGES.length) return undefined;
+  return BOARD_IMAGES[badgeId - 1];
 }
 
-function shuffle<T>(items: T[], seed: number): T[] {
-  const deck = [...items];
-  const rand = mulberry32(seed ^ 0x9e3779b9);
-  for (let i = deck.length - 1; i > 0; i--) {
-    const j = Math.floor(rand() * (i + 1));
-    [deck[i], deck[j]] = [deck[j], deck[i]];
-  }
-  return deck;
+/** The board's sticker art in the user's personal deck order (badge ids). */
+export function deckImages(deck: number[]): ImageSourcePropType[] {
+  return deck.map((id) => badgeImage(id) ?? BOARD_IMAGES[0]);
 }
 
-/** The user's personal sticker deck: all 15 badges in their unique order. */
-export function boardDeckFor(userId: number): ImageSourcePropType[] {
-  return shuffle(BOARD_IMAGES, userId);
-}
-
-/** The sticker a specific user earns for a quest/task name, if the name has one. */
-export function questArtForUser(
-  userId: number,
+/** The badge a user earned for a task, looked up through their persisted awards. */
+export function badgeImageForAward(
+  awards: readonly { award_type: string; badge_id: number | null }[],
   name: string,
 ): ImageSourcePropType | undefined {
-  const deck = boardDeckFor(userId);
-  const slot = AWARD_SLOT_ORDER.indexOf(name);
-  if (slot < 0) return undefined;
-  return deck[slot % deck.length];
+  let type = name;
+  if (name === 'Purchase Ticket') type = 'ticket_purchase';
+  else if (name === 'Complete Profile') type = 'profile_complete';
+  return badgeImage(awards.find((a) => a.award_type === type)?.badge_id);
 }

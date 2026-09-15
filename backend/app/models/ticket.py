@@ -30,6 +30,7 @@ class Award(SQLModel, table=True):
     user_id: int = Field(foreign_key="user.id", index=True)
     award_type: str = Field(default="ticket_purchase")
     reward_xp: int = Field(default=0)
+    badge_id: int | None = Field(default=None, index=True)
     awarded_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
     user: "User" = Relationship(back_populates="awards")

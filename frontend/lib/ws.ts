@@ -3,7 +3,8 @@ import { getToken } from '@/lib/auth-token';
 import { getPendingMessages, markMessagesSent, saveMessage, type ThreadKind } from '@/lib/chat-db';
 
 /** A live chat frame. DMs carry `conversation_id`+`to`; group messages carry
- * `group_id`. The server fills in `from_name` so group bubbles can be labeled. */
+ * `group_id`. The server fills in `from_name` so group bubbles can be labeled.
+ * `media_url` is an optional photo URL; the caption text rides in `text`. */
 export type ChatMessage = {
   type: 'message';
   from: number;
@@ -12,6 +13,7 @@ export type ChatMessage = {
   conversation_id?: number;
   group_id?: number;
   text: string;
+  media_url?: string | null;
   created_at: string;
 };
 
@@ -170,25 +172,27 @@ function disconnectSocket() {
 
 /** Build an outgoing frame, persist it locally, and send it if a socket is up.
  * Returns the message so the caller can render it optimistically. */
-export function sendDm(from: number, to: number, conversationId: number, text: string): ChatMessage {
+export function sendDm(from: number, to: number, conversationId: number, text: string, mediaUrl?: string): ChatMessage {
   const message: ChatMessage = {
     type: 'message',
     from,
     to,
     conversation_id: conversationId,
     text,
+    media_url: mediaUrl ?? null,
     created_at: new Date().toISOString(),
   };
   persistAndSend(from, 'dm', message);
   return message;
 }
 
-export function sendGroup(from: number, groupId: number, text: string): ChatMessage {
+export function sendGroup(from: number, groupId: number, text: string, mediaUrl?: string): ChatMessage {
   const message: ChatMessage = {
     type: 'message',
     from,
     group_id: groupId,
     text,
+    media_url: mediaUrl ?? null,
     created_at: new Date().toISOString(),
   };
   persistAndSend(from, 'group', message);
@@ -213,6 +217,7 @@ async function flushPending(ownerId: number): Promise<void> {
       type: 'message',
       from: ownerId,
       text: m.text,
+      media_url: m.media_url ?? null,
       created_at: m.created_at,
       ...(m.kind === 'dm'
         ? { to: m.to_id ?? undefined, conversation_id: m.thread_id }

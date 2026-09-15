@@ -1,16 +1,41 @@
 import React from 'react';
 import { Pressable, TextInput, View } from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
 import Animated, { Easing, interpolate, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
+import { GlassNavButton } from '@/components/GlassNavButton';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
+import type { ThreadKind } from '@/lib/chat-db';
 
-export function MessageBar({ onSend }: { onSend?: (text: string) => void }) {
+export function MessageBar({
+  onSend,
+  threadId,
+  threadKind,
+  otherUserId,
+}: {
+  onSend?: (text: string) => void;
+  /** The thread this bar is attached to; the Camera flow sends back into it. */
+  threadId: number;
+  threadKind: ThreadKind;
+  /** DM recipient, needed so the camera flow can address the message. */
+  otherUserId?: number;
+}) {
+  const router = useRouter();
   const iconSize = 20;
   const gap = wuzyLayout.itemGap;
   const sendSize = 32;
 
   const [text, setText] = React.useState('');
   const hasText = text.length > 0;
+  const [attachOpen, setAttachOpen] = React.useState(false);
+
+  // Returning from the camera flow (or anywhere else) lands back on the thread
+  // with the attach sheet closed, not silently floating over the bar.
+  useFocusEffect(
+    React.useCallback(() => {
+      setAttachOpen(false);
+    }, []),
+  );
 
   // 0 = only attach and mic, 1 = send button revealed at their right
   const progress = useSharedValue(0);
@@ -20,6 +45,20 @@ export function MessageBar({ onSend }: { onSend?: (text: string) => void }) {
       easing: Easing.inOut(Easing.ease),
     });
   }, [hasText, progress]);
+
+  // 0 = sheet hidden, 1 = risen above the bar
+  const sheet = useSharedValue(0);
+  React.useEffect(() => {
+    sheet.value = withTiming(attachOpen ? 1 : 0, {
+      duration: 250,
+      easing: Easing.out(Easing.cubic),
+    });
+  }, [attachOpen, sheet]);
+
+  const sheetStyle = useAnimatedStyle(() => ({
+    opacity: sheet.value,
+    transform: [{ translateY: (1 - sheet.value) * 64 }],
+  }));
 
   // attach and mic collapse away as the send door slides in, so the
   // partially revealed send never overlaps them; negative margins cancel
@@ -35,60 +74,125 @@ export function MessageBar({ onSend }: { onSend?: (text: string) => void }) {
     marginLeft: interpolate(progress.value, [0, 1], [-gap, 0]),
   }));
 
+  const openCamera = () => {
+    setAttachOpen(false);
+    router.push({
+      pathname: '/camera',
+      params: {
+        id: String(threadId),
+        kind: threadKind,
+        otherUserId: otherUserId != null ? String(otherUserId) : '',
+      },
+    });
+  };
+
   return (
-    <View
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap,
-        height: wuzyLayout.control,
-        paddingHorizontal: 16,
-        backgroundColor: '#3B3A2D',
-        borderRadius: 9999,
-      }}>
-      <Ionicons name="happy-outline" size={iconSize} color={wuzyColors.white} />
-      <TextInput
-        value={text}
-        onChangeText={setText}
-        placeholder="Message"
-        placeholderTextColor={wuzyColors.gray}
-        style={{
-          flex: 1,
-          minWidth: 0,
-          alignSelf: 'stretch',
-          textAlignVertical: 'center',
-          fontSize: wuzyType.body,
-          color: wuzyColors.white,
-          fontFamily: wuzyFonts.bold,
-          letterSpacing: 0.15,
-          paddingVertical: 0,
-        }}
-      />
+    <View style={{ position: 'relative' }}>
       <Animated.View
-        style={[{ flexDirection: 'row', alignItems: 'center', gap, overflow: 'hidden' }, iconsStyle]}>
-        <Ionicons name="attach-outline" size={iconSize} color={wuzyColors.white} />
-        <Ionicons name="mic-outline" size={iconSize} color={wuzyColors.white} />
-      </Animated.View>
-      <Animated.View style={[{ alignItems: 'flex-end', overflow: 'hidden' }, sendStyle]}>
-        <Pressable
-          onPress={() => {
-            const trimmed = text.trim();
-            if (trimmed) onSend?.(trimmed);
-            setText('');
-          }}
-          accessibilityRole="button"
-          accessibilityLabel="Send"
-          style={{
-            width: sendSize,
-            height: sendSize,
-            borderRadius: sendSize / 2,
-            backgroundColor: wuzyColors.yellowMuted,
+        pointerEvents={attachOpen ? 'auto' : 'none'}
+        style={[
+          {
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: wuzyLayout.control + 10,
             alignItems: 'center',
-            justifyContent: 'center',
+          },
+          sheetStyle,
+        ]}>
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'space-evenly',
+            width: '100%',
+            backgroundColor: wuzyColors.surface,
+            borderColor: wuzyColors.surfaceBorder,
+            borderWidth: 1,
+            borderRadius: 24,
+            padding: wuzyLayout.itemGap,
           }}>
-          <Ionicons name="send" size={Math.round(sendSize * 0.5)} color={wuzyColors.bg} />
-        </Pressable>
+          <GlassNavButton icon="camera-outline" tintColor={wuzyColors.yellowDim} onPress={openCamera} accessibilityLabel="Camera" />
+          <GlassNavButton
+            icon="images-outline"
+            tintColor={wuzyColors.yellowDim}
+            onPress={() => setAttachOpen(false)}
+            accessibilityLabel="Photos"
+          />
+          <GlassNavButton
+            icon="location-outline"
+            tintColor={wuzyColors.yellowDim}
+            onPress={() => setAttachOpen(false)}
+            accessibilityLabel="Location"
+          />
+          <GlassNavButton
+            icon="calendar-outline"
+            tintColor={wuzyColors.yellowDim}
+            onPress={() => setAttachOpen(false)}
+            accessibilityLabel="Calendar"
+          />
+        </View>
       </Animated.View>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap,
+          height: wuzyLayout.control,
+          paddingHorizontal: 16,
+          backgroundColor: '#3B3A2D',
+          borderRadius: 9999,
+        }}>
+        <Ionicons name="happy-outline" size={iconSize} color={wuzyColors.white} />
+        <TextInput
+          value={text}
+          onChangeText={setText}
+          placeholder="Message"
+          placeholderTextColor={wuzyColors.gray}
+          style={{
+            flex: 1,
+            minWidth: 0,
+            alignSelf: 'stretch',
+            textAlignVertical: 'center',
+            fontSize: wuzyType.body,
+            color: wuzyColors.white,
+            fontFamily: wuzyFonts.bold,
+            letterSpacing: 0.15,
+            paddingVertical: 0,
+          }}
+        />
+        <Animated.View
+          style={[{ flexDirection: 'row', alignItems: 'center', gap, overflow: 'hidden' }, iconsStyle]}>
+          <Pressable
+            onPress={() => setAttachOpen((o) => !o)}
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel="Attach"
+            style={{ alignItems: 'center', justifyContent: 'center' }}>
+            <Ionicons name="attach-outline" size={iconSize} color={wuzyColors.white} />
+          </Pressable>
+          <Ionicons name="mic-outline" size={iconSize} color={wuzyColors.white} />
+        </Animated.View>
+        <Animated.View style={[{ alignItems: 'flex-end', overflow: 'hidden' }, sendStyle]}>
+          <Pressable
+            onPress={() => {
+              const trimmed = text.trim();
+              if (trimmed) onSend?.(trimmed);
+              setText('');
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Send"
+            style={{
+              width: sendSize,
+              height: sendSize,
+              borderRadius: sendSize / 2,
+              backgroundColor: wuzyColors.yellowMuted,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+            <Ionicons name="send" size={Math.round(sendSize * 0.5)} color={wuzyColors.bg} />
+          </Pressable>
+        </Animated.View>
+      </View>
     </View>
   );
 }

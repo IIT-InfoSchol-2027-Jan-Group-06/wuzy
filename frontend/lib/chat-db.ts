@@ -7,9 +7,10 @@ export type ThreadKind = 'dm' | 'group';
 
 /** A locally-cached message, normalized to a single thread key (kind + id).
  * `to_id` is the DM recipient, set on outgoing messages so a pending message
- * can be retried when the socket reconnects. `pending` marks messages saved
- * while offline that have not reached the server yet. `is_read` is 0 for
- * incoming messages the user has not opened yet. */
+ * can be retried when the socket reconnects. `media_url` is a server-relative
+ * photo URL, so a picture message needs no caption text. `pending` marks
+ * messages saved while offline that have not reached the server yet. `is_read`
+ * is 0 for incoming messages the user has not opened yet. */
 export type StoredMessage = {
   id?: number;
   kind: ThreadKind;
@@ -18,12 +19,13 @@ export type StoredMessage = {
   from_name?: string | null;
   to_id?: number | null;
   text: string;
+  media_url?: string | null;
   created_at: string;
   pending?: number;
   is_read?: number;
 };
 
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 let dbPromise: Promise<SQLiteDatabase> | null = null;
 
@@ -53,6 +55,7 @@ function getDb(): Promise<SQLiteDatabase> {
             from_name TEXT,
             to_id INTEGER,
             text TEXT NOT NULL,
+            media_url TEXT,
             created_at TEXT NOT NULL,
             pending INTEGER NOT NULL DEFAULT 0,
             is_read INTEGER NOT NULL DEFAULT 1
@@ -76,6 +79,7 @@ function toStored(kind: ThreadKind, message: ChatMessage) {
     from_name: message.from_name,
     to_id: kind === 'dm' ? (message.to ?? null) : null,
     text: message.text,
+    media_url: message.media_url ?? null,
     created_at: message.created_at,
   };
 }
@@ -89,8 +93,8 @@ export async function saveMessage(
   const db = await getDb();
   const row = toStored(kind, message);
   await db.runAsync(
-    `INSERT INTO messages (owner_id, kind, thread_id, from_id, from_name, to_id, text, created_at, pending, is_read)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO messages (owner_id, kind, thread_id, from_id, from_name, to_id, text, media_url, created_at, pending, is_read)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ownerId,
     kind,
     row.thread_id,
@@ -98,6 +102,7 @@ export async function saveMessage(
     row.from_name ?? null,
     row.to_id,
     row.text,
+    row.media_url,
     row.created_at,
     opts.pending ? 1 : 0,
     opts.isRead === false ? 0 : 1,
@@ -117,9 +122,10 @@ export async function getMessages(
     from_id: number;
     from_name: string | null;
     text: string;
+    media_url: string | null;
     created_at: string;
   }>(
-    `SELECT kind, thread_id, from_id, from_name, text, created_at
+    `SELECT kind, thread_id, from_id, from_name, text, media_url, created_at
      FROM messages
      WHERE owner_id = ? AND kind = ? AND thread_id = ?
      ORDER BY id DESC
@@ -136,11 +142,13 @@ export async function getMessages(
       from: r.from_id,
       from_name: r.from_name,
       text: r.text,
+      media_url: r.media_url,
       created_at: r.created_at,
     }));
 }
 
-/** Latest message per thread, used to build the chat list (preview, order, highlight). */
+/** Latest message per thread, used to build the chat list (preview, order, highlight).
+ * A photo with no caption reads "Photo" as its preview text. */
 export type ThreadSummaryRow = {
   kind: ThreadKind;
   thread_id: number;
@@ -151,7 +159,9 @@ export type ThreadSummaryRow = {
 export async function getThreadSummaries(ownerId: number): Promise<ThreadSummaryRow[]> {
   const db = await getDb();
   return db.getAllAsync<ThreadSummaryRow>(
-    `SELECT m.kind, m.thread_id, m.text, m.created_at
+    `SELECT m.kind, m.thread_id,
+       CASE WHEN m.media_url IS NOT NULL AND (m.text IS NULL OR m.text = '') THEN 'Photo' ELSE m.text END AS text,
+       m.created_at
      FROM messages m
      JOIN (
        SELECT kind, thread_id, MAX(id) AS max_id
@@ -206,9 +216,12 @@ export async function getUnreadNotifications(ownerId: number): Promise<StoredMes
     from_id: number;
     from_name: string | null;
     text: string;
+    media_url: string | null;
     created_at: string;
   }>(
-    `SELECT m.kind, m.thread_id, m.from_id, m.from_name, m.text, m.created_at
+    `SELECT m.kind, m.thread_id, m.from_id, m.from_name,
+       CASE WHEN m.media_url IS NOT NULL AND (m.text IS NULL OR m.text = '') THEN 'Photo' ELSE m.text END AS text,
+       m.media_url, m.created_at
      FROM messages m
      JOIN (
        SELECT kind, thread_id, MAX(id) AS max_id
@@ -225,6 +238,7 @@ export async function getUnreadNotifications(ownerId: number): Promise<StoredMes
     from: r.from_id,
     from_name: r.from_name,
     text: r.text,
+    media_url: r.media_url,
     created_at: r.created_at,
   }));
 }
@@ -264,11 +278,12 @@ export async function getPendingMessages(ownerId: number): Promise<StoredMessage
     from_name: string | null;
     to_id: number | null;
     text: string;
+    media_url: string | null;
     created_at: string;
     pending: number;
     is_read: number;
   }>(
-    `SELECT id, kind, thread_id, from_id, from_name, to_id, text, created_at, pending, is_read
+    `SELECT id, kind, thread_id, from_id, from_name, to_id, text, media_url, created_at, pending, is_read
      FROM messages
      WHERE owner_id = ? AND pending = 1
      ORDER BY id ASC`,
@@ -282,6 +297,7 @@ export async function getPendingMessages(ownerId: number): Promise<StoredMessage
     from_name: r.from_name,
     to_id: r.to_id,
     text: r.text,
+    media_url: r.media_url,
     created_at: r.created_at,
     pending: r.pending,
     is_read: r.is_read,

@@ -1,7 +1,8 @@
 """Ticket endpoints.
 
-POST /tickets/purchase - Purchase a ticket and receive an award.
-GET  /tickets/         - List tickets for the current user.
+POST /tickets/purchase    - Buy a ticket (no award yet).
+POST /tickets/claim-award - Claim the ticket badge once 5 tickets are bought.
+GET  /tickets/            - List tickets for the current user.
 """
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -17,6 +18,7 @@ from app.schemas.ticket import AwardRead, TicketPurchaseResponse, TicketRead
 router = APIRouter()
 
 TICKET_AWARD_XP = 50
+TICKET_TARGET = 5
 
 
 @router.post("/purchase", response_model=TicketPurchaseResponse)
@@ -24,7 +26,7 @@ def purchase_ticket(
     current_user_id: int = Depends(get_current_user_id),
     session: Session = Depends(get_session),
 ):
-    """Purchase a ticket and automatically receive an award."""
+    """Purchase a ticket. The badge is earned later by claiming it."""
     user = session.get(User, current_user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -33,6 +35,32 @@ def purchase_ticket(
     session.add(ticket)
     session.commit()
     session.refresh(ticket)
+
+    return TicketPurchaseResponse(ticket=TicketRead.model_validate(ticket))
+
+
+@router.post("/claim-award", response_model=AwardRead)
+def claim_ticket_award(
+    current_user_id: int = Depends(get_current_user_id),
+    session: Session = Depends(get_session),
+):
+    """Claim the ticket badge once the user has bought enough tickets.
+
+    Idempotent: a user who already holds the award gets it back as-is.
+    """
+    user = session.get(User, current_user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    tickets = session.exec(select(Ticket).where(Ticket.user_id == current_user_id)).all()
+    if len(tickets) < TICKET_TARGET:
+        raise HTTPException(status_code=400, detail="Buy 5 tickets before claiming")
+
+    existing = session.exec(
+        select(Award).where(Award.user_id == current_user_id, Award.award_type == "ticket_purchase")
+    ).first()
+    if existing is not None:
+        return AwardRead.model_validate(existing)
 
     award = Award(
         user_id=current_user_id,
@@ -43,13 +71,13 @@ def purchase_ticket(
     session.add(award)
     user.total_xp += TICKET_AWARD_XP
     session.add(user)
-    ticket.award_granted = True
-    session.add(ticket)
+    for ticket in tickets:
+        ticket.award_granted = True
+        session.add(ticket)
     session.commit()
     session.refresh(award)
-    session.refresh(ticket)
 
-    return TicketPurchaseResponse(ticket=TicketRead.model_validate(ticket), award=AwardRead.model_validate(award))
+    return AwardRead.model_validate(award)
 
 
 @router.get("/", response_model=list[TicketRead])

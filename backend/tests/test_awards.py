@@ -11,17 +11,40 @@ def test_badge_deck_is_stable_and_persisted(client, user):
     assert client.get("/awards/user/999999/deck").status_code == 404
 
 
-def test_ticket_purchase_grants_award_and_xp(client, user):
+def test_ticket_purchase_then_claim_grants_award_and_xp(client, user):
     _, headers = user
+    deck = client.get("/awards/deck", headers=headers).json()
+
     res = client.post("/tickets/purchase", headers=headers)
     assert res.status_code == 200
     body = res.json()
-    assert body["ticket"]["award_granted"] is True
-    assert body["award"]["award_type"] == "ticket_purchase"
-    assert body["award"]["reward_xp"] == 50
-    assert body["award"]["badge_id"] in client.get("/awards/deck", headers=headers).json()
+    assert body["ticket"]["award_granted"] is False
+    assert body["award"] is None
+    ticket_id = body["ticket"]["id"]
 
-    assert [t["id"] for t in client.get("/tickets/", headers=headers).json()] == [body["ticket"]["id"]]
+    # Fewer than five tickets cannot claim the badge yet.
+    assert client.post("/tickets/claim-award", headers=headers).status_code == 400
+
+    for _ in range(4):
+        assert client.post("/tickets/purchase", headers=headers).status_code == 200
+    assert len(client.get("/tickets/", headers=headers).json()) == 5
+
+    award = client.post("/tickets/claim-award", headers=headers)
+    assert award.status_code == 200
+    award_body = award.json()
+    assert award_body["award_type"] == "ticket_purchase"
+    assert award_body["reward_xp"] == 50
+    assert award_body["badge_id"] in deck
+
+    # Idempotent: claiming again returns the same award, no extra XP.
+    again = client.post("/tickets/claim-award", headers=headers)
+    assert again.status_code == 200
+    assert again.json()["id"] == award_body["id"]
+
+    tickets = client.get("/tickets/", headers=headers).json()
+    assert all(t["award_granted"] for t in tickets)
+    assert ticket_id in [t["id"] for t in tickets]
+
     xp = client.get("/users/me/xp", headers=headers).json()
     assert xp["total_xp"] == 50
     assert xp["rank"] and "progress_pct" in xp

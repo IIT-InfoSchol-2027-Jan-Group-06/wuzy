@@ -366,6 +366,11 @@ export async function apiPurchaseTicket(): Promise<TicketPurchaseResponse> {
   return apiPost<TicketPurchaseResponse>('/tickets/purchase', {});
 }
 
+/** Claim the ticket badge once enough tickets are bought. Idempotent. */
+export async function apiClaimTicketAward(): Promise<ApiAwardRead> {
+  return apiPost<ApiAwardRead>('/tickets/claim-award', {});
+}
+
 export async function apiGetTickets(): Promise<ApiTicketRead[]> {
   return apiGet<ApiTicketRead[]>('/tickets/');
 }

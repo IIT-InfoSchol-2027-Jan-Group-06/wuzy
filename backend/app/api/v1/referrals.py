@@ -174,10 +174,20 @@ def _connect_pair(a_id: int, b_id: int) -> None:
             f.follower_id
             for f in session.exec(select(Follow).where(Follow.followed_id == a_id)).all()
         }
+        a_added = False
+        b_added = False
         if b_id not in follows:
             session.add(Follow(follower_id=a_id, followed_id=b_id))
+            a_added = True
         if b_id not in followed_back:
             session.add(Follow(follower_id=b_id, followed_id=a_id))
+            b_added = True
+        if a_added or b_added:
+            from app.api.v1.quests import bump_quest_for
+            if a_added:
+                bump_quest_for(a_id, "Social Network", session)
+            if b_added:
+                bump_quest_for(b_id, "Social Network", session)
         session.commit()
 
 

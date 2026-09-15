@@ -7,7 +7,7 @@ import { TabHeader } from '@/components/TabHeader';
 import { QuestsSection } from '@/components/awards/QuestsSection';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 import { deckImages } from '@/constants/awards-data';
-import { apiCompleteProfile, apiGetAwards, apiGetMyDeck, apiGetQuests, apiGetTickets, apiPurchaseTicket, apiRecordDailyLogin, type ApiAwardRead, type ApiQuest, type ApiTicketRead } from '@/lib/api';
+import { apiCompleteProfile, apiGetAwards, apiGetMyDeck, apiGetQuests, apiGetTickets, apiClaimTicketAward, apiRecordDailyLogin, type ApiAwardRead, type ApiQuest, type ApiTicketRead } from '@/lib/api';
 
 const MAX_XP = 600;
 
@@ -30,6 +30,7 @@ export default function AwardsScreen() {
   const [barProgress] = useState(new Animated.Value(0));
   const [tickets, setTickets] = useState<ApiTicketRead[]>([]);
   const [boardImage, setBoardImage] = useState<ImageSourcePropType>(boardImages[0]);
+  const [prevBoardImage, setPrevBoardImage] = useState<ImageSourcePropType>(boardImages[0]);
   const hasAnimated = useRef(false);
 
   const purchaseDone =
@@ -68,24 +69,19 @@ export default function AwardsScreen() {
     let cancelled = false;
     const stepThrough = (step: number) => {
       if (cancelled || step > targetIndex) return;
+      setPrevBoardImage(boardImages[step - 2] ?? boardImages[0]);
+      setBoardImage(boardImages[step - 1]);
       leaveAnim.setValue(1);
       enterAnim.setValue(0);
       enterY.setValue(60);
-      Animated.timing(leaveAnim, {
-        toValue: 0,
-        duration: 260,
-        useNativeDriver: true,
-      }).start(() => {
+      Animated.parallel([
+        Animated.timing(leaveAnim, { toValue: 0, duration: 260, useNativeDriver: true }),
+        Animated.timing(enterAnim, { toValue: 1, duration: 380, useNativeDriver: true }),
+        Animated.spring(enterY, { toValue: 0, friction: 7, tension: 50, useNativeDriver: true }),
+      ]).start(() => {
         if (cancelled) return;
-        setBoardImage(boardImages[step - 1]);
-        Animated.parallel([
-          Animated.timing(enterAnim, { toValue: 1, duration: 380, useNativeDriver: true }),
-          Animated.spring(enterY, { toValue: 0, friction: 7, tension: 50, useNativeDriver: true }),
-        ]).start(() => {
-          if (cancelled) return;
-          if (step < targetIndex) stepThrough(step + 1);
-          else setDisplayIndex(targetIndex);
-        });
+        if (step < targetIndex) stepThrough(step + 1);
+        else setDisplayIndex(targetIndex);
       });
     };
     stepThrough(displayIndex + 1);
@@ -125,6 +121,10 @@ export default function AwardsScreen() {
       .catch(() => setQuests([]));
   }, []);
 
+  const markTaskComplete = useCallback((name: string) => {
+    setCompletedTasks((prev) => new Set(prev).add(name));
+  }, []);
+
   const loadDeck = useCallback(() => {
     apiGetMyDeck()
       .then(setDeck)
@@ -133,9 +133,14 @@ export default function AwardsScreen() {
 
   const loadAwards = useCallback(() => {
     apiGetAwards()
-      .then((data) => setAwards(data))
+      .then((data) => {
+        setAwards(data);
+        // Persisted awards survive restarts, so re-cross the custom tasks they own.
+        if (data.some((a) => a.award_type === 'ticket_purchase')) markTaskComplete('Purchase Ticket');
+        if (data.some((a) => a.award_type === 'profile_complete')) markTaskComplete('Complete Profile');
+      })
       .catch(() => setAwards([]));
-  }, []);
+  }, [markTaskComplete]);
 
   const loadTickets = useCallback(() => {
     apiGetTickets()
@@ -143,25 +148,25 @@ export default function AwardsScreen() {
       .catch(() => setTickets([]));
   }, []);
 
-  const markTaskComplete = useCallback((name: string) => {
-    setCompletedTasks((prev) => new Set(prev).add(name));
-  }, []);
-
   const handleQuestClaimed = useCallback(() => {
     loadQuests();
   }, [loadQuests]);
 
-  const handlePurchaseTicket = async () => {
+  const handleClaimTicketAward = async () => {
     setProcessing('ticket');
     try {
-      await apiPurchaseTicket();
-      Alert.alert('Award', 'Ticket purchased! +100 XP earned');
+      await apiClaimTicketAward();
       markTaskComplete('Purchase Ticket');
       loadQuests();
       loadAwards();
       loadTickets();
-    } catch {
-      Alert.alert('Error', 'Failed to purchase ticket');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : '';
+      if (message.includes('Buy 5 tickets')) {
+        Alert.alert('Award', 'Buy 5 tickets to fill the bar first');
+      } else {
+        Alert.alert('Error', 'Failed to claim ticket badge');
+      }
     } finally {
       setProcessing(null);
     }
@@ -189,12 +194,12 @@ export default function AwardsScreen() {
   const onClaimTask = useCallback((name: string) => {
     return async () => {
       if (name === 'Purchase Ticket') {
-        await handlePurchaseTicket();
+        await handleClaimTicketAward();
       } else if (name === 'Complete Profile') {
         await handleCompleteProfile();
       }
     };
-  }, [handlePurchaseTicket, handleCompleteProfile]);
+  }, [handleClaimTicketAward, handleCompleteProfile]);
 
   useFocusEffect(
     useCallback(() => {
@@ -237,7 +242,7 @@ export default function AwardsScreen() {
               />
             )}
             <Animated.Image
-              source={boardImage}
+              source={prevBoardImage}
               style={{ position: 'absolute', width: 260, height: 260, resizeMode: 'contain', opacity: leaveAnim }}
             />
             <Animated.Image

@@ -1,5 +1,5 @@
 import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 
 import { ChatBubble } from '@/components/chat/ChatBubble';
@@ -33,6 +33,32 @@ export default function ChatViewScreen() {
   const [memberCount, setMemberCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
+  // Reload the thread's locally-cached history from disk. Runs on first focus
+  // and on every return, so a photo sent from the camera flow shows up in the
+  // thread when the flow pops back here.
+  const reloadHistory = useCallback(async () => {
+    if (!user) return;
+    const history = (await getMessages(user.id, threadKind, threadId)).map((m) => ({
+      type: 'message' as const,
+      from: m.from,
+      from_name: m.from_name,
+      to: undefined,
+      conversation_id: m.kind === 'dm' ? m.thread_id : undefined,
+      group_id: m.kind === 'group' ? m.thread_id : undefined,
+      text: m.text,
+      media_url: m.media_url,
+      created_at: m.created_at,
+    }));
+    setMessages(history);
+    markThreadRead(threadKind, threadId);
+  }, [user, threadId, threadKind, markThreadRead]);
+
+  useFocusEffect(
+    useCallback(() => {
+      reloadHistory();
+    }, [reloadHistory]),
+  );
+
   useEffect(() => {
     if (!user || !Number.isFinite(threadId)) return;
 
@@ -50,21 +76,6 @@ export default function ChatViewScreen() {
 
     let active = true;
     (async () => {
-      // Load the thread's locally-cached history first.
-      const history = (await getMessages(user.id, threadKind, threadId)).map((m) => ({
-        type: 'message' as const,
-        from: m.from,
-        from_name: m.from_name,
-        to: undefined,
-        conversation_id: m.kind === 'dm' ? m.thread_id : undefined,
-        group_id: m.kind === 'group' ? m.thread_id : undefined,
-        text: m.text,
-        created_at: m.created_at,
-      }));
-      if (!active) return;
-      setMessages(history);
-      markThreadRead(threadKind, threadId);
-
       // Resolve the header from the right source: a 1:1 peer or the group.
       if (isGroup) {
         try {
@@ -160,12 +171,18 @@ export default function ChatViewScreen() {
               text={item.text}
               outgoing={item.from === user?.id}
               name={isGroup && item.from !== user?.id ? item.from_name ?? undefined : undefined}
+              mediaUrl={item.media_url}
             />
           )}
         />
 
         <View style={{ paddingBottom: wuzyLayout.itemGap }}>
-          <MessageBar onSend={send} />
+          <MessageBar
+            onSend={send}
+            threadId={threadId}
+            threadKind={threadKind}
+            otherUserId={otherUserId ?? undefined}
+          />
         </View>
       </KeyboardAvoidingView>
     </Screen>

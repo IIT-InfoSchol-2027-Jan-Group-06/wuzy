@@ -138,7 +138,7 @@ def _notify_push(recipient_id: int, message: dict) -> None:
         return
 
     sender = message.get("from_name") or "Someone"
-    text = message.get("text", "")
+    text = message.get("text") or ("Photo" if message.get("media_url") else "New message")
     if message.get("group_id") is not None:
         thread_url = f"/chat/{message['group_id']}?kind=group"
     else:

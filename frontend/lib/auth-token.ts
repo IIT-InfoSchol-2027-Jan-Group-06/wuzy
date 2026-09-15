@@ -29,21 +29,3 @@ export function clearToken(): Promise<void> {
   }
   return SecureStore.deleteItemAsync(TOKEN_KEY);
 }
-
-const LAST_LOGIN_KEY = 'wuzy.last_login_date';
-
-export function getLastLoginDate(): Promise<string | null> {
-  if (web) {
-    return Promise.resolve(typeof localStorage !== 'undefined' ? localStorage.getItem(LAST_LOGIN_KEY) : null);
-  }
-  return SecureStore.getItemAsync(LAST_LOGIN_KEY);
-}
-
-export function setLastLoginDate(date: string): Promise<void> {
-  if (web) {
-    if (typeof localStorage !== 'undefined') localStorage.setItem(LAST_LOGIN_KEY, date);
-    return Promise.resolve();
-  }
-  return SecureStore.setItemAsync(LAST_LOGIN_KEY, date);
-}
-

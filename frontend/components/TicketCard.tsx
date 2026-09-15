@@ -1,18 +1,27 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, Text, View } from 'react-native';
-import type { StyleProp, ViewStyle } from 'react-native';
+import type { ImageSourcePropType, StyleProp, ViewStyle } from 'react-native';
 import Svg, { Line } from 'react-native-svg';
 
 import { QrCode } from '@/components/QrCode';
-import type { Ticket } from '@/constants/ticket-data';
 import { wuzyColors, wuzyFonts, wuzyType } from '@/constants/wuzy-theme';
 
 const RADIUS = 24;
 const NOTCH = 13;
 
+/** What a ticket card draws. Built from an API ticket by the vault. */
+export interface TicketCardData {
+  id: number;
+  image: ImageSourcePropType;
+  title: string;
+  date: string;
+  venue: string;
+  code: string;
+}
+
 export interface TicketCardProps {
-  ticket: Ticket;
+  ticket: TicketCardData;
   width: number;
   style?: StyleProp<ViewStyle>;
 }

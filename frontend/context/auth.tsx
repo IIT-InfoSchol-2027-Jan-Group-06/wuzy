@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { getToken, setToken, clearToken } from '@/lib/auth-token';
-import { apiLogin, apiMe, apiRecordDailyLogin, type ApiUser, type AuthSession } from '@/lib/api';
+import { apiDailyLogin, apiLogin, apiMe, type ApiUser, type AuthSession } from '@/lib/api';
 import { registerForPushNotifications } from '@/lib/push';
 
 type AuthContextValue = {
@@ -48,14 +48,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   };
 
-// Register this device's push token once a user is signed in, so chat
-  // messages for them can arrive as OS notifications when they are away.
+  // Once a user is signed in: register this device for push, and count today
+  // toward their daily streak (the server ignores repeats on the same day).
   useEffect(() => {
     if (user) {
       registerForPushNotifications();
-      apiRecordDailyLogin();
+      apiDailyLogin().catch(() => {});
     }
-  }, [user]);
+  }, [user?.id]);
 
   const updateUser = (patch: Partial<ApiUser>) => {
     setUser(prev => (prev ? { ...prev, ...patch } : prev));

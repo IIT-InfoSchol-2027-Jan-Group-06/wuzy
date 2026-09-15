@@ -1,45 +1,68 @@
 import { useCallback, useState } from 'react';
-import { FlatList, NativeScrollEvent, NativeSyntheticEvent, Pressable, Share, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { FlatList, NativeScrollEvent, NativeSyntheticEvent, Pressable, Share, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from 'expo-router';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { ScreenHeader } from '@/components/ScreenHeader';
-import { TicketCard } from '@/components/TicketCard';
-import { tickets, type Ticket } from '@/constants/ticket-data';
-import { wuzyLayout } from '@/constants/wuzy-theme';
-import { apiBumpQuestProgress, apiGetQuests } from '@/lib/api';
+import { TicketCard, type TicketCardData } from '@/components/TicketCard';
+import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
+import { apiGetTickets, apiShareTicket, assetUrl, type ApiTicketRead } from '@/lib/api';
 
 const CARD_GAP = 16;
+const fallbackArt = require('@/assets/images/event1.jpg');
 
-// Each native share counts one action toward the Ticket Sharing task.
-const TICKET_QUEST = 'Ticket Sharing';
+/** Shape an API ticket for the card. Legacy tickets without an event get generic art. */
+function toCard(t: ApiTicketRead): TicketCardData {
+  const when = t.event
+    ? new Date(t.event.start_time)
+        .toLocaleString('en-US', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })
+        .toUpperCase()
+    : '';
+  return {
+    id: t.id,
+    image: t.event?.image_url ? { uri: assetUrl(t.event.image_url) } : fallbackArt,
+    title: t.event?.title.toUpperCase() ?? 'WUZY TICKET',
+    date: when,
+    venue: t.event?.venue?.toUpperCase() ?? '',
+    code: `WZ-TKT-${String(t.id).padStart(4, '0')}`,
+  };
+}
 
 /** Blurred active-ticket art fills the whole screen, so this route composes the shell by hand instead of using Screen. */
 export default function TicketVaultScreen() {
   const { width } = useWindowDimensions();
+  const [tickets, setTickets] = useState<TicketCardData[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
+
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      apiGetTickets()
+        .then((rows) => {
+          if (active) setTickets(rows.map(toCard));
+        })
+        .catch(() => {});
+      return () => {
+        active = false;
+      };
+    }, []),
+  );
 
   const cardWidth = Math.min(Math.round(width * 0.78), 360);
   const sidePadding = (width - cardWidth) / 2;
   const activeTicket = tickets[activeIndex] ?? tickets[0];
 
-  const handleShare = useCallback(async (ticket: Ticket) => {
+  const handleShare = useCallback(async (ticket: TicketCardData) => {
     try {
-      const data = await apiGetQuests();
-      const quest = data.quests.find((q) => q.name === TICKET_QUEST);
-      if (quest) {
-        await apiBumpQuestProgress(quest.id);
-      }
-    } catch {
-      // Keeps the count unchanged; the bump did not go through.
-    }
-    try {
-      await Share.share({
+      const result = await Share.share({
         message: `${ticket.title}\n${ticket.date}\n${ticket.venue}\nJoin me on Wuzy!`,
       });
+      // ponytail: Android always reports sharedAction, so the count is optimistic there.
+      if (result.action === Share.sharedAction) apiShareTicket(ticket.id).catch(() => {});
     } catch {
-      // Share sheet dismissed or not supported; nothing to do.
+      // Share sheet not supported; nothing to count.
     }
   }, []);
 
@@ -50,7 +73,9 @@ export default function TicketVaultScreen() {
 
   return (
     <View className="flex-1 bg-wuzy-bg">
-      <Image key={activeTicket.id} source={activeTicket.image} style={StyleSheet.absoluteFill} contentFit="cover" transition={250} blurRadius={20} />
+      {activeTicket && (
+        <Image key={activeTicket.id} source={activeTicket.image} style={StyleSheet.absoluteFill} contentFit="cover" transition={250} blurRadius={20} />
+      )}
       <LinearGradient
         colors={['rgba(10, 15, 23, 0.38)', 'rgba(10, 15, 23, 0.5)', 'rgba(10, 15, 23, 0.64)']}
         locations={[0, 0.5, 1]}
@@ -63,23 +88,31 @@ export default function TicketVaultScreen() {
         </View>
 
         <View className="flex-1 justify-center">
-          <FlatList
-            data={tickets}
-            keyExtractor={(item: Ticket) => item.id}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            snapToInterval={cardWidth + CARD_GAP}
-            decelerationRate="fast"
-            contentContainerStyle={{ paddingHorizontal: sidePadding, alignItems: 'center' }}
-            ItemSeparatorComponent={() => <View style={{ width: CARD_GAP }} />}
-            onMomentumScrollEnd={handleMomentumScrollEnd}
-            getItemLayout={(_, index) => ({ length: cardWidth + CARD_GAP, offset: (cardWidth + CARD_GAP) * index, index })}
-            renderItem={({ item }) => (
-              <Pressable onPress={() => handleShare(item)} accessibilityRole="button" className="active:opacity-80">
-                <TicketCard ticket={item} width={cardWidth} />
-              </Pressable>
-            )}
-          />
+          {tickets.length === 0 ? (
+            <Text
+              className="text-center"
+              style={{ fontFamily: wuzyFonts.body, fontSize: wuzyType.body, color: wuzyColors.gray, paddingHorizontal: wuzyLayout.side }}>
+              No tickets yet. Buy one from an event to see it here.
+            </Text>
+          ) : (
+            <FlatList
+              data={tickets}
+              keyExtractor={(item) => String(item.id)}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              snapToInterval={cardWidth + CARD_GAP}
+              decelerationRate="fast"
+              contentContainerStyle={{ paddingHorizontal: sidePadding, alignItems: 'center' }}
+              ItemSeparatorComponent={() => <View style={{ width: CARD_GAP }} />}
+              onMomentumScrollEnd={handleMomentumScrollEnd}
+              getItemLayout={(_, index) => ({ length: cardWidth + CARD_GAP, offset: (cardWidth + CARD_GAP) * index, index })}
+              renderItem={({ item }) => (
+                <Pressable onPress={() => handleShare(item)} accessibilityRole="button" className="active:opacity-80">
+                  <TicketCard ticket={item} width={cardWidth} />
+                </Pressable>
+              )}
+            />
+          )}
         </View>
       </SafeAreaView>
     </View>

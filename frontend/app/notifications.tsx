@@ -32,6 +32,7 @@ const kinds: Record<string, { label: string; category: string }> = {
   connection: { label: 'Connection', category: 'requests' },
   group: { label: 'Group', category: 'messages' },
   like: { label: 'Like', category: 'activity' },
+  gift: { label: 'Gift', category: 'activity' },
 };
 
 /** A live "new message" notification, keyed by thread so updates replace each other. */

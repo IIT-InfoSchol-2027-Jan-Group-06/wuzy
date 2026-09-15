@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { BlurView } from 'expo-blur';
-import { Pressable, StyleSheet, Text, View, useWindowDimensions, type ImageSourcePropType } from 'react-native';
+import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 
 import { GlassNavButton } from '@/components/GlassNavButton';
@@ -8,25 +8,12 @@ import { ProfileGrid, ProfileHero } from '@/components/profile';
 import { Screen } from '@/components/Screen';
 import { TagSection } from '@/components/TagSection';
 import { accountFor } from '@/constants/accounts';
-import { badgeImageForAward } from '@/constants/awards-data';
+import { earnedStickers } from '@/constants/awards-data';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 import { useAuth } from '@/context/auth';
-import { apiGet, apiGetAwards, apiGetQuests, assetUrl, type ApiAwardRead, type ApiPost, type ApiQuest } from '@/lib/api';
+import { apiGet, apiGetAwards, assetUrl, type ApiAwardRead, type ApiPost } from '@/lib/api';
 
 const GRID_GAP = 2;
-
-const AWARD_ORDER = [
-  'Daily Login',
-  'Social Network',
-  'Purchase Ticket',
-  'Complete Profile',
-  'Ticket Sharing',
-];
-
-interface EarnedAward {
-  name: string;
-  image: ImageSourcePropType;
-}
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -37,7 +24,6 @@ export default function ProfileScreen() {
   const [photos, setPhotos] = useState<ApiPost[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
   const [awards, setAwards] = useState<ApiAwardRead[]>([]);
-  const [quests, setQuests] = useState<ApiQuest[]>([]);
   const [awardsLoaded, setAwardsLoaded] = useState(false);
 
   const loadPhotos = useCallback(async () => {
@@ -55,12 +41,9 @@ export default function ProfileScreen() {
   const loadAwardsInfo = useCallback(async () => {
     if (!user) return;
     try {
-      const [awardList, questData] = await Promise.all([apiGetAwards(), apiGetQuests()]);
-      setAwards(awardList);
-      setQuests(questData.quests);
+      setAwards(await apiGetAwards());
     } catch {
       setAwards([]);
-      setQuests([]);
     } finally {
       setAwardsLoaded(true);
     }
@@ -73,24 +56,7 @@ export default function ProfileScreen() {
     }, [loadPhotos, loadAwardsInfo]),
   );
 
-  const earnedAwards: EarnedAward[] = [];
-  const purchaseDone = awards.some((a) => a.award_type === 'ticket_purchase');
-  const profileDone = awards.some((a) => a.award_type === 'profile_complete');
-  if (purchaseDone) {
-    const image = badgeImageForAward(awards, 'Purchase Ticket');
-    if (image) earnedAwards.push({ name: 'Purchase Ticket', image });
-  }
-  if (profileDone) {
-    const image = badgeImageForAward(awards, 'Complete Profile');
-    if (image) earnedAwards.push({ name: 'Complete Profile', image });
-  }
-  for (const quest of quests) {
-    if (quest.active_subtask === null) {
-      const image = badgeImageForAward(awards, quest.name);
-      if (image) earnedAwards.push({ name: quest.name, image });
-    }
-  }
-  earnedAwards.sort((a, b) => AWARD_ORDER.indexOf(a.name) - AWARD_ORDER.indexOf(b.name));
+  const earnedAwards = earnedStickers(awards);
 
   if (!user) return null;
 

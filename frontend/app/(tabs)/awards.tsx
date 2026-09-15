@@ -36,19 +36,21 @@ export default function AwardsScreen() {
     completedTasks.has('Purchase Ticket') || awards.some((a) => a.award_type === 'ticket_purchase');
   const profileDone =
     completedTasks.has('Complete Profile') || awards.some((a) => a.award_type === 'profile_complete');
-  // The badge only moves when a whole quest is done (every subtask claimed) or
-  // a custom task is done. Each finished quest advances the board toward img15.
+  // Every claimed subtask advances the board; purchase and profile are each
+  // single-step tasks. Progress is per-user, so each user fills their own bar.
   const questsReady = quests.length > 0 && deck != null;
-  const doneCount = questsReady
-    ? quests.filter((q) => q.active_subtask === null).length + (purchaseDone ? 1 : 0) + (profileDone ? 1 : 0)
+  const doneSteps = questsReady
+    ? quests.reduce((sum, q) => sum + q.claimed_steps, 0) + (purchaseDone ? 1 : 0) + (profileDone ? 1 : 0)
     : 0;
-  const totalQuests = questsReady ? quests.length + 2 : 1;
-  const earnedXp = Math.round((doneCount / totalQuests) * MAX_XP);
-  const barPct = Math.min(100, Math.round((doneCount / totalQuests) * 100));
-  const maxRank = questsReady && doneCount >= totalQuests;
+  const totalSteps = questsReady
+    ? quests.reduce((sum, q) => sum + q.subtask_total, 0) + 2
+    : 1;
+  const earnedXp = Math.round((doneSteps / totalSteps) * MAX_XP);
+  const barPct = Math.min(100, Math.round((doneSteps / totalSteps) * 100));
+  const maxRank = questsReady && doneSteps >= totalSteps;
   const targetIndex = Math.min(
     boardImages.length,
-    1 + Math.round((doneCount / totalQuests) * (boardImages.length - 1)),
+    1 + Math.round((doneSteps / totalSteps) * (boardImages.length - 1)),
   );
 
   // Snap to the current rank once real quest data is in, and never animate

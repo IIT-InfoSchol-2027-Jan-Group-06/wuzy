@@ -1,7 +1,7 @@
 import Constants from 'expo-constants';
 import { File } from 'expo-file-system';
 
-import { getToken, setToken } from '@/lib/auth-token';
+import { getLastLoginDate, getToken, setLastLoginDate, setToken } from '@/lib/auth-token';
 
 /**
  * Base URL for the Wuzy backend.
@@ -182,6 +182,8 @@ export interface ApiUser {
   avatar_url: string | null;
   is_active: boolean;
   created_at: string;
+  total_xp: number;
+  badge_deck: number[] | null;
 }
 
 export interface ApiPost {
@@ -243,8 +245,34 @@ export interface ApiQuestsDashboard {
   quests: ApiQuest[];
 }
 
+export interface ApiTicketRead {
+  id: number;
+  user_id: number;
+  ticket_type: string;
+  purchased_at: string;
+  award_granted: boolean;
+}
+
+export interface ApiAwardRead {
+  id: number;
+  user_id: number;
+  award_type: string;
+  reward_xp: number;
+  badge_id: number | null;
+  awarded_at: string;
+}
+
+export interface TicketPurchaseResponse {
+  ticket: ApiTicketRead;
+  award: ApiAwardRead | null;
+}
+
 export function apiGetQuests(): Promise<ApiQuestsDashboard> {
   return apiGet<ApiQuestsDashboard>('/quests/');
+}
+
+export function apiGetUserQuests(userId: number): Promise<ApiQuestsDashboard> {
+  return apiGet<ApiQuestsDashboard>(`/quests/user/${userId}`);
 }
 
 export function apiBumpQuestProgress(questId: number): Promise<ApiQuest> {
@@ -301,6 +329,69 @@ export function respondReferral(id: number, accept: boolean): Promise<ApiReferra
 /** Tell the sender a resolved referral has been seen, so its card returns to the Send Request pill. Idempotent. */
 export function consumeReferral(id: number): Promise<ApiReferralRequest> {
   return apiPost<ApiReferralRequest>(`/referrals/${id}/consume`, {});
+}
+
+export async function apiPurchaseTicket(): Promise<TicketPurchaseResponse> {
+  return apiPost<TicketPurchaseResponse>('/tickets/purchase', {});
+}
+
+export async function apiGetTickets(): Promise<ApiTicketRead[]> {
+  return apiGet<ApiTicketRead[]>('/tickets/');
+}
+
+export async function apiCompleteProfile(): Promise<ApiAwardRead> {
+  return apiPost<ApiAwardRead>('/awards/complete-profile', {});
+}
+
+export async function apiGetAwards(): Promise<ApiAwardRead[]> {
+  return apiGet<ApiAwardRead[]>('/awards/');
+}
+
+export async function apiGetUserAwards(userId: number): Promise<ApiAwardRead[]> {
+  return apiGet<ApiAwardRead[]>(`/awards/user/${userId}`);
+}
+
+/** The current user's personal badge deck (persisted on the user row). */
+export function apiGetMyDeck(): Promise<number[]> {
+  return apiGet<number[]>('/awards/deck');
+}
+
+/** Any user's personal badge deck (public). */
+export function apiGetUserDeck(userId: number): Promise<number[]> {
+  return apiGet<number[]>(`/awards/user/${userId}/deck`);
+}
+
+export interface UserXpData {
+  total_xp: number;
+  rank: string;
+  progress_pct: number;
+  next_rank: string | null;
+  xp_in_rank: number;
+  xp_to_next: number;
+}
+
+export function apiGetUserXp(): Promise<UserXpData> {
+  return apiGet<UserXpData>('/users/me/xp');
+}
+
+/** Record a daily login and bump the Daily Login quest progress once per calendar day. */
+export async function apiRecordDailyLogin(): Promise<void> {
+  const token = await getToken();
+  if (!token) return;
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    const last = await getLastLoginDate();
+    if (last === today) return;
+
+    const data = await apiGetQuests();
+    const quest = data.quests.find((q) => q.name === 'Daily Login');
+    if (quest && quest.active_subtask) {
+      await apiBumpQuestProgress(quest.id);
+      await setLastLoginDate(today);
+    }
+  } catch {
+    // Ignore offline or transient failures
+  }
 }
 
 /** Compact "ago" label: 5m, 2h, 1d, 12 Aug. Empty for missing timestamps. */

@@ -2,6 +2,7 @@
 
 GET  /quests/                         - Dashboard: every task, its active
                                         subtask and the subtask totals
+GET  /quests/user/{user_id}           - Public dashboard for any user
 POST /quests/{quest_id}/progress      - Increment a counted action (bump),
                                         capped at the active subtask's target
 POST /quests/{quest_id}/claim         - Claim the active subtask once the
@@ -13,8 +14,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
 from app.core.auth import get_current_user_id
+from app.core.badges import badge_id_for
 from app.db.session import get_session
 from app.models.quest import Quest, QuestSubtask, QuestSubtaskProgress
+from app.models.ticket import Award
+from app.models.user import User
 from app.schemas.quest import QuestRead, QuestsDashboard, QuestSubtaskRead
 
 router = APIRouter()
@@ -113,19 +117,36 @@ def _read(
     )
 
 
+def _dashboard_for_user(user_id: int, session: Session) -> QuestsDashboard:
+    """Build the full quest dashboard for any user id."""
+    quests = session.exec(select(Quest).order_by(Quest.sort_order)).all()
+    dashboard = []
+    for quest in quests:
+        subtasks, active, progress, step_index = _active_step(quest, user_id, session)
+        claimed_steps = _claimed_steps(subtasks, user_id, session)
+        dashboard.append(_read(quest, subtasks, active, progress, step_index, claimed_steps))
+    return QuestsDashboard(quests=dashboard)
+
+
 @router.get("/", response_model=QuestsDashboard)
 def get_quests(
     current_user_id: int = Depends(get_current_user_id),
     session: Session = Depends(get_session),
 ):
     """Return every task with the caller's active subtask and claim state."""
-    quests = session.exec(select(Quest).order_by(Quest.sort_order)).all()
-    dashboard = []
-    for quest in quests:
-        subtasks, active, progress, step_index = _active_step(quest, current_user_id, session)
-        claimed_steps = _claimed_steps(subtasks, current_user_id, session)
-        dashboard.append(_read(quest, subtasks, active, progress, step_index, claimed_steps))
-    return QuestsDashboard(quests=dashboard)
+    return _dashboard_for_user(current_user_id, session)
+
+
+@router.get("/user/{user_id}", response_model=QuestsDashboard)
+def get_user_quests(
+    user_id: int,
+    session: Session = Depends(get_session),
+):
+    """Return every task with a specific user's progress (public, no auth required)."""
+    user = session.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return _dashboard_for_user(user_id, session)
 
 
 @router.post("/{quest_id}/progress", response_model=QuestRead)
@@ -182,6 +203,20 @@ def claim_level(
 
     progress.claimed = True
     session.add(progress)
+
+    # Grant the subtask's reward: an Award row and XP added to the user.
+    user = session.get(User, current_user_id)
+    if user is not None:
+        award = Award(
+            user_id=current_user_id,
+            award_type=quest.name,
+            reward_xp=active.reward_xp,
+            badge_id=badge_id_for(session, current_user_id, quest.name),
+        )
+        session.add(award)
+        user.total_xp += active.reward_xp
+        session.add(user)
+
     session.commit()
     session.refresh(progress)
 

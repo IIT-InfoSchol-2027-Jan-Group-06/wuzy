@@ -10,7 +10,7 @@ from alembic import context
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from app.db.session import engine
-from app.models import Quest, QuestSubtask, User  # Import models for autogenerate
+from app.models import Award, Quest, QuestSubtask, Ticket, User  # Import models for autogenerate
 from sqlmodel import SQLModel
 
 # Alembic Config object

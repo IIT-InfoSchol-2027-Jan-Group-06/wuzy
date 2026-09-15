@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Text, View, useWindowDimensions } from 'react-native';
+import { Text, View, useWindowDimensions, type ImageSourcePropType } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 
 import { ProfileGrid, ProfileHero } from '@/components/profile';
@@ -7,10 +7,25 @@ import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { TagSection } from '@/components/TagSection';
 import { accountFor } from '@/constants/accounts';
+import { badgeImageForAward } from '@/constants/awards-data';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
-import { apiGet, type ApiPost, type ApiUser } from '@/lib/api';
+import { apiGet, apiGetUserAwards, apiGetUserQuests, type ApiAwardRead, type ApiPost, type ApiQuest, type ApiUser } from '@/lib/api';
 
 const GRID_GAP = 2;
+
+const AWARD_ORDER = [
+  'Daily Login',
+  'Attend Live Events',
+  'Social Network',
+  'Purchase Ticket',
+  'Complete Profile',
+  'Ticket Sharing',
+];
+
+interface EarnedAward {
+  name: string;
+  image: ImageSourcePropType;
+}
 
 export default function UserProfileScreen() {
   const router = useRouter();
@@ -19,18 +34,25 @@ export default function UserProfileScreen() {
 
   const [profile, setProfile] = useState<ApiUser | null>(null);
   const [photos, setPhotos] = useState<ApiPost[]>([]);
+  const [awards, setAwards] = useState<ApiAwardRead[]>([]);
+  const [quests, setQuests] = useState<ApiQuest[]>([]);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     if (!id) return;
     try {
       setLoading(true);
-      const [user, posts] = await Promise.all([
+      const userId = Number(id);
+      const [user, posts, awardList, questData] = await Promise.all([
         apiGet<ApiUser>(`/users/${id}`),
         apiGet<ApiPost[]>(`/feed/profile/${id}`),
+        apiGetUserAwards(userId),
+        apiGetUserQuests(userId),
       ]);
       setProfile(user);
       setPhotos(posts);
+      setAwards(awardList);
+      setQuests(questData.quests);
     } catch {
       router.back();
     } finally {
@@ -47,6 +69,25 @@ export default function UserProfileScreen() {
   if (!profile) {
     return null;
   }
+
+  const earnedAwards: EarnedAward[] = [];
+  const purchaseDone = awards.some((a) => a.award_type === 'ticket_purchase');
+  const profileDone = awards.some((a) => a.award_type === 'profile_complete');
+  if (purchaseDone) {
+    const image = badgeImageForAward(awards, 'Purchase Ticket');
+    if (image) earnedAwards.push({ name: 'Purchase Ticket', image });
+  }
+  if (profileDone) {
+    const image = badgeImageForAward(awards, 'Complete Profile');
+    if (image) earnedAwards.push({ name: 'Complete Profile', image });
+  }
+  for (const quest of quests) {
+    if (quest.active_subtask === null) {
+      const image = badgeImageForAward(awards, quest.name);
+      if (image) earnedAwards.push({ name: quest.name, image });
+    }
+  }
+  earnedAwards.sort((a, b) => AWARD_ORDER.indexOf(a.name) - AWARD_ORDER.indexOf(b.name));
 
   const heroHeight = Math.min(Math.round(width * 1.3), 540);
   const gridItemSize = Math.floor((width - GRID_GAP * 2) / 3);
@@ -66,7 +107,8 @@ export default function UserProfileScreen() {
       <ProfileHero
         background={accountFor(profile.username).backgroundImage}
         name={name}
-        awardsCount={accountFor(profile.username).awardsCount}
+        awardsCount={earnedAwards.length}
+        awards={earnedAwards}
         bio={profile.bio}
         height={heroHeight}
       />

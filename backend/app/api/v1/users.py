@@ -6,30 +6,22 @@ GET  /users/by-username/{username} - Resolve a Wuzy profile QR to a user
 POST /users/{id}/connect     - Turn a scanned QR into a Connection (mutual follow)
 GET  /users/{id}/connections - List a user's Connections (mutual follows)
 GET  /users/{id}             - Fetch a single user's profile
-GET  /users/me/xp            - Fetch current user's XP, rank, and progress
+PATCH /users/me              - Edit the caller's profile
 """
 
 import bcrypt
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, col, select
 
+from app.api.v1.quests import record
 from app.api.v1.ws import notify
 from app.core.auth import get_current_user_id
 from app.db.session import get_session
 from app.models.follow import Follow
-from app.models.ticket import Award
 from app.models.user import User
 from app.schemas.user import UserCreate, UserRead, UserUpdate
 
 router = APIRouter()
-
-RANKS = [
-    {"label": "Bronze", "threshold": 0},
-    {"label": "Silver", "threshold": 100},
-    {"label": "Gold", "threshold": 250},
-    {"label": "Diamond", "threshold": 500},
-]
-
 
 @router.post("/", response_model=UserRead, status_code=201)
 def create_user(payload: UserCreate, session: Session = Depends(get_session)):
@@ -93,6 +85,26 @@ def read_user_connections(user_id: int, session: Session = Depends(get_session))
     return session.exec(select(User).where(col(User.id).in_(connection_ids))).all()
 
 
+@router.patch("/me", response_model=UserRead)
+def update_me(
+    payload: UserUpdate,
+    current_user_id: int = Depends(get_current_user_id),
+    session: Session = Depends(get_session),
+):
+    """Edit the caller's profile. A full profile completes the Complete Profile quest."""
+    user = session.get(User, current_user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    for field, value in payload.model_dump(exclude_unset=True).items():
+        setattr(user, field, value)
+    if user.display_name and user.bio and user.avatar_url and user.hobbies:
+        record(session, current_user_id, "complete_profile", set_to=1)
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    return user
+
+
 @router.post("/{user_id}/connect", response_model=UserRead)
 def connect_user(
     user_id: int,
@@ -128,11 +140,9 @@ def connect_user(
     if user_id not in followed_back:
         session.add(Follow(follower_id=user_id, followed_id=current_user_id))
     if new:
-        from app.api.v1.quests import bump_quest_for
-        # A fresh mutual follow is a connection for both sides, so each party's
-        # Social Network quest advances alike wherever it is tracked.
-        bump_quest_for(current_user_id, "Social Network", session)
-        bump_quest_for(user_id, "Social Network", session)
+        # A fresh mutual follow is a connection for both sides.
+        record(session, current_user_id, "social_network")
+        record(session, user_id, "social_network")
     session.commit()
     session.refresh(other)
     if new:
@@ -150,24 +160,6 @@ def connect_user(
     return other
 
 
-@router.patch("/me", response_model=UserRead)
-def update_me(
-    payload: UserUpdate,
-    current_user_id: int = Depends(get_current_user_id),
-    session: Session = Depends(get_session),
-):
-    user = session.get(User, current_user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    update_data = payload.model_dump(exclude_unset=True)
-    for field, value in update_data.items():
-        setattr(user, field, value)
-    session.add(user)
-    session.commit()
-    session.refresh(user)
-    return user
-
-
 @router.get("/{user_id}", response_model=UserRead)
 def read_user(user_id: int, session: Session = Depends(get_session)):
     """Fetch a single user by ID. Used to populate the profile page."""
@@ -175,51 +167,3 @@ def read_user(user_id: int, session: Session = Depends(get_session)):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
-
-
-@router.get("/me/xp")
-def get_user_xp(
-    current_user_id: int = Depends(get_current_user_id),
-    session: Session = Depends(get_session),
-):
-    """Return the current user's total XP, rank, and progress to the next rank."""
-    user = session.get(User, current_user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    total_xp = session.exec(
-        select(Award).where(Award.user_id == current_user_id)
-    ).all()
-    total_xp = sum(a.reward_xp for a in total_xp)
-
-    # Update user total_xp if it differs
-    if user.total_xp != total_xp:
-        user.total_xp = total_xp
-        session.add(user)
-        session.commit()
-        session.refresh(user)
-
-    rank = RANKS[0]
-    for r in RANKS:
-        if total_xp >= r["threshold"]:
-            rank = r
-
-    current_threshold = rank["threshold"]
-    next_rank = None
-    for r in RANKS:
-        if r["threshold"] > current_threshold:
-            next_rank = r
-            break
-
-    xp_in_rank = total_xp - current_threshold
-    xp_to_next = next_rank["threshold"] - current_threshold if next_rank else 0
-    progress_pct = min(100, round((xp_in_rank / xp_to_next) * 100)) if xp_to_next > 0 else 100
-
-    return {
-        "total_xp": total_xp,
-        "rank": rank["label"],
-        "progress_pct": progress_pct,
-        "next_rank": next_rank["label"] if next_rank else None,
-        "xp_in_rank": xp_in_rank,
-        "xp_to_next": xp_to_next,
-    }

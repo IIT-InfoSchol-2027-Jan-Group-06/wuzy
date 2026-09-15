@@ -12,6 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import selectinload
 from sqlmodel import Session, col, select
 
+from app.api.v1.quests import record
 from app.api.v1.ws import notify
 from app.core.auth import get_current_user_id
 from app.db.session import get_session
@@ -95,6 +96,7 @@ def create_group(
     session.add(GroupMember(group_id=group.id, user_id=current_user_id))
     for member_id in member_ids:
         session.add(GroupMember(group_id=group.id, user_id=member_id))
+    record(session, current_user_id, "squad_up")
     session.commit()
     session.refresh(group)
     creator = session.get(User, current_user_id)

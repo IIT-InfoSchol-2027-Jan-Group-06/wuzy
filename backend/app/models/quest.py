@@ -1,31 +1,26 @@
+from sqlalchemy import UniqueConstraint
 from sqlmodel import Field, SQLModel
 
 
 class Quest(SQLModel, table=True):
-    """A parent task holding an ordered list of subtasks.
+    """A quest line: an ordered list of tiers the user works through.
 
-    The task itself carries no counter or reward; those live on its
-    subtasks. Each subtask is completed with a single claim click once its
-    counter has reached its target, moving the user to the next one. The
-    final subtask's claim grants the task reward.
+    key is the stable id code uses ("social_network"); name is what the app
+    shows. sort_order is also the quest's slot in the user's badge deck.
     """
 
     __tablename__ = "quest"
 
     id: int | None = Field(default=None, primary_key=True)
+    key: str = Field(unique=True, index=True)
     name: str
     description: str
+    category: str = Field(default="social")
     sort_order: int = Field(default=0)
 
 
 class QuestSubtask(SQLModel, table=True):
-    """A single difficulty tier inside a task.
-
-    Tiers are worked through in order: the user sees only the first
-    unclaimed one and incrementing a counter (via API bump) fills it.
-    Once the counter reaches the target the claim button appears, and
-    clicking it marks the subtask claimed and advances to the next one.
-    """
+    """One tier of a quest. Tiers are claimed in sort_order; the last one grants the badge."""
 
     __tablename__ = "quest_subtask"
 
@@ -41,14 +36,12 @@ class QuestSubtask(SQLModel, table=True):
 
 
 class QuestSubtaskProgress(SQLModel, table=True):
-    """Per-user progress through a single subtask.
-
-    current_progress increments on each bump (capped at the subtask's
-    target_count server-side) and claimed flips true when the user clicks
-    Claim, advancing to the next subtask.
-    """
+    """A user's counter and claim flag for one tier. Written only by record() and claim."""
 
     __tablename__ = "quest_subtask_progress"
+    __table_args__ = (
+        UniqueConstraint("user_id", "subtask_id", name="uq_quest_subtask_progress_user_subtask"),
+    )
 
     id: int | None = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id", index=True)

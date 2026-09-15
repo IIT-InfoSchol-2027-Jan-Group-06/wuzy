@@ -21,6 +21,7 @@ class AwardRead(BaseModel):
     id: int
     user_id: int
     award_type: str
+    tier: int | None = None
     reward_xp: int
     badge_id: int | None = None
     awarded_at: datetime

@@ -8,7 +8,6 @@ from pathlib import Path
 import bcrypt
 from sqlmodel import Session, delete, func, select
 
-from app.core.badges import badge_id_for, build_deck
 from app.db.session import engine
 from app.models.conversation import Conversation, ConversationMember
 from app.models.event import Event, EventEngagement
@@ -16,7 +15,7 @@ from app.models.follow import Follow
 from app.models.group import Group, GroupMember
 from app.models.post import Post
 from app.models.quest import Quest, QuestSubtask, QuestSubtaskProgress
-from app.models.ticket import Award, Ticket
+from app.models.ticket import Ticket
 from app.models.user import User
 
 STORAGE_ROOT = Path("storage")
@@ -369,234 +368,172 @@ def seed():
         print("Demo logins (password123): abhiruk, ravindu644, sethuki, azma, charuki @test.com")
         print("Backend URL base: http://localhost:8000")
 
-# Tasks hold ordered subtasks. Each subtask has its own target, counter unit
-# and reward; the user works through them one at a time, claiming each.
-# Each entry: (task name, description, [(subtask name, target, unit, xp, sticker), ...])
+# Quest catalog. Position in this list is the quest's sort_order and its slot in
+# the user's badge deck. Each entry: (key, name, description, category, tiers),
+# tiers: (name, target, unit, xp). Progress is counted server-side by record().
 QUESTS = [
     (
+        "social_network",
         "Social Network",
         "Connect with people and grow your circle.",
-        [
-            ("Add a Friend", 1, "friend", 50, True),
-        ],
+        "social",
+        [("1 Friend", 1, "friends", 30), ("3 Friends", 3, "friends", 60), ("10 Friends", 10, "friends", 120)],
     ),
     (
+        "matchmaker",
+        "Matchmaker",
+        "Refer friends to each other and watch them connect.",
+        "social",
+        [("1 Referral", 1, "referrals", 50), ("3 Referrals", 3, "referrals", 100)],
+    ),
+    (
+        "squad_up",
+        "Squad Up",
+        "Start a group chat with your connections.",
+        "social",
+        [("1 Group", 1, "groups", 40)],
+    ),
+    (
+        "explorer",
+        "Explorer",
+        "Mark the events you are going to.",
+        "events",
+        [("1 Event", 1, "events", 20), ("3 Events", 3, "events", 50), ("10 Events", 10, "events", 100)],
+    ),
+    (
+        "ticket_holder",
+        "Ticket Holder",
+        "Buy tickets to events.",
+        "events",
+        [("1 Ticket", 1, "tickets", 40), ("5 Tickets", 5, "tickets", 100)],
+    ),
+    (
+        "ticket_sharing",
         "Ticket Sharing",
-        "Share event tickets with your circle.",
-        [
-            ("Share 1 Ticket", 1, "tickets", 80, True),
-        ],
+        "Share your tickets with friends.",
+        "events",
+        [("1 Share", 1, "shares", 40), ("3 Shares", 3, "shares", 80)],
     ),
     (
-        "Daily Login",
-        "Log in every day to earn awards.",
-        [
-            ("Log In", 1, "day", 50, True),
-        ],
+        "gift_giver",
+        "Gift Giver",
+        "Gift a ticket to a connection.",
+        "events",
+        [("1 Gift", 1, "gifts", 50), ("3 Gifts", 3, "gifts", 100)],
+    ),
+    (
+        "daily_streak",
+        "Daily Streak",
+        "Open Wuzy every day to keep your streak alive.",
+        "habits",
+        [("1 Day", 1, "days", 20), ("7 Days", 7, "days", 80), ("30 Days", 30, "days", 200)],
+    ),
+    (
+        "complete_profile",
+        "Complete Profile",
+        "Add a name, bio, photo and hobbies.",
+        "habits",
+        [("Profile", 1, "profile", 100)],
     ),
 ]
 
-# Demo progress per task, applied on a fresh seed. Tuples name the subtask
-# and its counter: one subtask complete-unclaimed (1/1) so the Claim button
-# is immediately testable, the rest mid-way so the bars and counters show.
-# Rows are unclaimed on purpose so the claim flow can be run end to end.
-# Each entry: (task name, [(subtask name, current_progress), ...])
+# Demo counters applied once per existing account on a fresh seed, so a
+# claimable card is there to try. (key, tier index, current_progress)
 QUEST_START_PROGRESS = [
-    ("Social Network", [("Add a Friend", 0)]),
-    ("Ticket Sharing", [("Share 1 Ticket", 1)]),
-    ("Daily Login", [("Log In", 0)]),
+    ("social_network", 0, 1),
+    ("explorer", 0, 1),
+    ("complete_profile", 0, 1),
 ]
 
 
 def seed_quests(session: Session) -> None:
-    """Sync the task catalog: drop stale subtasks, add missing ones.
-
-    Existing quests and subtasks keep their ids but their display, reward
-    and target fields are refreshed from the catalog. Live user progress is
-    preserved.
-    """
-    wanted_names = {quest[0] for quest in QUESTS}
+    """Sync the quest catalog by key. Tiers match by position so live progress survives."""
+    wanted = {quest[0] for quest in QUESTS}
     for stale in session.exec(select(Quest)).all():
-        if stale.name not in wanted_names:
-            session.delete(stale)
+        if stale.key in wanted:
+            continue
+        for tier in session.exec(select(QuestSubtask).where(QuestSubtask.quest_id == stale.id)).all():
+            session.exec(delete(QuestSubtaskProgress).where(QuestSubtaskProgress.subtask_id == tier.id))
+            session.delete(tier)
+        # No ORM relationship links tiers to their quest, so flush the children first.
+        session.flush()
+        session.delete(stale)
     session.commit()
 
-    for index, (name, description, subtasks) in enumerate(QUESTS):
-        quest = session.exec(select(Quest).where(Quest.name == name)).first()
+    for index, (key, name, description, category, tiers) in enumerate(QUESTS):
+        quest = session.exec(select(Quest).where(Quest.key == key)).first()
         if quest is None:
-            quest = Quest(name=name, description=description, sort_order=index)
-            session.add(quest)
+            quest = Quest(key=key, name=name, description=description, category=category, sort_order=index)
         else:
+            quest.name = name
             quest.description = description
+            quest.category = category
             quest.sort_order = index
-            session.add(quest)
+        session.add(quest)
         session.commit()
         session.refresh(quest)
 
-        wanted_subtasks = {subtask[0] for subtask in subtasks}
-        for stale in session.exec(
-            select(QuestSubtask).where(QuestSubtask.quest_id == quest.id)
-        ).all():
-            if stale.name not in wanted_subtasks:
-                session.exec(
-                    delete(QuestSubtaskProgress).where(QuestSubtaskProgress.subtask_id == stale.id)
-                )
+        existing = {
+            tier.sort_order: tier
+            for tier in session.exec(select(QuestSubtask).where(QuestSubtask.quest_id == quest.id)).all()
+        }
+        for position, stale in existing.items():
+            if position >= len(tiers):
+                session.exec(delete(QuestSubtaskProgress).where(QuestSubtaskProgress.subtask_id == stale.id))
                 session.delete(stale)
-        session.commit()
-
-        for sub_index, (sub_name, target, unit, xp, sticker) in enumerate(subtasks):
-            subtask = session.exec(
-                select(QuestSubtask).where(
-                    QuestSubtask.quest_id == quest.id,
-                    QuestSubtask.name == sub_name,
-                )
-            ).first()
-            description = f"Complete {target} {unit} in {name}"
-            if subtask is None:
-                subtask = QuestSubtask(
-                    quest_id=quest.id,
-                    name=sub_name,
-                    description=description,
-                    target_count=target,
-                    progress_unit=unit,
-                    reward_xp=xp,
-                    reward_sticker=sticker,
-                    sort_order=sub_index,
-                )
-                session.add(subtask)
-            else:
-                subtask.description = description
-                subtask.target_count = target
-                subtask.progress_unit = unit
-                subtask.reward_xp = xp
-                subtask.reward_sticker = sticker
-                subtask.sort_order = sub_index
-                session.add(subtask)
+        for position, (tier_name, target, unit, xp) in enumerate(tiers):
+            tier = existing.get(position) or QuestSubtask(quest_id=quest.id, sort_order=position)
+            tier.name = tier_name
+            tier.description = f"{tier_name} in {name}"
+            tier.target_count = target
+            tier.progress_unit = unit
+            tier.reward_xp = xp
+            tier.reward_sticker = position == len(tiers) - 1
+            session.add(tier)
     session.commit()
 
 
 def seed_quest_progress(session: Session) -> None:
-    """Add a demo progress row per subtask for every account, if missing.
-
-    Existing rows keep their live counter and claim flag so a container
-    restart never resets what a user already earned.
-    """
+    """Give every account the demo counters, only where no row exists yet."""
     users = session.exec(select(User)).all()
-    quests = {quest.name: quest for quest in session.exec(select(Quest)).all()}
-    for user in users:
-        for quest_name, subtask_progress in QUEST_START_PROGRESS:
-            quest = quests.get(quest_name)
-            if quest is None:
-                continue
-            for sub_name, current in subtask_progress:
-                subtask = session.exec(
-                    select(QuestSubtask).where(
-                        QuestSubtask.quest_id == quest.id,
-                        QuestSubtask.name == sub_name,
-                    )
-                ).first()
-                if subtask is None:
-                    continue
-                exists = session.exec(
-                    select(QuestSubtaskProgress).where(
-                        QuestSubtaskProgress.subtask_id == subtask.id,
-                        QuestSubtaskProgress.user_id == user.id,
-                    )
-                ).first()
-                if exists is None:
-                    session.add(
-                        QuestSubtaskProgress(
-                            user_id=user.id,
-                            subtask_id=subtask.id,
-                            current_progress=current,
-                            claimed=False,
-                        )
-                    )
+    for key, position, current in QUEST_START_PROGRESS:
+        tier = session.exec(
+            select(QuestSubtask)
+            .join(Quest, Quest.id == QuestSubtask.quest_id)
+            .where(Quest.key == key, QuestSubtask.sort_order == position)
+        ).first()
+        if tier is None:
+            continue
+        for user in users:
+            exists = session.exec(
+                select(QuestSubtaskProgress).where(
+                    QuestSubtaskProgress.subtask_id == tier.id,
+                    QuestSubtaskProgress.user_id == user.id,
+                )
+            ).first()
+            if exists is None:
+                session.add(
+                    QuestSubtaskProgress(user_id=user.id, subtask_id=tier.id, current_progress=current)
+                )
     session.commit()
 
 
-
-def _run_ticket_award_seed() -> None:
-    """Seed ticket and award demo data when users exist."""
-    from sqlmodel import Session as _Session
-
-    from app.db.session import engine as _engine
-
-    with _Session(_engine) as _session:
-        count = _session.exec(select(func.count(User.id))).one()
-        if count > 0:
-            seed_tickets(_session)
-            seed_awards(_session)
-
-
 def seed_tickets(session: Session) -> None:
-    """Seed demo tickets for all users if they have none."""
-    users = session.exec(select(User)).all()
-    for user in users:
-        exists = session.exec(
-            select(Ticket).where(Ticket.user_id == user.id)
-        ).first()
-        if exists is None:
+    """Give every account one demo ticket if it has none."""
+    for user in session.exec(select(User)).all():
+        if session.exec(select(Ticket).where(Ticket.user_id == user.id)).first() is None:
             session.add(Ticket(user_id=user.id, ticket_type="standard"))
     session.commit()
 
 
-def seed_awards(session: Session) -> None:
-    """Seed demo awards for users who have tickets."""
-    users = session.exec(select(User)).all()
-    for user in users:
-        if not user.badge_deck:
-            user.badge_deck = build_deck(user.id)
-            session.add(user)
-        # Backfill badge ids on awards created before the badge column existed.
-        for award in session.exec(
-            select(Award).where(Award.user_id == user.id, Award.badge_id.is_(None))
-        ).all():
-            award.badge_id = badge_id_for(session, user.id, award.award_type)
-            session.add(award)
-        tickets = session.exec(
-            select(Ticket).where(Ticket.user_id == user.id)
-        ).all()
-        if len(tickets) >= 5 and not tickets[0].award_granted:
-            award = Award(
-                user_id=user.id,
-                award_type="ticket_purchase",
-                reward_xp=50,
-                badge_id=badge_id_for(session, user.id, "ticket_purchase"),
-            )
-            session.add(award)
-            for ticket in tickets:
-                ticket.award_granted = True
-                session.add(ticket)
-        has_profile_award = session.exec(
-            select(Award).where(
-                Award.user_id == user.id,
-                Award.award_type == "profile_complete",
-            )
-        ).first()
-        if has_profile_award is None and user.bio and user.display_name:
-            award = Award(
-                user_id=user.id,
-                award_type="profile_complete",
-                reward_xp=100,
-                badge_id=badge_id_for(session, user.id, "profile_complete"),
-            )
-            session.add(award)
-    session.commit()
-
-    # Sync total_xp on all users
-    for user in users:
-        total_xp = session.exec(
-            select(Award).where(Award.user_id == user.id)
-        ).all()
-        total_xp = sum(a.reward_xp for a in total_xp)
-        if user.total_xp != total_xp:
-            user.total_xp = total_xp
-            session.add(user)
-    session.commit()
+def _run_ticket_seed() -> None:
+    """Seed demo tickets when users exist."""
+    with Session(engine) as session:
+        if session.exec(select(func.count(User.id))).one() > 0:
+            seed_tickets(session)
 
 
-seed_tickets_if_present = _run_ticket_award_seed
+seed_tickets_if_present = _run_ticket_seed
 
 
 def _run_quest_seed() -> None:

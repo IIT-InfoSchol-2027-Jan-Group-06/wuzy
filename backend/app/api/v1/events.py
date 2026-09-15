@@ -28,6 +28,7 @@ from datetime import UTC, datetime
 from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlmodel import Session, col, select
 
+from app.api.v1.quests import record
 from app.core.auth import get_current_user_id
 from app.db.session import get_session
 from app.models.event import Event, EventEngagement
@@ -284,6 +285,7 @@ def engage_event(
         )
     ).first()
 
+    going = False
     if existing is None:
         session.add(
             EventEngagement(
@@ -292,7 +294,11 @@ def engage_event(
                 kind=payload.kind,
             )
         )
-    elif payload.kind == "going":
+        going = payload.kind == "going"
+    elif payload.kind == "going" and existing.kind != "going":
         existing.kind = "going"
+        going = True
+    if going:
+        record(session, current_user_id, "explorer")
     session.commit()
     return Response(status_code=204)

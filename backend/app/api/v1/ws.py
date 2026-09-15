@@ -203,7 +203,7 @@ async def websocket_endpoint(websocket: WebSocket, user_id: int, token: str):
                 message = json.loads(raw)
             except json.JSONDecodeError:
                 continue
-            if message.get("type") != "message":
+            if message.get("type") not in ("message", "voice_note"):
                 continue
 
             with Session(engine) as session:

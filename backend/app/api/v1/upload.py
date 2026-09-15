@@ -18,7 +18,7 @@ from app.core.auth import get_current_user_id
 
 router = APIRouter()
 
-ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "gif", "webp", "heic"}
+ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "gif", "webp", "heic", "m4a", "mp3", "webm"}
 STORAGE_ROOT = Path("storage")
 # Strip anything that is not alphanumeric, dot, underscore, or hyphen.
 SAFE_NAME = re.compile(r"[^a-zA-Z0-9_.-]")
@@ -52,7 +52,7 @@ def upload_file(
     restricts uploads to known directories (post or avatar) to prevent
     writing to arbitrary paths.
     """
-    if kind not in ("post", "avatar"):
+    if kind not in ("post", "avatar", "audio"):
         raise HTTPException(status_code=404, detail="Unknown upload kind")
 
     filename = file.filename or "file.jpg"

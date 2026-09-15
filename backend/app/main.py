@@ -13,7 +13,21 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.api.v1 import auth, awards, chat, events, feed, groups, posts, quests, referrals, tickets, upload, users, ws
+from app.api.v1 import (
+    auth,
+    awards,
+    chat,
+    events,
+    feed,
+    groups,
+    posts,
+    quests,
+    referrals,
+    tickets,
+    upload,
+    users,
+    ws,
+)
 from app.db.session import init_db
 
 

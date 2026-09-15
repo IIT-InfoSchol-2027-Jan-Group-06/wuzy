@@ -2,17 +2,16 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
-import { apiGetEvent, apiPurchaseTicket, assetUrl, type ApiRecommendedEvent } from '@/lib/api';
+import { apiGetEvent, apiGetRecommendedEvents, apiPurchaseTicket, assetUrl, type ApiRecommendedEvent } from '@/lib/api';
 
 const card = { backgroundColor: wuzyColors.surface, borderRadius: 24, borderWidth: 1, borderColor: wuzyColors.glassBorder };
 
 export default function TicketScreen() {
-  const router = useRouter();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const { width } = useWindowDimensions();
   const [event, setEvent] = useState<ApiRecommendedEvent | null>(null);
@@ -24,12 +23,12 @@ export default function TicketScreen() {
     let active = true;
     (async () => {
       try {
-        if (id) {
-          const found = await apiGetEvent(Number(id));
-          if (active) setEvent(found);
-        }
+        const found = id
+          ? await apiGetEvent(Number(id))
+          : (await apiGetRecommendedEvents())[0];
+        if (active) setEvent(found ?? null);
       } catch {
-        // Leave event null; the screen shows the empty state below.
+        if (active) setEvent(null);
       }
     })();
     return () => {

@@ -1,4 +1,3 @@
-import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { AssetField, MediaType, Query, usePermissions, type Asset } from 'expo-media-library';
 import { type ReactNode, useEffect, useState } from 'react';
@@ -10,18 +9,14 @@ import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-th
 
 /** Full-screen gallery picker for the chat attach flow: an opaque overlay that
  * covers the whole thread, a fixed X header above a scrollable three-column
- * grid of the device's photos (newest first). Tapping a photo hands its id and
- * resolved file URI to the caller, which drives the send-gallery flow. The
- * picked photo is ringed until the caller clears it (on return from the send
- * frame). */
+ * grid of the device's photos (newest first). Tapping a photo resolves its
+ * file URI and hands it to the caller, which compresses both popups on the spot
+ * and pushes the send-gallery frame. */
 export function GalleryPopup({
-  selectedId,
   onSelect,
   onClose,
 }: {
-  /** Asset id of the ringed photo; the caller clears it on return from the send frame. */
-  selectedId: string | null;
-  /** Fires with the asset id (for the ring) and its resolved file URI (for the send frame). */
+  /** Fires with the asset id and its resolved file URI for the send frame. */
   onSelect: (assetId: string, uri: string) => void;
   onClose: () => void;
 }) {
@@ -157,27 +152,16 @@ export function GalleryPopup({
         showsVerticalScrollIndicator={false}
         columnWrapperStyle={{ gap }}
         contentContainerStyle={{ paddingHorizontal: wuzyLayout.side, paddingTop: wuzyLayout.top, paddingBottom: wuzyLayout.gap, gap }}
-        renderItem={({ item }) => {
-          const selected = item.id === selectedId;
-          return (
-            <Pressable
-              onPress={() => pick(item)}
-              accessibilityRole="button"
-              accessibilityLabel="Pick photo"
-              className="active:opacity-80"
-              style={{ width: cell, height: cell, borderRadius: 6, overflow: 'hidden' }}>
-              <Image source={{ uri: item.id }} style={StyleSheet.absoluteFill} contentFit="cover" />
-              {selected && (
-                <View style={[StyleSheet.absoluteFill, { borderWidth: 3, borderColor: wuzyColors.yellow }]} />
-              )}
-              {selected && (
-                <View className="absolute items-center justify-center rounded-full" style={{ top: 4, right: 4, width: 22, height: 22, backgroundColor: wuzyColors.yellow }}>
-                  <Ionicons name="checkmark" size={16} color={wuzyColors.bg} />
-                </View>
-              )}
-            </Pressable>
-          );
-        }}
+        renderItem={({ item }) => (
+          <Pressable
+            onPress={() => pick(item)}
+            accessibilityRole="button"
+            accessibilityLabel="Pick photo"
+            className="active:opacity-80"
+            style={{ width: cell, height: cell, borderRadius: 6, overflow: 'hidden' }}>
+            <Image source={{ uri: item.id }} style={StyleSheet.absoluteFill} contentFit="cover" />
+          </Pressable>
+        )}
       />
     );
   };

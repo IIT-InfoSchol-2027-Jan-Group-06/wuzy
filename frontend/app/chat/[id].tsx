@@ -1,6 +1,6 @@
 import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 import { ChatBubble } from '@/components/chat/ChatBubble';
 import { ChatHeader } from '@/components/chat/ChatHeader';
@@ -36,22 +36,18 @@ export default function ChatViewScreen() {
   const [loading, setLoading] = useState(true);
 
   // Attach sheet and photo-gallery overlay, owned here so the chat route can
-  // keep both up while the gallery send frame is stacked on top and close them
-  // together on the X button.
+  // compress both popups together once a gallery picture is picked (or on the
+  // gallery's X button).
   const [attachOpen, setAttachOpen] = useState(false);
   const [galleryOpen, setGalleryOpen] = useState(false);
-  const [selectedGalleryId, setSelectedGalleryId] = useState<string | null>(null);
-  // Set only when the gallery pushes its send frame, so a focus return there
-  // is told apart from the camera flow (which collapses the sheet).
-  const galleryReturnRef = useRef(false);
 
   // Reload the thread's locally-cached history from disk. Runs on first focus
   // and on every return, so a photo sent from the camera flow shows up in the
   // thread when the flow pops back here.
   const reloadHistory = useCallback(async () => {
     if (!user) return;
-    const history = (await getMessages(user.id, threadKind, threadId)).map((m) => ({
-      type: 'message' as const,
+    const history: ChatMessage[] = (await getMessages(user.id, threadKind, threadId)).map((m) => ({
+      type: m.audio_url ? 'voice_note' : 'message',
       from: m.from,
       from_name: m.from_name,
       to: undefined,
@@ -59,6 +55,8 @@ export default function ChatViewScreen() {
       group_id: m.kind === 'group' ? m.thread_id : undefined,
       text: m.text,
       media_url: m.media_url,
+      audio_url: m.audio_url,
+      duration_ms: m.duration_ms,
       created_at: m.created_at,
     }));
     setMessages(history);
@@ -68,15 +66,9 @@ export default function ChatViewScreen() {
   useFocusEffect(
     useCallback(() => {
       reloadHistory();
-      // Returning from the gallery send frame keeps the attach sheet and the
-      // gallery overlay up (only the pick is cleared); any other return, e.g.
-      // the camera flow, lands on the thread with the sheet closed.
-      if (galleryReturnRef.current) {
-        galleryReturnRef.current = false;
-        setSelectedGalleryId(null);
-      } else {
-        setAttachOpen(false);
-      }
+      // Any return from a pushed flow (camera, gallery send) lands on the
+      // thread with the attach sheet collapsed.
+      setAttachOpen(false);
     }, [reloadHistory]),
   );
 
@@ -149,9 +141,9 @@ export default function ChatViewScreen() {
   );
 
   const openGallery = () => {
-    setSelectedGalleryId(null);
-    // The attach sheet stays open beneath the overlay so closing the gallery
-    // can dismiss both together.
+    // The attach sheet stays open beneath the overlay so the gallery's X can
+    // dismiss both together, but the sheet pops back down on the X tap (kept
+    // in sync by the overlay's onClose) or immediately on a pick.
     setGalleryOpen(true);
   };
 
@@ -160,11 +152,13 @@ export default function ChatViewScreen() {
     setAttachOpen(false);
   };
 
-  const selectGalleryImage = (galleryId: string, uri: string) => {
-    // The resolved file path goes out-of-band like the camera's pending photo.
+  const selectGalleryImage = (_galleryId: string, uri: string) => {
+    // Picking a picture compresses both popups on the spot, then the send
+    // frame pushes on top of the thread. The resolved file path goes
+    // out-of-band like the camera's pending photo.
+    setGalleryOpen(false);
+    setAttachOpen(false);
     setPendingPhoto(uri);
-    galleryReturnRef.current = true;
-    setSelectedGalleryId(galleryId);
     router.push({
       pathname: '/send-gallery',
       params: {
@@ -174,6 +168,27 @@ export default function ChatViewScreen() {
       },
     });
   };
+
+  // Send a finished voice note: optimistic append into the thread, same shape
+  // as the gallery's photo-send callback in send-gallery.tsx.
+  const sendVoiceNote = useCallback(
+    (audioUrl: string, durationMs: number) => {
+      if (!user) return;
+      if (isGroup) {
+        setMessages((prev) => [
+          ...prev,
+          sendGroup(user.id, threadId, '', undefined, { audioUrl, durationMs }),
+        ]);
+      } else if (otherUserId) {
+        setMessages((prev) => [
+          ...prev,
+          sendDm(user.id, otherUserId, threadId, '', undefined, { audioUrl, durationMs }),
+        ]);
+      }
+      markThreadActive({ kind: threadKind, id: threadId });
+    },
+    [user, isGroup, threadId, threadKind, otherUserId],
+  );
 
   if (loading) {
     return (
@@ -220,6 +235,8 @@ export default function ChatViewScreen() {
               outgoing={item.from === user?.id}
               name={isGroup && item.from !== user?.id ? item.from_name ?? undefined : undefined}
               mediaUrl={item.media_url}
+              audioUrl={item.audio_url}
+              durationMs={item.duration_ms}
             />
           )}
         />
@@ -227,6 +244,7 @@ export default function ChatViewScreen() {
         <View style={{ paddingBottom: wuzyLayout.itemGap }}>
           <MessageBar
             onSend={send}
+            onSendVoiceNote={sendVoiceNote}
             threadId={threadId}
             threadKind={threadKind}
             otherUserId={otherUserId ?? undefined}
@@ -238,11 +256,7 @@ export default function ChatViewScreen() {
       </KeyboardAvoidingView>
 
       {galleryOpen && (
-        <GalleryPopup
-          selectedId={selectedGalleryId}
-          onSelect={selectGalleryImage}
-          onClose={closeGallery}
-        />
+        <GalleryPopup onSelect={selectGalleryImage} onClose={closeGallery} />
       )}
     </Screen>
   );

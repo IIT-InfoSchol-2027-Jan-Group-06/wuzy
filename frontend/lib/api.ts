@@ -148,7 +148,7 @@ export function apiMe(): Promise<ApiUser> {
   return apiGet<ApiUser>('/auth/me');
 }
 
-export async function uploadImage(kind: 'post' | 'avatar', uri: string) {
+export async function uploadImage(kind: 'post' | 'avatar' | 'audio', uri: string) {
   const file = new File(uri);
   const form = new FormData();
   form.append('file', file as unknown as Blob);

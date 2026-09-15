@@ -2,6 +2,7 @@ import { Image } from 'expo-image';
 import { memo } from 'react';
 import { Text, View } from 'react-native';
 
+import { VoiceNoteBubble } from '@/components/chat/VoiceNoteBubble';
 import { wuzyColors, wuzyFonts, wuzyType } from '@/constants/wuzy-theme';
 import { assetUrl } from '@/lib/api';
 
@@ -15,6 +16,8 @@ export const ChatBubble = memo(function ChatBubble({
   outgoing,
   name,
   mediaUrl,
+  audioUrl,
+  durationMs,
 }: {
   text: string;
   outgoing: boolean;
@@ -22,6 +25,10 @@ export const ChatBubble = memo(function ChatBubble({
   name?: string;
   /** Photo URL (server-relative). Rendered above the caption in one bubble. */
   mediaUrl?: string | null;
+  /** Voice-note audio URL (server-relative); renders a playable voice bubble. */
+  audioUrl?: string | null;
+  /** Voice-note length in milliseconds, for the time label. */
+  durationMs?: number | null;
 }) {
   const bubbleStyle = outgoing
     ? {
@@ -58,8 +65,8 @@ export const ChatBubble = memo(function ChatBubble({
       style={{
         alignSelf: outgoing ? 'flex-end' : 'flex-start',
         maxWidth: '75%',
-        paddingVertical: mediaUrl ? 0 : 12,
-        paddingHorizontal: mediaUrl ? 0 : 16,
+        paddingVertical: mediaUrl || audioUrl ? 0 : 12,
+        paddingHorizontal: mediaUrl || audioUrl ? 0 : 16,
         borderTopLeftRadius: outgoing ? RADIUS : NICK,
         borderTopRightRadius: outgoing ? NICK : RADIUS,
         borderBottomLeftRadius: RADIUS,
@@ -73,13 +80,18 @@ export const ChatBubble = memo(function ChatBubble({
             fontSize: wuzyType.small,
             color: wuzyColors.yellow,
             marginBottom: 4,
-            paddingTop: mediaUrl ? 12 : 0,
+            paddingTop: mediaUrl || audioUrl ? 12 : 0,
             ...pad,
           }}>
           {name}
         </Text>
       ) : null}
-      {mediaUrl ? (
+      {audioUrl ? (
+        <View style={{ paddingHorizontal: 16, paddingVertical: 12 }}>
+          <VoiceNoteBubble audioUrl={audioUrl} durationMs={durationMs ?? 0} outgoing={outgoing} />
+        </View>
+      ) : null}
+      {!audioUrl && mediaUrl ? (
         <Image
           source={{ uri: assetUrl(mediaUrl) }}
           style={{

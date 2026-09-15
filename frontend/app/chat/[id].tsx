@@ -1,6 +1,8 @@
-import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, View } from 'react-native';
+import { ActivityIndicator, FlatList, Keyboard, KeyboardAvoidingView, View, type LayoutChangeEvent } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ChatBubble } from '@/components/chat/ChatBubble';
 import { ChatHeader } from '@/components/chat/ChatHeader';
@@ -40,6 +42,56 @@ export default function ChatViewScreen() {
   // gallery's X button).
   const [attachOpen, setAttachOpen] = useState(false);
   const [galleryOpen, setGalleryOpen] = useState(false);
+
+  // TEMP DEBUG: console.log keyboard + KAV metrics for the avoidance fix. Remove after.
+  const insets = useSafeAreaInsets();
+  const kavFrame = useRef({ y: 0, height: 0 });
+
+  useEffect(() => {
+    const log = (label: string, kbH: number, kbY: number) => {
+      const pad = Math.max(kavFrame.current.y + kavFrame.current.height - kbY, 0);
+      const padWithOffset = Math.max(
+        kavFrame.current.y + kavFrame.current.height - (kbY - insets.top),
+        0,
+      );
+      console.log(
+        '[kbd]',
+        label,
+        'insetsTop',
+        insets.top,
+        'kbH',
+        kbH,
+        'kbY',
+        kbY,
+        'kavY',
+        kavFrame.current.y,
+        'kavH',
+        kavFrame.current.height,
+        'pad',
+        pad,
+        'padWithOffset',
+        padWithOffset,
+      );
+    };
+    const show = Keyboard.addListener('keyboardDidShow', (e) =>
+      log('show', e.endCoordinates.height, e.endCoordinates.screenY),
+    );
+    const hide = Keyboard.addListener('keyboardDidHide', () => log('hide', 0, 0));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, [insets.top]);
+
+  const onKavLayoutDebug = useCallback((e: LayoutChangeEvent) => {
+    kavFrame.current = { y: e.nativeEvent.layout.y, height: e.nativeEvent.layout.height };
+    console.log(
+      '[kbd] kavLayout y',
+      e.nativeEvent.layout.y,
+      'height',
+      e.nativeEvent.layout.height,
+    );
+  }, []);
 
   // Reload the thread's locally-cached history from disk. Runs on first focus
   // and on every return, so a photo sent from the camera flow shows up in the
@@ -206,7 +258,7 @@ export default function ChatViewScreen() {
 
   return (
     <Screen>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+      <KeyboardAvoidingView behavior="padding" keyboardVerticalOffset={insets.top} style={{ flex: 1 }} onLayout={onKavLayoutDebug}>
         <ChatHeader
           name={chatName}
           avatar={avatar}

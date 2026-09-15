@@ -102,7 +102,7 @@ async function connectSocket(userId: number): Promise<void> {
         for (const listener of notificationListeners) listener(data);
         return;
       }
-      if (data?.type !== 'message') return;
+      if (data?.type !== 'message' && data.type !== 'voice_note') return;
       const kind: ThreadKind = data.group_id != null ? 'group' : 'dm';
       const threadId = kind === 'group' ? data.group_id : data.conversation_id;
       if (threadId == null) return;

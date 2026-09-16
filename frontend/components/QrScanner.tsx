@@ -29,7 +29,7 @@ function ScanBox({ children }: { children: ReactNode }) {
 
 /** Camera side of the Connect card. Scans another user's Wuzy code and connects with them.
  *  The new connection's card shows on the Connections screen, not in the camera view. */
-export function QrScanner() {
+export function QrScanner({ onConnected }: { onConnected?: () => void }) {
   const [permission, requestPermission] = useCameraPermissions();
   const [phase, setPhase] = useState<Phase>('camera');
 
@@ -41,12 +41,19 @@ export function QrScanner() {
     setPhase(next);
   }, []);
 
-  // "Connected!" and "Already Connected!" are brief feedback; the camera returns to scanning on its own.
+  // "Connected!" shows briefly, then the caller pops back so the filled quest
+  // line is visible on the Awards screen. "Already Connected!" returns to scanning.
   useEffect(() => {
     if (phase !== 'found' && phase !== 'already') return;
-    const timer = setTimeout(() => go('camera'), 1500);
+    const timer = setTimeout(() => {
+      if (phase === 'found' && onConnected) {
+        onConnected();
+        return;
+      }
+      go('camera');
+    }, 1500);
     return () => clearTimeout(timer);
-  }, [phase, go]);
+  }, [phase, go, onConnected]);
 
   const handleScanned = useCallback(
     async (result: BarcodeScanningResult) => {

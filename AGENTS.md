@@ -9,7 +9,7 @@ Expo ~57, expo-router ~57, React 19.2, React Native 0.86, TypeScript, NativeWind
 Expo HAS CHANGED. Read the versioned docs at https://docs.expo.dev/versions/v57.0.0/ before writing Expo code. Do not trust training-data Expo patterns.
 
 ## Commands
-
+add
 Run from `frontend/`:
 
 ```
@@ -86,6 +86,9 @@ backend/
 | `GET` | `/users/{id}/connections` | No | A user's Connections (mutual follows), used to filter the refer list |
 | `POST` | `/posts/` | Yes | Create post (X-User-Id header) |
 | `POST` | `/posts/{id}/pin-to-profile` | Yes | Promote ephemeral to permanent (author only) |
+| `POST` | `/posts/{id}/like` | Yes | Toggle my like; notifies the author on like |
+| `GET` | `/notifications` | Yes | My notification rows, newest first |
+| `POST` | `/notifications/read` | Yes | Mark all my notifications read (204) |
 | `GET` | `/feed/discover` | Yes | Ephemeral posts alive for this session (X-Session-Id) + all permanent posts |
 | `POST` | `/feed/{id}/view` | Yes | Record a view tagged with X-Session-Id (idempotent 204) |
 | `GET` | `/feed/profile/{user_id}` | No | Permanent posts for a user's profile |

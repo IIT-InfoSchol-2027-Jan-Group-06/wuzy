@@ -7,7 +7,6 @@ import type { ApiQuest } from '@/lib/api';
 
 /** Maps each task to its right-column action (or none). */
 const actionFor: Record<string, { label: string; route: string }> = {
-  'Attend Live Events': { label: 'Attend', route: '/event-details' },
   'Social Network': { label: 'Add', route: '/connect' },
   'Ticket Sharing': { label: 'Share', route: '/ticket-vault' },
   'Complete Profile': { label: 'Complete', route: '/(tabs)/profile' },
@@ -36,7 +35,6 @@ export function QuestsSection({ quests, onClaimed, completedTasks, onClaimTask, 
   // Display order: Daily Login leads the board, Ticket Sharing closes it.
   const taskOrder = [
     'Daily Login',
-    'Attend Live Events',
     'Social Network',
     'Purchase Ticket',
     'Complete Profile',
@@ -64,7 +62,7 @@ export function QuestsSection({ quests, onClaimed, completedTasks, onClaimTask, 
           if (taskNames.includes(name)) {
             const isPurchaseTicket = name === 'Purchase Ticket';
             const purchaseCount = Math.min(5, ticketCount ?? 0);
-            const isDone = isPurchaseTicket ? purchaseCount >= 5 : (completedTasks?.has(name) ?? false);
+            const isDone = completedTasks?.has(name) ?? false;
             const action = actionFor[name];
             const actionLabel = action?.label ?? (name === 'Purchase Ticket' ? 'Purchase' : 'Complete');
             return (
@@ -92,7 +90,7 @@ export function QuestsSection({ quests, onClaimed, completedTasks, onClaimTask, 
                 actionLabel={actionLabel}
                 onAction={action ? () => router.push(action.route as never) : undefined}
                 onClaimed={onClaimed}
-                onClaimCustom={action ? undefined : onClaimTask?.(name)}
+                onClaimCustom={onClaimTask?.(name)}
               />
             );
           }

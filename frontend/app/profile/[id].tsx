@@ -15,7 +15,6 @@ const GRID_GAP = 2;
 
 const AWARD_ORDER = [
   'Daily Login',
-  'Attend Live Events',
   'Social Network',
   'Purchase Ticket',
   'Complete Profile',

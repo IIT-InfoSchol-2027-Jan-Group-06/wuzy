@@ -125,6 +125,15 @@ export function apiEngageEvent(eventId: number, kind: 'view' | 'going'): Promise
   return apiPostNoContent(`/events/${eventId}/engage`, { kind });
 }
 
+export async function apiPatch<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${API_URL}${path}`, {
+    method: 'PATCH',
+    headers: { ...API_HEADERS, ...(await authHeaders()) },
+    body: JSON.stringify(body),
+  });
+  return handleResponse<T>(res, path);
+}
+
 export interface AuthSession {
   access_token: string;
   token_type: string;
@@ -195,6 +204,13 @@ export interface ApiPost {
   user_id: number;
   created_at: string;
   user: ApiUser | null;
+  like_count: number;
+  liked_by_me: boolean;
+}
+
+/** Toggle my like on a post. Returns the new state and count. */
+export function likePost(postId: number): Promise<{ liked: boolean; like_count: number }> {
+  return apiPost(`/posts/${postId}/like`, {});
 }
 
 export interface ApiConversation {
@@ -316,9 +332,33 @@ export function getUserConnections(userId: number): Promise<ApiUser[]> {
   return apiGet<ApiUser[]>(`/users/${userId}/connections`);
 }
 
-/** Every referral naming me, newest first. Resolved ones are included so the notifications screen can pop their outcome once per session. */
-export function getInboxReferrals(): Promise<ApiReferralRequest[]> {
-  return apiGet<ApiReferralRequest[]>('/referrals/inbox');
+/** One row on the notifications page. `payload.text` is the full sentence and
+ * `payload.url` the deep link; referral rows also carry `my_status`, `status`
+ * and `other_name` so the card knows whether to show Accept/Decline. */
+export interface ApiNotification {
+  id: number;
+  type: string;
+  actor_id: number | null;
+  entity_id: number | null;
+  payload: {
+    text: string;
+    url: string;
+    actor_name?: string;
+    actor_avatar_url?: string | null;
+    other_name?: string;
+    my_status?: string;
+    status?: string;
+  };
+  read_at: string | null;
+  created_at: string;
+}
+
+export function getNotifications(): Promise<ApiNotification[]> {
+  return apiGet<ApiNotification[]>('/notifications');
+}
+
+export function markNotificationsRead(): Promise<void> {
+  return apiPostNoContent('/notifications/read');
 }
 
 /** Accept or decline a referral. Only the referred user can respond. */
@@ -333,6 +373,11 @@ export function consumeReferral(id: number): Promise<ApiReferralRequest> {
 
 export async function apiPurchaseTicket(): Promise<TicketPurchaseResponse> {
   return apiPost<TicketPurchaseResponse>('/tickets/purchase', {});
+}
+
+/** Claim the ticket badge once enough tickets are bought. Idempotent. */
+export async function apiClaimTicketAward(): Promise<ApiAwardRead> {
+  return apiPost<ApiAwardRead>('/tickets/claim-award', {});
 }
 
 export async function apiGetTickets(): Promise<ApiTicketRead[]> {

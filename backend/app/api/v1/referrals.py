@@ -2,27 +2,24 @@
 
 POST /referrals           - the sender creates a request between two users
 GET  /referrals/outgoing  - every request the current user sent (refer-screen lock)
-GET  /referrals/inbox     - every request naming the current user (notifications)
 
-Creating a request delivers it to both recipients over their shared WebSocket
-(or their offline mailbox) plus a best-effort OS push banner via Expo, each
-saying the sender wants to refer them to the other. A referral only becomes a
-connection (mutual follow) when both recipients accept; either decline voids
-it for everyone.
+Every step lands on the notifications page through ws.notify(): both
+recipients get a `referral` row (with Accept/Decline) when the request is
+created, the sender gets a `referral_response` row on each reply, and both
+recipients get a `connection` or `referral_declined` row when it resolves. A
+referral only becomes a connection (mutual follow) when both recipients
+accept; either decline voids it for everyone.
 """
-
-import threading
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
-from app.api.v1.ws import deliver_live
+from app.api.v1.ws import notify
 from app.core.auth import get_current_user_id
-from app.core.push import send_push
 from app.db.session import engine, get_session
 from app.models.follow import Follow
-from app.models.push_token import PushToken
+from app.models.notification import Notification
 from app.models.referral import ReferralRequest
 from app.models.user import User
 from app.schemas.referral import ReferralCreate, ReferralRead, ReferralRespond
@@ -74,70 +71,91 @@ def _read(session: Session, request: ReferralRequest) -> ReferralRead:
     )
 
 
-def _frame(request: ReferralRequest) -> dict:
-    """The live referral frame both clients use to refresh their lists."""
-    with Session(engine) as session:
-        sender = session.get(User, request.sender_id)
-        first = session.get(User, request.first_user_id)
-        second = session.get(User, request.second_user_id)
-        sender_name = _display_name(sender) if sender else None
-        first_name = _display_name(first) if first else None
-        second_name = _display_name(second) if second else None
-    return {
-        "type": "referral",
-        "request_id": request.id,
-        "sender_id": request.sender_id,
-        "first_user_id": request.first_user_id,
-        "second_user_id": request.second_user_id,
-        "sender_name": sender_name,
-        "first_name": first_name,
-        "second_name": second_name,
-        "status": request.status,
-        "created_at": request.created_at.isoformat(),
-    }
+def _recipients(session: Session, request: ReferralRequest) -> list[tuple[User, User]]:
+    """(me, other) for each recipient, so each sees the referral from their side."""
+    first = session.get(User, request.first_user_id)
+    second = session.get(User, request.second_user_id)
+    return [(first, second), (second, first)]
 
 
-def _notify_referral(request: ReferralRequest) -> None:
-    """Deliver a new referral to both recipients: live frame plus OS push.
-
-    Each recipient sees themselves referred to the other, so the push pairs the
-    sender's name with the other recipient's name per recipient. The Expo push
-    calls can take seconds, so they run on daemon threads like chat pushes.
-    """
-    payload = _frame(request)
-    deliver_live(request.first_user_id, payload)
-    deliver_live(request.second_user_id, payload)
-
-    with Session(engine) as session:
-        tokens = session.exec(
-            select(PushToken).where(
-                PushToken.user_id.in_([request.first_user_id, request.second_user_id])
-            )
-        ).all()
-    if not tokens:
-        return
-    sender_name = payload["sender_name"]
-    for token in tokens:
-        other_name = (
-            payload["second_name"]
-            if token.user_id == request.first_user_id
-            else payload["first_name"]
+def _notify_referral(session: Session, request: ReferralRequest) -> None:
+    """Give both recipients a referral row; away devices get a push with Accept/Decline."""
+    sender = session.get(User, request.sender_id)
+    for me, other in _recipients(session, request):
+        notify(
+            session,
+            me.id,
+            "referral",
+            actor=sender,
+            entity_id=request.id,
+            body=f"{_display_name(sender)} wants to refer you to {_display_name(other)}",
+            payload={"other_name": _display_name(other), "my_status": PENDING, "status": PENDING},
+            channel="referrals",
+            category="referrals",
         )
-        title = sender_name or "Someone"
-        body = f"wants to refer you to {other_name}"
-        threading.Thread(
-            target=send_push,
-            args=(token.token, title, body),
-            kwargs={"data": {"url": "/notifications"}},
-            daemon=True,
-        ).start()
 
 
-def _notify_resolved(request: ReferralRequest) -> None:
-    """Tell both recipients a referral popped (connection or denial)."""
-    payload = _frame(request)
-    deliver_live(request.first_user_id, payload)
-    deliver_live(request.second_user_id, payload)
+def _notify_response(session: Session, request: ReferralRequest, responder: User) -> None:
+    """Tell the sender about a reply, keep the recipients' referral rows current,
+    and hand both recipients the outcome once the referral resolves."""
+    sender = session.get(User, request.sender_id)
+    pairs = _recipients(session, request)
+    my_status = (
+        request.first_status if responder.id == request.first_user_id else request.second_status
+    )
+    other = next(o for me, o in pairs if me.id == responder.id)
+    notify(
+        session,
+        request.sender_id,
+        "referral_response",
+        actor=responder,
+        entity_id=request.id,
+        body=f"{_display_name(responder)} {my_status} your referral to {_display_name(other)}",
+        payload={
+            "status": request.status,
+            "first_status": request.first_status,
+            "second_status": request.second_status,
+        },
+    )
+
+    rows = session.exec(
+        select(Notification).where(
+            Notification.type == "referral", Notification.entity_id == request.id
+        )
+    ).all()
+    for row in rows:
+        update = {"status": request.status}
+        if row.user_id == responder.id:
+            update["my_status"] = my_status
+        # Reassign so SQLAlchemy notices the JSON column changed.
+        row.payload = {**row.payload, **update}
+        session.add(row)
+    session.commit()
+
+    if request.status == ACCEPTED:
+        for me, other in pairs:
+            notify(
+                session,
+                me.id,
+                "connection",
+                actor=other,
+                entity_id=other.id,
+                url=f"/profile/{other.id}",
+                body=(
+                    f"You are now connected with {_display_name(other)} "
+                    f"via {_display_name(sender)}'s referral"
+                ),
+            )
+    elif request.status == DECLINED:
+        for me, other in pairs:
+            notify(
+                session,
+                me.id,
+                "referral_declined",
+                actor=sender,
+                entity_id=request.id,
+                body=f"Your referral with {_display_name(other)} was declined",
+            )
 
 
 def _connect_pair(a_id: int, b_id: int) -> None:
@@ -156,10 +174,20 @@ def _connect_pair(a_id: int, b_id: int) -> None:
             f.follower_id
             for f in session.exec(select(Follow).where(Follow.followed_id == a_id)).all()
         }
+        a_added = False
+        b_added = False
         if b_id not in follows:
             session.add(Follow(follower_id=a_id, followed_id=b_id))
+            a_added = True
         if b_id not in followed_back:
             session.add(Follow(follower_id=b_id, followed_id=a_id))
+            b_added = True
+        if a_added or b_added:
+            from app.api.v1.quests import bump_quest_for
+            if a_added:
+                bump_quest_for(a_id, "Social Network", session)
+            if b_added:
+                bump_quest_for(b_id, "Social Network", session)
         session.commit()
 
 
@@ -215,7 +243,7 @@ def create_referral(
             return _read(session, existing)
         raise
     session.refresh(request)
-    _notify_referral(request)
+    _notify_referral(session, request)
     return _read(session, request)
 
 
@@ -234,48 +262,6 @@ def list_outgoing(
     return [_read(session, request) for request in requests]
 
 
-@router.get("/inbox", response_model=list[ReferralRead])
-def list_inbox(
-    current_user_id: int = Depends(get_current_user_id),
-    session: Session = Depends(get_session),
-):
-    """Every referral naming the caller as a recipient, newest first.
-
-    Resolved referrals stay in the list: the notifications screen pops each
-    outcome once per session (Connection made / Referral Denied), so it needs
-    the terminal state even when the referral resolved while the user was away.
-    """
-    requests = session.exec(
-        select(ReferralRequest)
-        .where(
-            (ReferralRequest.first_user_id == current_user_id)
-            | (ReferralRequest.second_user_id == current_user_id)
-        )
-        .order_by(ReferralRequest.created_at.desc())
-    ).all()
-    return [_read(session, request) for request in requests]
-
-
-def _notify_sender(request: ReferralRequest) -> None:
-    """Tell the sender their referral moved, live over the shared socket."""
-    with Session(engine) as session:
-        first = session.get(User, request.first_user_id)
-        second = session.get(User, request.second_user_id)
-    payload = {
-        "type": "referral_response",
-        "request_id": request.id,
-        "sender_id": request.sender_id,
-        "first_user_id": request.first_user_id,
-        "second_user_id": request.second_user_id,
-        "first_name": _display_name(first) if first else None,
-        "second_name": _display_name(second) if second else None,
-        "first_status": request.first_status,
-        "second_status": request.second_status,
-        "status": request.status,
-    }
-    deliver_live(request.sender_id, payload)
-
-
 @router.post("/{request_id}/respond", response_model=ReferralRead)
 def respond_referral(
     request_id: int,
@@ -287,10 +273,9 @@ def respond_referral(
 
     The reply updates only the responder's own status. A decline voids the
     whole referral; the second accept resolves it into a real connection
-    (mutual follow) between the two. The sender is notified live on every
-    response so their refer screen updates in place, and both recipients are
-    notified when the referral fully resolves so their notifications pop the
-    result.
+    (mutual follow) between the two. The sender is notified on every response
+    so their refer screen updates in place, and both recipients are notified
+    when the referral fully resolves.
     """
     request = session.get(ReferralRequest, request_id)
     if request is None:
@@ -311,9 +296,7 @@ def respond_referral(
     session.refresh(request)
     if request.status == ACCEPTED:
         _connect_pair(request.first_user_id, request.second_user_id)
-    _notify_sender(request)
-    if request.status != PENDING:
-        _notify_resolved(request)
+    _notify_response(session, request, session.get(User, current_user_id))
     return _read(session, request)
 
 

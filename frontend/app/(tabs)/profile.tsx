@@ -11,13 +11,12 @@ import { accountFor } from '@/constants/accounts';
 import { badgeImageForAward } from '@/constants/awards-data';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 import { useAuth } from '@/context/auth';
-import { apiGet, apiGetAwards, apiGetQuests, type ApiAwardRead, type ApiPost, type ApiQuest } from '@/lib/api';
+import { apiGet, apiGetAwards, apiGetQuests, assetUrl, type ApiAwardRead, type ApiPost, type ApiQuest } from '@/lib/api';
 
 const GRID_GAP = 2;
 
 const AWARD_ORDER = [
   'Daily Login',
-  'Attend Live Events',
   'Social Network',
   'Purchase Ticket',
   'Complete Profile',
@@ -119,7 +118,7 @@ export default function ProfileScreen() {
   return (
     <Screen scroll padded={false} style={{ paddingTop: 0 }}>
       <ProfileHero
-        background={extra.backgroundImage}
+        background={user.avatar_url ? { uri: assetUrl(user.avatar_url) } : extra.backgroundImage}
         name={user.display_name ?? user.username}
         awardsCount={awardsLoaded ? earnedAwards.length : extra.awardsCount}
         awards={awardsLoaded ? earnedAwards : undefined}
@@ -136,8 +135,8 @@ export default function ProfileScreen() {
       <View style={{ paddingHorizontal: wuzyLayout.side, gap: wuzyLayout.gap, paddingTop: wuzyLayout.gap }}>
         <TagSection tags={user.hobbies ?? []} />
 
-        <View className="flex-row items-center justify-center" style={{ gap: wuzyLayout.itemGap }}>
-          {pillButton('Edit profile')}
+        <View style={{ flexDirection: 'row', gap: wuzyLayout.itemGap }}>
+          {pillButton('Edit profile', () => router.push('/edit-profile'))}
           {pillButton('Connections', () => router.push('/connections'))}
         </View>
 

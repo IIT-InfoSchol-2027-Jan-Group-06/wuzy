@@ -10,9 +10,7 @@ import { ScreenHeader } from '@/components/ScreenHeader';
 import { TagSection } from '@/components/TagSection';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 import {
-  apiBumpQuestProgress,
   apiGetEvent,
-  apiGetQuests,
   apiGetRecommendedEvents,
   assetUrl,
   type ApiRecommendedEvent,
@@ -55,15 +53,6 @@ export default function EventDetailsScreen() {
 
   const handleBuyTicket = async () => {
     if (!event) return;
-    try {
-      const data = await apiGetQuests();
-      const quest = data.quests.find((q) => q.name === 'Attend Live Events');
-      if (quest) {
-        await apiBumpQuestProgress(quest.id);
-      }
-    } catch {
-      // Keeps the count unchanged; the bump did not go through.
-    }
     router.push({ pathname: '/ticket', params: { id: String(event.id) } });
   };
 

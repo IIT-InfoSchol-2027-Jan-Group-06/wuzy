@@ -1,4 +1,4 @@
-import { API_URL } from '@/lib/api';
+import { API_URL, type ApiNotification } from '@/lib/api';
 import { getToken } from '@/lib/auth-token';
 import { getPendingMessages, markMessagesSent, saveMessage, type ThreadKind } from '@/lib/chat-db';
 
@@ -25,35 +25,9 @@ export type ChatThread = { kind: 'dm' | 'group'; id: number };
 
 export type ChatListener = (m: ChatMessage) => void;
 
-/** A live referral notice routed over the same socket. Not chat: no thread or
- * cache write, just an inbox refresh signal for the notifications screen. */
-export type ReferralFrame = {
-  type: 'referral';
-  request_id: number;
-  sender_id: number;
-  first_user_id: number;
-  second_user_id: number;
-  sender_name: string | null;
-  first_name: string | null;
-  second_name: string | null;
-  status: string;
-  created_at: string;
-};
-
-/** A live referral response, routed to the sender so their refer screen can
- * reflect a recipient's accept/decline while it is open. */
-export type ReferralResponseFrame = {
-  type: 'referral_response';
-  request_id: number;
-  sender_id: number;
-  first_user_id: number;
-  second_user_id: number;
-  first_name: string | null;
-  second_name: string | null;
-  first_status: string;
-  second_status: string;
-  status: string;
-};
+/** A notification row pushed over the same socket the moment it is created.
+ * Not chat: no cache write, just a refresh signal for whoever is listening. */
+export type NotificationFrame = { type: 'notification'; notification: ApiNotification };
 
 let socket: WebSocket | null = null;
 let socketUserId: number | null = null;
@@ -62,22 +36,13 @@ let reconnectDelay = 1000;
 let holds = 0;
 const listeners = new Set<ChatListener>();
 
-const referralListeners = new Set<(f: ReferralFrame) => void>();
-const referralResponseListeners = new Set<(f: ReferralResponseFrame) => void>();
+const notificationListeners = new Set<(f: NotificationFrame) => void>();
 
-/** Subscribe to live referral frames. Returns an unsubscribe handle. */
-export function subscribeReferrals(listener: (f: ReferralFrame) => void): () => void {
-  referralListeners.add(listener);
+/** Subscribe to live notification frames. Returns an unsubscribe handle. */
+export function subscribeNotifications(listener: (f: NotificationFrame) => void): () => void {
+  notificationListeners.add(listener);
   return () => {
-    referralListeners.delete(listener);
-  };
-}
-
-/** Subscribe to live referral response frames (accept/decline from the person referred). */
-export function subscribeReferralResponses(listener: (f: ReferralResponseFrame) => void): () => void {
-  referralResponseListeners.add(listener);
-  return () => {
-    referralResponseListeners.delete(listener);
+    notificationListeners.delete(listener);
   };
 }
 
@@ -132,13 +97,9 @@ async function connectSocket(userId: number): Promise<void> {
 
   ws.onmessage = (event) => {
     try {
-      const data = JSON.parse(event.data) as ChatMessage | ReferralFrame | ReferralResponseFrame;
-      if (data?.type === 'referral') {
-        for (const listener of referralListeners) listener(data);
-        return;
-      }
-      if (data?.type === 'referral_response') {
-        for (const listener of referralResponseListeners) listener(data);
+      const data = JSON.parse(event.data) as ChatMessage | NotificationFrame;
+      if (data?.type === 'notification') {
+        for (const listener of notificationListeners) listener(data);
         return;
       }
       if (data?.type !== 'message') return;

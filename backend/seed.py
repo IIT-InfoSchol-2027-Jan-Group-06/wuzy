@@ -374,39 +374,24 @@ def seed():
 # Each entry: (task name, description, [(subtask name, target, unit, xp, sticker), ...])
 QUESTS = [
     (
-        "Attend Live Events",
-        "Go to live events and climb the table.",
-        [
-            ("Attend 1 Event", 1, "completed", 20, False),
-            ("Attend 3 Events", 3, "completed", 50, True),
-            ("Attend 5 Events", 5, "completed", 100, True),
-        ],
-    ),
-    (
         "Social Network",
         "Connect with people and grow your circle.",
         [
-            ("Add 3 Friends", 3, "friends", 10, False),
-            ("Add 5 Friends", 5, "friends", 25, False),
-            ("Add 10 Friends", 10, "friends", 50, True),
+            ("Add a Friend", 1, "friend", 50, True),
         ],
     ),
     (
         "Ticket Sharing",
         "Share event tickets with your circle.",
         [
-            ("Share 1 Ticket", 1, "tickets", 20, False),
-            ("Share 3 Tickets", 3, "tickets", 40, False),
-            ("Share 5 Tickets", 5, "tickets", 80, True),
+            ("Share 1 Ticket", 1, "tickets", 80, True),
         ],
     ),
     (
         "Daily Login",
         "Log in every day to earn awards.",
         [
-            ("Day 1 Login", 1, "days", 10, False),
-            ("3-Day Streak", 3, "days", 30, False),
-            ("7-Day Streak", 7, "days", 50, True),
+            ("Log In", 1, "day", 50, True),
         ],
     ),
 ]
@@ -417,10 +402,9 @@ QUESTS = [
 # Rows are unclaimed on purpose so the claim flow can be run end to end.
 # Each entry: (task name, [(subtask name, current_progress), ...])
 QUEST_START_PROGRESS = [
-    ("Attend Live Events", [("Attend 1 Event", 1)]),
-    ("Social Network", [("Add 3 Friends", 2)]),
+    ("Social Network", [("Add a Friend", 0)]),
     ("Ticket Sharing", [("Share 1 Ticket", 1)]),
-    ("Daily Login", [("Day 1 Login", 1)]),
+    ("Daily Login", [("Log In", 0)]),
 ]
 
 
@@ -573,15 +557,15 @@ def seed_awards(session: Session) -> None:
         tickets = session.exec(
             select(Ticket).where(Ticket.user_id == user.id)
         ).all()
-        for ticket in tickets:
-            if not ticket.award_granted:
-                award = Award(
-                    user_id=user.id,
-                    award_type="ticket_purchase",
-                    reward_xp=50,
-                    badge_id=badge_id_for(session, user.id, "ticket_purchase"),
-                )
-                session.add(award)
+        if len(tickets) >= 5 and not tickets[0].award_granted:
+            award = Award(
+                user_id=user.id,
+                award_type="ticket_purchase",
+                reward_xp=50,
+                badge_id=badge_id_for(session, user.id, "ticket_purchase"),
+            )
+            session.add(award)
+            for ticket in tickets:
                 ticket.award_granted = True
                 session.add(ticket)
         has_profile_award = session.exec(

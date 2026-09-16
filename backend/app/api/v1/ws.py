@@ -42,6 +42,7 @@ from app.db.session import engine
 from app.models.conversation import Conversation, ConversationMember
 from app.models.follow import Follow
 from app.models.group import Group, GroupMember
+from app.models.notification import Notification
 from app.models.push_token import PushToken
 from app.models.user import User
 
@@ -124,45 +125,86 @@ def _group_member_ids(session: Session, group_id: int) -> list[int]:
     return [row.user_id for row in rows]
 
 
-def _notify_push(recipient_id: int, message: dict) -> None:
-    """Push a queued message to the recipient's device when they are away.
-
-    Best-effort: no token means no notification, and failures are swallowed.
-    The data.url deep-links back into the thread so tapping opens the chat.
-    """
+def _push(
+    user_id: int,
+    title: str,
+    body: str,
+    data: dict,
+    channel: str | None = None,
+    category: str | None = None,
+) -> None:
+    """Best-effort OS push to a user's device: no token means no notification."""
     with Session(engine) as session:
-        token = session.exec(
-            select(PushToken).where(PushToken.user_id == recipient_id)
-        ).first()
+        token = session.exec(select(PushToken).where(PushToken.user_id == user_id)).first()
     if token is None:
         return
+    # The Expo HTTP call can take seconds; keep it off the caller's loop or thread.
+    threading.Thread(
+        target=send_push,
+        args=(token.token, title, body, data),
+        kwargs={"channel": channel, "category": category},
+        daemon=True,
+    ).start()
 
+
+def _notify_push(recipient_id: int, message: dict) -> None:
+    """Push a queued chat message; data.url deep-links back into the thread."""
     sender = message.get("from_name") or "Someone"
     text = message.get("text") or ("Photo" if message.get("media_url") else "New message")
     if message.get("group_id") is not None:
         thread_url = f"/chat/{message['group_id']}?kind=group"
     else:
         thread_url = f"/chat/{message.get('conversation_id')}?kind=dm"
-    # The Expo HTTP call can take seconds; keep it off the socket's event loop.
-    threading.Thread(
-        target=send_push,
-        args=(token.token, sender, text or "New message"),
-        kwargs={"data": {"url": thread_url}},
-        daemon=True,
-    ).start()
+    _push(recipient_id, sender, text or "New message", {"url": thread_url}, channel="messages")
 
 
-def deliver_live(user_id: int, payload: dict) -> None:
-    """Push a live frame to an open socket, or queue it for replay if away.
+def notify(
+    session: Session,
+    user_id: int,
+    type: str,
+    *,
+    actor: User | None = None,
+    entity_id: int | None = None,
+    payload: dict | None = None,
+    body: str = "",
+    url: str = "/notifications",
+    channel: str | None = None,
+    category: str | None = None,
+) -> Notification | None:
+    """Record a notification for user_id and deliver it.
 
-    Non-chat frames (e.g. referral notifications) reuse the same socket and
-    offline mailbox as messages; the client forwards them to listeners.
+    body is the full sentence the page shows. The row is the source of truth
+    for the notifications page. An open socket gets a live `notification`
+    frame; otherwise the device gets an OS push. A user is never notified about
+    their own action.
     """
+    if actor is not None and actor.id == user_id:
+        return None
+    data = {"text": body, "url": url, **(payload or {})}
+    if actor is not None:
+        data["actor_name"] = actor.display_name or actor.username
+        data["actor_avatar_url"] = actor.avatar_url
+    row = Notification(
+        user_id=user_id,
+        type=type,
+        actor_id=actor.id if actor else None,
+        entity_id=entity_id,
+        payload=data,
+    )
+    session.add(row)
+    session.commit()
+    session.refresh(row)
+
     recipient = _sockets.get(user_id)
     if recipient is not None:
-        _deliver_socket(recipient, payload)
-    elif not is_online(user_id):
-        queue_offline(user_id, payload)
+        frame = {"type": "notification", "notification": row.model_dump(mode="json")}
+        _deliver_socket(recipient, frame)
+    else:
+        push_data = {"url": url}
+        if type == "referral":
+            push_data["referralId"] = entity_id
+        _push(user_id, "Wuzy", body, push_data, channel, category)
+    return row
 
 
 def _send_or_queue(payload: dict, recipient_id: int) -> None:

@@ -1,10 +1,10 @@
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { Platform, Pressable, StyleSheet, View, useWindowDimensions, type StyleProp, type ViewStyle } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View, useWindowDimensions, type StyleProp, type ViewStyle } from 'react-native';
 import type { ReactNode } from 'react';
 
-import { wuzyColors } from '@/constants/wuzy-theme';
+import { wuzyColors, wuzyFonts, wuzyType } from '@/constants/wuzy-theme';
 
 export interface GlassNavButtonProps {
   icon?: ReactNode | keyof typeof Ionicons.glyphMap;
@@ -17,6 +17,8 @@ export interface GlassNavButtonProps {
   accessibilityLabel?: string;
   /** Tint layer color, default the frosted yellow (e.g. white for a neutral pill). */
   tintColor?: string;
+  /** Unread count shown as a yellow pill at the top right; hidden when 0. */
+  badge?: number;
 }
 
 export function GlassNavButton({
@@ -28,10 +30,14 @@ export function GlassNavButton({
   children,
   accessibilityLabel,
   tintColor = 'rgba(244, 196, 0, 0.1)',
+  badge = 0,
 }: GlassNavButtonProps) {
   const { width: screenWidth } = useWindowDimensions();
   const baseSize = size ?? Math.round((50 / 375) * screenWidth);
   const resolvedIconSize = Math.round(baseSize * 0.48);
+  const badgeSize = Math.round(baseSize * 0.34);
+  // Inset so the round badge stays inside the clipped circle.
+  const badgeInset = Math.round(baseSize * 0.12);
 
   return (
     <Pressable
@@ -80,6 +86,26 @@ export function GlassNavButton({
             icon
           ))}
       </View>
+      {badge > 0 && (
+        <View
+          style={{
+            position: 'absolute',
+            top: badgeInset,
+            right: badgeInset,
+            minWidth: badgeSize,
+            height: badgeSize,
+            borderRadius: badgeSize / 2,
+            paddingHorizontal: 4,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: wuzyColors.yellow,
+            zIndex: 11,
+          }}>
+          <Text style={{ fontFamily: wuzyFonts.bold, fontSize: wuzyType.caption, color: wuzyColors.bg }}>
+            {badge > 99 ? '99+' : badge}
+          </Text>
+        </View>
+      )}
     </Pressable>
   );
 }

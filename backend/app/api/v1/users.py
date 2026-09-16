@@ -13,12 +13,13 @@ import bcrypt
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, col, select
 
+from app.api.v1.ws import notify
 from app.core.auth import get_current_user_id
 from app.db.session import get_session
 from app.models.follow import Follow
 from app.models.ticket import Award
 from app.models.user import User
-from app.schemas.user import UserCreate, UserRead
+from app.schemas.user import UserCreate, UserRead, UserUpdate
 
 router = APIRouter()
 
@@ -121,13 +122,50 @@ def connect_user(
             select(Follow).where(Follow.followed_id == current_user_id)
         ).all()
     }
+    new = user_id not in follows or user_id not in followed_back
     if user_id not in follows:
         session.add(Follow(follower_id=current_user_id, followed_id=user_id))
     if user_id not in followed_back:
         session.add(Follow(follower_id=user_id, followed_id=current_user_id))
+    if new:
+        from app.api.v1.quests import bump_quest_for
+        # A fresh mutual follow is a connection for both sides, so each party's
+        # Social Network quest advances alike wherever it is tracked.
+        bump_quest_for(current_user_id, "Social Network", session)
+        bump_quest_for(user_id, "Social Network", session)
     session.commit()
     session.refresh(other)
+    if new:
+        # Only the scanned user hears about it; the scanner is looking at the result.
+        me = session.get(User, current_user_id)
+        notify(
+            session,
+            user_id,
+            "connection",
+            actor=me,
+            entity_id=me.id,
+            url=f"/profile/{me.id}",
+            body=f"{me.display_name or me.username} connected with you",
+        )
     return other
+
+
+@router.patch("/me", response_model=UserRead)
+def update_me(
+    payload: UserUpdate,
+    current_user_id: int = Depends(get_current_user_id),
+    session: Session = Depends(get_session),
+):
+    user = session.get(User, current_user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    update_data = payload.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(user, field, value)
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    return user
 
 
 @router.get("/{user_id}", response_model=UserRead)

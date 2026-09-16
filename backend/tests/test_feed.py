@@ -22,7 +22,7 @@ def test_ephemeral_hides_after_a_new_session(client, user):
     assert ephemeral["id"] not in seen_in_new_session
     assert permanent["id"] in seen_in_new_session
 
-    assert _ids(client.get(f"/feed/profile/{me['id']}")) == {permanent["id"]}
+    assert _ids(client.get(f"/feed/profile/{me['id']}", headers=headers)) == {permanent["id"]}
 
 
 def test_view_unknown_post(client, user):

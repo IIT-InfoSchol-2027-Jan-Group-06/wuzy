@@ -21,6 +21,8 @@ interface ConnectCardProps {
   /** When set, replaces the mode toggle with a single "Done" pill. */
   doneLabel?: string;
   onDone?: () => void;
+  /** Called after a successful scan so the screen can pop back to the Awards tab. */
+  onConnected?: () => void;
 }
 
 // The inactive icon needs to read against the translucent glass half; the active one uses wuzyColors.bg.
@@ -91,6 +93,7 @@ export function ConnectCard({
   showBack = true,
   doneLabel,
   onDone,
+  onConnected,
 }: ConnectCardProps) {
   // The toggle pill flips the glass card between the owner's QR and the scanner.
   const [showCamera, setShowCamera] = useState(false);
@@ -111,13 +114,15 @@ export function ConnectCard({
       <View style={{ marginVertical: wuzyLayout.itemGap }}>
         <QrCode value={qrValue} size={200} />
       </View>
-      <Text style={{ fontFamily: wuzyFonts.body, fontSize: wuzyType.body, color: wuzyColors.white, opacity: 0.7 }}>Scan to connect</Text>
+      <Pressable accessibilityRole="button" accessibilityLabel="Scan to connect" onPress={() => setShowCamera(true)}>
+        <Text style={{ fontFamily: wuzyFonts.body, fontSize: wuzyType.body, color: wuzyColors.yellow, textDecorationLine: 'underline' }}>Scan to connect</Text>
+      </Pressable>
     </>
   );
 
   const cameraSide = (
     <>
-      <QrScanner />
+      <QrScanner onConnected={onConnected} />
       <Text style={{ fontFamily: wuzyFonts.body, fontSize: wuzyType.body, color: wuzyColors.white, opacity: 0.7 }}>
         Point at another user&apos;s QR code
       </Text>

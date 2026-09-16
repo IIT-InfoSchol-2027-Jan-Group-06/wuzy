@@ -12,10 +12,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import selectinload
 from sqlmodel import Session, col, select
 
+from app.api.v1.ws import notify
 from app.core.auth import get_current_user_id
 from app.db.session import get_session
 from app.models.follow import Follow
 from app.models.group import Group, GroupMember
+from app.models.user import User
 from app.schemas.group import GroupCreate, GroupRead
 
 router = APIRouter()
@@ -95,4 +97,16 @@ def create_group(
         session.add(GroupMember(group_id=group.id, user_id=member_id))
     session.commit()
     session.refresh(group)
+    creator = session.get(User, current_user_id)
+    for member_id in member_ids:
+        notify(
+            session,
+            member_id,
+            "group",
+            actor=creator,
+            entity_id=group.id,
+            url=f"/chat/{group.id}?kind=group",
+            body=f"{creator.display_name or creator.username} added you to {name}",
+            channel="messages",
+        )
     return group

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Pressable, Switch, Text, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
@@ -75,6 +76,7 @@ export default function SettingsScreen() {
   const { logout } = useAuth();
   const [pushNotifications, setPushNotifications] = useState(true);
   const [emailUpdates, setEmailUpdates] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const handleLogout = async () => {
     await logout();
@@ -99,8 +101,100 @@ export default function SettingsScreen() {
       </View>
 
       <Section title="Account">
-        <SettingRow icon="log-out-outline" label="Log out" showChevron={false} onPress={handleLogout} />
+        <SettingRow
+          icon="log-out-outline"
+          label="Log out"
+          showChevron={false}
+          onPress={() => setShowLogoutModal(true)}
+        />
       </Section>
+
+      <Modal
+        visible={showLogoutModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowLogoutModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <BlurView intensity={5} tint="dark" style={StyleSheet.absoluteFill} />
+          <View style={styles.modalBackdrop} />
+
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Log out of your account?</Text>
+
+            <Pressable
+              onPress={handleLogout}
+              accessibilityRole="button"
+              style={styles.logoutButton}
+              className="active:opacity-70"
+            >
+              <Text style={styles.logoutText}>Log out</Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => setShowLogoutModal(false)}
+              accessibilityRole="button"
+              style={styles.cancelButton}
+              className="active:opacity-70"
+            >
+              <Text style={styles.cancelText}>Cancel</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalBackdrop: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+  },
+  modalCard: {
+    width: '80%',
+    backgroundColor: 'rgba(23, 30, 40, 0.95)',
+    borderRadius: 20,
+    paddingVertical: 32,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  modalTitle: {
+    fontSize: wuzyType.section,
+    color: wuzyColors.white,
+    textAlign: 'center',
+    marginBottom: wuzyLayout.gap,
+    fontFamily: wuzyFonts.semibold,
+  },
+  logoutButton: {
+    width: '100%',
+    paddingVertical: 14,
+    borderRadius: 12,
+    backgroundColor: 'rgba(231, 76, 60, 0.15)',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  logoutText: {
+    fontSize: wuzyType.body,
+    color: '#E74C3C',
+    fontFamily: wuzyFonts.semibold,
+  },
+  cancelButton: {
+    width: '100%',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  cancelText: {
+    fontSize: wuzyType.small,
+    color: wuzyColors.white,
+    fontFamily: wuzyFonts.medium,
+  },
+});

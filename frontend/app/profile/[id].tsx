@@ -10,7 +10,7 @@ import { TagSection } from '@/components/TagSection';
 import { accountFor } from '@/constants/accounts';
 import { earnedStickers } from '@/constants/awards-data';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
-import { apiGet, apiGetUserAwards, type ApiAwardRead, type ApiPost, type ApiUser } from '@/lib/api';
+import { apiGet, apiGetUserAwards, assetUrl, type ApiAwardRead, type ApiPost, type ApiUser } from '@/lib/api';
 
 const GRID_GAP = 2;
 
@@ -76,7 +76,7 @@ export default function UserProfileScreen() {
         </>
       }>
       <ProfileHero
-        background={accountFor(profile.username).backgroundImage}
+        background={profile.avatar_url ? { uri: assetUrl(profile.avatar_url) } : accountFor(profile.username).backgroundImage}
         name={name}
         awardsCount={earnedAwards.length}
         awards={earnedAwards}

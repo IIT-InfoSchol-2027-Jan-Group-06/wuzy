@@ -40,9 +40,7 @@ def seed_media():
         for image in src.iterdir():
             if not image.is_file():
                 continue
-            target = dst / image.name
-            if not target.exists():
-                shutil.copy(image, target)
+            shutil.copy(image, dst / image.name)
     # Profile grid pictures live per user in grid_pricture/<username>/. The
     # numbered files are the curated set; copy them into the post dir under a
     # per-user name so nothing collides and no file is moved out of its folder.
@@ -57,8 +55,7 @@ def seed_media():
                 if not image.is_file() or not image.stem.isdigit():
                     continue
                 target = post_dir / f"grid_{user_dir.name}_{image.name}"
-                if not target.exists():
-                    shutil.copy(image, target)
+                shutil.copy(image, target)
 
 
 # Demo accounts: (email, password, username, display_name, bio, hobbies, avatar)
@@ -70,7 +67,7 @@ ACCOUNTS = [
         "Abhiruk Prashan",
         "Full-stack dev by day, concert goer by night. I build things and break the dance floor.",
         ["Tech", "Music", "Gaming"],
-        "avatar1.png",
+        "avatar1.webp",
     ),
     (
         "ravindu644@test.com",
@@ -79,7 +76,7 @@ ACCOUNTS = [
         "Ravindu Deshan",
         "Fitness nut and runner. Always up for a beach day.",
         ["Fitness", "Sports", "Travel"],
-        "avatar2.png",
+        "avatar2.webp",
     ),
     (
         "sethuki@test.com",
@@ -88,7 +85,7 @@ ACCOUNTS = [
         "Sethuki Karawita",
         "Designer who sketches between coffee breaks. Obsessed with typography and sunsets.",
         ["Art", "Design", "Reading"],
-        "avatar3.png",
+        "avatar3.webp",
     ),
     (
         "azma@test.com",
@@ -97,7 +94,7 @@ ACCOUNTS = [
         "Azma Ashraf",
         "Foodie and travel photographer. I collect stamps in my passport and recipes in my head.",
         ["Food", "Photography", "Travel"],
-        "avatar4.png",
+        "avatar4.webp",
     ),
     (
         "charuki@test.com",
@@ -106,7 +103,7 @@ ACCOUNTS = [
         "Charuki Weheragoda",
         "Music lover, dancer, part-time DJ. Vibes over everything.",
         ["Music", "Dance", "Movies"],
-        "avatar5.png",
+        "avatar5.webp",
     ),
 ]
 
@@ -127,32 +124,32 @@ CONNECTIONS = [
 # as permanent profile posts.
 POSTS = {
     "abhiruk": [
-        ("grid_abhiruk_1.png", "Golden hour doesn't get better than this", "colombo", True),
-        ("grid_abhiruk_2.png", "Day on the go", "colombo", True),
-        ("grid_abhiruk_3.png", "Made with care", "colombo", True),
-        ("grid_abhiruk_4.png", "Worth the wait", "colombo", True),
+        ("grid_abhiruk_1.webp", "Golden hour doesn't get better than this", "colombo", True),
+        ("grid_abhiruk_2.webp", "Day on the go", "colombo", True),
+        ("grid_abhiruk_3.webp", "Made with care", "colombo", True),
+        ("grid_abhiruk_4.webp", "Worth the wait", "colombo", True),
     ],
     "ravindu644": [
-        ("post2.png", "Morning run squad", "colombo", True),
-        ("event2.png", "Beach clean-up morning", "galle", True),
-        ("post4.png", "Post-gym refuel", "colombo", True),
+        ("post2.webp", "Morning run squad", "colombo", True),
+        ("event2.webp", "Beach clean-up morning", "galle", True),
+        ("post4.webp", "Post-gym refuel", "colombo", True),
     ],
     "sethuki": [
-        ("grid_sethuki_1.png", "Sketching the skyline", "kandy", True),
-        ("grid_sethuki_2.png", "Lines and light", "kandy", True),
-        ("grid_sethuki_3.png", "Everyday details", "kandy", True),
-        ("grid_sethuki_4.png", "Still learning", "kandy", True),
+        ("grid_sethuki_1.webp", "Sketching the skyline", "kandy", True),
+        ("grid_sethuki_2.webp", "Lines and light", "kandy", True),
+        ("grid_sethuki_3.webp", "Everyday details", "kandy", True),
+        ("grid_sethuki_4.webp", "Still learning", "kandy", True),
     ],
     "azma": [
-        ("grid_azma_1.png", "Market colours", "colombo", True),
-        ("grid_azma_2.png", "Salt in the air", "mirissa", True),
-        ("grid_azma_3.png", "New plate, old favourites", "colombo", True),
-        ("grid_azma_4.png", "Golden frame", "galle", True),
+        ("grid_azma_1.webp", "Market colours", "colombo", True),
+        ("grid_azma_2.webp", "Salt in the air", "mirissa", True),
+        ("grid_azma_3.webp", "New plate, old favourites", "colombo", True),
+        ("grid_azma_4.webp", "Golden frame", "galle", True),
     ],
     "charuki": [
-        ("grid_charuki_1.png", "Setting up the set", "colombo", True),
-        ("grid_charuki_2.png", "Studio session", "colombo", True),
-        ("grid_charuki_3.png", "Grooving all day", "mount lavinia", True),
+        ("grid_charuki_1.webp", "Setting up the set", "colombo", True),
+        ("grid_charuki_2.webp", "Studio session", "colombo", True),
+        ("grid_charuki_3.webp", "Grooving all day", "mount lavinia", True),
     ],
 }
 
@@ -178,7 +175,7 @@ EVENTS = [
         "Rs 5,000",
         0,
         6,
-        "event1.png",
+        "event1.webp",
     ),
     (
         "Indie Rock Night",
@@ -191,7 +188,7 @@ EVENTS = [
         "Rs 2,500",
         1,
         20,
-        "event2.png",
+        "event2.webp",
     ),
     (
         "DJ Sunset Set",
@@ -204,7 +201,7 @@ EVENTS = [
         "Rs 2,000",
         2,
         17,
-        "event3.png",
+        "event3.webp",
     ),
     (
         "Startup Pitch Night",
@@ -217,7 +214,7 @@ EVENTS = [
         "Rs 6,000",
         0,
         9,
-        "event4.png",
+        "event4.webp",
     ),
     (
         "Tech Conference",
@@ -230,7 +227,7 @@ EVENTS = [
         "Rs 15,000",
         5,
         9,
-        "event5.png",
+        "event5.webp",
     ),
     (
         "Hackathon Weekend",
@@ -243,7 +240,7 @@ EVENTS = [
         "Free",
         3,
         9,
-        "event6.png",
+        "event6.webp",
     ),
     (
         "Esports Arena Finals",
@@ -256,7 +253,7 @@ EVENTS = [
         "Rs 2,500",
         1,
         18,
-        "event7.png",
+        "event7.webp",
     ),
     (
         "Morning Beach Run",
@@ -269,7 +266,7 @@ EVENTS = [
         "Free",
         0,
         6,
-        "event8.png",
+        "event8.webp",
     ),
     (
         "Sunrise Yoga",
@@ -282,7 +279,7 @@ EVENTS = [
         "Rs 1,200",
         2,
         6,
-        "event9.png",
+        "event9.webp",
     ),
     (
         "Gallery Opening Night",
@@ -295,7 +292,7 @@ EVENTS = [
         "Free",
         1,
         19,
-        "event10.png",
+        "event10.webp",
     ),
     (
         "Print Making Workshop",
@@ -308,7 +305,7 @@ EVENTS = [
         "Rs 1,500",
         4,
         10,
-        "event11.png",
+        "event11.webp",
     ),
     (
         "Book Nook Meetup",
@@ -321,7 +318,7 @@ EVENTS = [
         "Free",
         6,
         17,
-        "event12.png",
+        "event12.webp",
     ),
     (
         "Food & Wine Expo",
@@ -334,7 +331,7 @@ EVENTS = [
         "Rs 3,500",
         3,
         12,
-        "event13.png",
+        "event13.webp",
     ),
     (
         "Street Food Fest",
@@ -347,7 +344,7 @@ EVENTS = [
         "Rs 800",
         2,
         19,
-        "event14.png",
+        "event14.webp",
     ),
     (
         "Movie Night Premiere",
@@ -360,7 +357,7 @@ EVENTS = [
         "Rs 1,500",
         0,
         21,
-        "event15.png",
+        "event15.webp",
     ),
     (
         "Comedy Open Mic",
@@ -373,7 +370,7 @@ EVENTS = [
         "Rs 2,000",
         4,
         20,
-        "event16.png",
+        "event16.webp",
     ),
     (
         "Sunday Gospel Brunch",
@@ -386,7 +383,7 @@ EVENTS = [
         "Rs 2,500",
         0,
         10,
-        "event17.png",
+        "event17.webp",
     ),
     (
         "Afro Pop Afterparty",
@@ -399,7 +396,7 @@ EVENTS = [
         "Rs 1,500",
         3,
         22,
-        "event1.png",
+        "event1.webp",
     ),
     (
         "Vinyl Listening Session",
@@ -412,7 +409,7 @@ EVENTS = [
         "Rs 800",
         7,
         18,
-        "event2.png",
+        "event2.webp",
     ),
     (
         "Backend Builds Cafe",
@@ -425,7 +422,7 @@ EVENTS = [
         "Free",
         0,
         12,
-        "event3.png",
+        "event3.webp",
     ),
     (
         "Indie Game Jams",
@@ -438,7 +435,7 @@ EVENTS = [
         "Rs 5,000",
         6,
         9,
-        "event4.png",
+        "event4.webp",
     ),
     (
         "AI Studio Hours",
@@ -451,7 +448,7 @@ EVENTS = [
         "Rs 2,000",
         9,
         10,
-        "event5.png",
+        "event5.webp",
     ),
     (
         "Night T20 Tournament",
@@ -464,7 +461,7 @@ EVENTS = [
         "Rs 1,000",
         2,
         18,
-        "event6.png",
+        "event6.webp",
     ),
     (
         "Trail Run Challenge",
@@ -477,7 +474,7 @@ EVENTS = [
         "Rs 1,500",
         8,
         6,
-        "event7.png",
+        "event7.webp",
     ),
     (
         "Iron Yoga & Brews",
@@ -490,7 +487,7 @@ EVENTS = [
         "Rs 1,200",
         11,
         7,
-        "event8.png",
+        "event8.webp",
     ),
     (
         "Clay & Coffee",
@@ -503,7 +500,7 @@ EVENTS = [
         "Rs 2,200",
         0,
         14,
-        "event9.png",
+        "event9.webp",
     ),
     (
         "Silk Screen Saturdays",
@@ -516,7 +513,7 @@ EVENTS = [
         "Rs 1,800",
         5,
         11,
-        "event10.png",
+        "event10.webp",
     ),
     (
         "Zine Fair",
@@ -529,7 +526,7 @@ EVENTS = [
         "Rs 900",
         10,
         12,
-        "event11.png",
+        "event11.webp",
     ),
     (
         "Chocolate & Wine Pairing",
@@ -542,7 +539,7 @@ EVENTS = [
         "Rs 2,800",
         0,
         17,
-        "event12.png",
+        "event12.webp",
     ),
     (
         "Ramen Night Market",
@@ -555,7 +552,7 @@ EVENTS = [
         "Rs 1,000",
         4,
         21,
-        "event13.png",
+        "event13.webp",
     ),
     (
         "Sci-Fi Double Feature",
@@ -568,7 +565,7 @@ EVENTS = [
         "Rs 2,000",
         0,
         20,
-        "event14.png",
+        "event14.webp",
     ),
     (
         "Producers Circle Screening",
@@ -581,7 +578,7 @@ EVENTS = [
         "Rs 3,500",
         12,
         19,
-        "event15.png",
+        "event15.webp",
     ),
 ]
 

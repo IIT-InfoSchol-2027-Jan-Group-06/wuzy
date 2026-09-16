@@ -21,6 +21,7 @@ export const BubbleContent = memo(function BubbleContent({
   mediaUrl,
   audioUrl,
   durationMs,
+  squareTop,
 }: {
   text: string;
   outgoing: boolean;
@@ -32,21 +33,31 @@ export const BubbleContent = memo(function BubbleContent({
   audioUrl?: string | null;
   /** Voice-note length in milliseconds, for the time label. */
   durationMs?: number | null;
+  /** Sits under a quoted reply block: square the touching top corners. */
+  squareTop?: boolean;
 }) {
   const pad = mediaUrl ? { paddingHorizontal: 16 } : {};
 
   // A bare picture keeps the standard image radius on all four corners. A
   // picture with a caption gets a square top and sharp bottom corners so the
-  // caption block connects cleanly underneath it.
+  // caption block connects cleanly underneath it. Under a reply block both
+  // cases zero the top corners so the picture sits flush on the quoted block.
   const mediaRadius =
     mediaUrl && text
       ? {
-          borderTopLeftRadius: outgoing ? RADIUS : NICK,
-          borderTopRightRadius: outgoing ? NICK : RADIUS,
+          borderTopLeftRadius: squareTop ? 0 : outgoing ? RADIUS : NICK,
+          borderTopRightRadius: squareTop ? 0 : outgoing ? NICK : RADIUS,
           borderBottomLeftRadius: 0,
           borderBottomRightRadius: 0,
         }
-      : { borderRadius: IMAGE_RADIUS };
+      : squareTop
+        ? {
+            borderTopLeftRadius: 0,
+            borderTopRightRadius: 0,
+            borderBottomLeftRadius: IMAGE_RADIUS,
+            borderBottomRightRadius: IMAGE_RADIUS,
+          }
+        : { borderRadius: IMAGE_RADIUS };
 
   return (
     <>
@@ -175,6 +186,7 @@ export const ChatBubble = memo(function ChatBubble({
           mediaUrl={mediaUrl}
           audioUrl={audioUrl}
           durationMs={durationMs}
+          squareTop={squareTop}
         />
       </View>
     </GestureDetector>

@@ -18,6 +18,9 @@ export type ReplyContext = {
   media_url?: string | null;
   audio_url?: string | null;
   duration_ms?: number | null;
+  /** Key of the original message (from-created_at-text) so tapping the quoted
+   *  block can scroll the thread back to it. */
+  ref?: string;
 };
 
 export type ChatMessage = {

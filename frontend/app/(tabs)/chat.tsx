@@ -9,16 +9,41 @@ import { Screen } from '@/components/Screen';
 import { SearchBar } from '@/components/SearchBar';
 import { TabHeader } from '@/components/TabHeader';
 import { MessageRow } from '@/components/chat/MessageRow';
+import { formatVoiceTime } from '@/components/chat/Waveform';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 import { useAuth } from '@/context/auth';
 import { useChatUnread } from '@/context/chat-unread';
 import { useConversations } from '@/hooks/useConversations';
 import { apiGet, assetUrl, relativeTime, type ApiGroup, type ApiPerson } from '@/lib/api';
 import { consumeThreadActive } from '@/lib/chat-activity';
-import { getThreadSummaries, getUnreadCounts } from '@/lib/chat-db';
+import { getThreadSummaries, getUnreadCounts, type ThreadSummaryRow } from '@/lib/chat-db';
 import { acquireChat, subscribeChat } from '@/lib/ws';
 
 const defaultAvatar = require('@/assets/images/avatar1.jpg');
+
+/** Chat-list preview for the latest message: "<sender> : <preview>", where the
+ *  sender is the other party's full name for received messages or "You" for
+ *  your own. Preview kinds follow the reply spec: text verbatim, "Photo" for
+ *  a picture, "voice message (m:ss)" for a voice note. */
+function chatPreview(
+  row: ThreadSummaryRow,
+  currentUserId: number,
+  peerName: string,
+  memberNames: Map<number, string>,
+): string {
+  const sender =
+    row.from_id === currentUserId
+      ? 'You'
+      : row.kind === 'dm'
+        ? peerName
+        : row.from_name ?? memberNames.get(row.from_id) ?? 'Member';
+  const body = row.audio_url
+    ? `voice message (${formatVoiceTime(row.duration_ms ?? 0)})`
+    : row.media_url
+      ? 'Photo'
+      : row.text ?? '';
+  return `${sender} : ${body}`;
+}
 
 const CATEGORIES = ['All', 'Unread'];
 const categoryOptions = CATEGORIES.map((c) => ({ id: c, label: c }));
@@ -47,9 +72,7 @@ export default function ChatScreen() {
   const [searchQuery, setSearchQuery] = React.useState('');
   const [groups, setGroups] = React.useState<ApiGroup[]>([]);
   const [persons, setPersons] = React.useState<ApiPerson[]>([]);
-  const [summaries, setSummaries] = React.useState<Record<string, { text: string; at: string }>>(
-    {},
-  );
+  const [summaries, setSummaries] = React.useState<Record<string, ThreadSummaryRow>>({});
   const [unreadCounts, setUnreadCounts] = React.useState<Map<string, number>>(new Map());
   const [highlightKey, setHighlightKey] = React.useState<string | null>(null);
 
@@ -68,9 +91,9 @@ export default function ChatScreen() {
       setPersons([]);
     }
     const rows = await getThreadSummaries(user.id);
-    const map: Record<string, { text: string; at: string }> = {};
+    const map: Record<string, ThreadSummaryRow> = {};
     for (const row of rows) {
-      map[`${row.kind}-${row.thread_id}`] = { text: row.text, at: row.created_at };
+      map[`${row.kind}-${row.thread_id}`] = row;
     }
     setSummaries(map);
     setUnreadCounts(await getUnreadCounts(user.id));
@@ -128,7 +151,14 @@ export default function ChatScreen() {
   // Group threads come from the groups list.
   for (const g of groups) {
     const local = summaries[`group-${g.id}`];
-    const preview = local?.text ?? 'Group chat';
+    const preview = local
+      ? chatPreview(
+          local,
+          user?.id ?? -1,
+          g.name,
+          new Map(g.members.map((m) => [m.id, m.display_name ?? m.username])),
+        )
+      : 'Group chat';
     const firstAvatar = g.members.find((m) => m.id !== user?.id)?.avatar_url;
     items.push({
       key: `group-${g.id}`,
@@ -136,8 +166,8 @@ export default function ChatScreen() {
       threadId: g.id,
       name: g.name,
       preview,
-      time: relativeTime(local?.at ?? null),
-      atMs: local ? new Date(local.at).getTime() : null,
+      time: relativeTime(local?.created_at ?? null),
+      atMs: local ? new Date(local.created_at).getTime() : null,
       avatar: firstAvatar ? { uri: assetUrl(firstAvatar) } : defaultAvatar,
       unread: (unreadCounts.get(`group-${g.id}`) ?? 0) > 0,
     });
@@ -146,14 +176,17 @@ export default function ChatScreen() {
   // DM threads come from the conversations list.
   for (const c of conversations) {
     const local = summaries[`dm-${c.id}`];
-    const preview = c.preview ?? local?.text ?? 'No messages yet';
-    const at = c.last_message_at ?? local?.at ?? null;
+    const peerName = c.other?.display_name ?? c.other?.username ?? 'Chat';
+    const preview = local
+      ? chatPreview(local, user?.id ?? -1, peerName, new Map())
+      : c.preview ?? 'No messages yet';
+    const at = c.last_message_at ?? local?.created_at ?? null;
     items.push({
       key: `dm-${c.id}`,
       kind: 'dm',
       threadId: c.id,
       otherUserId: c.other?.id ?? undefined,
-      name: c.other?.display_name ?? c.other?.username ?? 'Chat',
+      name: peerName,
       preview,
       time: relativeTime(at),
       atMs: at ? new Date(at).getTime() : null,

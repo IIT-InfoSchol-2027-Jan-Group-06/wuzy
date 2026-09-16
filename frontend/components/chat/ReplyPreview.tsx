@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { formatVoiceTime } from '@/components/chat/Waveform';
 import { wuzyColors, wuzyFonts, wuzyType } from '@/constants/wuzy-theme';
@@ -9,19 +9,20 @@ import type { ReplyContext } from '@/lib/ws';
 
 const RADIUS = 16;
 const NICK = 2;
-const RECEIVER_BUBBLE = 'rgba(84, 82, 56, 0.35)';
 const THUMB = 53;
 
 /** Shared layout for both the composing preview and the sent-message quoted
- *  snippet. White-tinted row: 3dp left accent bar, label, truncated text,
- *  mic + duration for voice replies, or a square image thumbnail. `onClose`
- *  shows the X close button (composing only; omit for sent state). */
+ *  snippet. White-tinted row: label, truncated text, mic + duration for voice
+ *  replies, or a square image thumbnail. `onClose` shows the X close button
+ *  (composing only; omit for sent state). */
 function ReplyBlock({
   reply,
   outgoing,
   label,
   stacked,
   onClose,
+  onPress,
+  mediaRight,
 }: {
   reply: ReplyContext;
   outgoing: boolean;
@@ -30,6 +31,11 @@ function ReplyBlock({
    *  corners so it sits flush on the message, keep the normal top treatment. */
   stacked?: boolean;
   onClose?: () => void;
+  /** Tapping the quoted block scrolls the thread to the replied-to message. */
+  onPress?: () => void;
+  /** Pin a picture reply's thumbnail to the block's right edge instead of
+   *  keeping it beside the caption (used when replying to a received photo). */
+  mediaRight?: boolean;
 }) {
   const isMedia = !!reply.media_url;
   const isVoice = !!reply.audio_url;
@@ -38,37 +44,29 @@ function ReplyBlock({
   const corners = stacked
     ? outgoing
       ? {
-          borderTopLeftRadius: NICK,
-          borderTopRightRadius: RADIUS,
-          borderBottomLeftRadius: 0,
-          borderBottomRightRadius: 0,
-        }
-      : {
           borderTopLeftRadius: RADIUS,
           borderTopRightRadius: NICK,
           borderBottomLeftRadius: 0,
           borderBottomRightRadius: 0,
         }
+      : {
+          borderTopLeftRadius: NICK,
+          borderTopRightRadius: RADIUS,
+          borderBottomLeftRadius: 0,
+          borderBottomRightRadius: 0,
+        }
     : { borderRadius: RADIUS };
 
-  return (
-    <View
-      style={{
-        ...corners,
-        backgroundColor: 'rgba(255, 255, 255, 0.08)',
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.12)',
-        overflow: 'hidden',
-      }}>
-      <View style={{ flexDirection: 'row' }}>
-        <View
-          style={{
-            width: 3,
-            backgroundColor: outgoing ? wuzyColors.yellow : RECEIVER_BUBBLE,
-            borderRadius: 1.5,
-          }}
-        />
-        <View style={{ flexShrink: 1, paddingLeft: 10, paddingRight: 5, paddingVertical: 10 }}>
+  const containerStyle: StyleProp<ViewStyle> = {
+    ...corners,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+  };
+
+  const body = (
+    <View style={{ flexDirection: 'row' }}>
+        <View style={{ flexShrink: 1, paddingLeft: stacked ? 5 : 0, paddingRight: 5, paddingVertical: 10 }}>
           <Text
             numberOfLines={1}
             style={{
@@ -109,7 +107,7 @@ function ReplyBlock({
         {isMedia && (
           <Image
             source={{ uri: assetUrl(reply.media_url!) }}
-            style={{ width: THUMB, aspectRatio: 1, marginLeft: 5 }}
+            style={{ width: THUMB, aspectRatio: 1, marginLeft: mediaRight ? 'auto' : 20 }}
             contentFit="cover"
           />
         )}
@@ -135,26 +133,52 @@ function ReplyBlock({
           </Pressable>
         )}
       </View>
-    </View>
+  );
+
+  return onPress ? (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel="Show replied message"
+      style={containerStyle}>
+      {body}
+    </Pressable>
+  ) : (
+    <View style={containerStyle}>{body}</View>
   );
 }
 
 /** Quoted snippet attached to the top of a sent message. Identical layout to
- *  the composing preview (same white-tinted row, accent bar, label, truncated
- *  text or 53dp square thumbnail) but without the X close button. */
+ *  the composing preview (same white-tinted row, label, truncated text or 53dp
+ *  square thumbnail) but without the accent bar and the X close button. */
 export function ReplyBubble({
   reply,
   outgoing,
   label,
   stacked,
+  onPress,
+  mediaRight,
 }: {
   reply: ReplyContext;
   outgoing: boolean;
   label: string;
   /** Stacked above the sent message: square the touching bottom corners. */
   stacked?: boolean;
+  /** Tapping the snippet scrolls the thread to the replied-to message. */
+  onPress?: () => void;
+  /** Pin a picture reply's thumbnail to the block's right edge. */
+  mediaRight?: boolean;
 }) {
-  return <ReplyBlock reply={reply} outgoing={outgoing} label={label} stacked={stacked} />;
+  return (
+    <ReplyBlock
+      reply={reply}
+      outgoing={outgoing}
+      label={label}
+      stacked={stacked}
+      onPress={onPress}
+      mediaRight={mediaRight}
+    />
+  );
 }
 
 /** Reply preview pinned above the typing bar. Same layout as the sent-message

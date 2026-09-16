@@ -22,6 +22,10 @@ import { acquireChat, sendDm, sendGroup, subscribeChat, type ChatMessage, type R
 
 const defaultAvatar = require('@/assets/images/avatar1.jpg');
 
+/** Stable identity for a message: the same triple the list keys on, reused to
+ *  find the replied-to message when its quoted block is tapped. */
+const messageKey = (m: ChatMessage) => `${m.from}-${m.created_at}-${m.text}`;
+
 export default function ChatViewScreen() {
   const router = useRouter();
   const { user } = useAuth();
@@ -46,6 +50,8 @@ export default function ChatViewScreen() {
   // The message currently being replied to. Drives the preview above the bar
   // and, once sent, the reply block attached to the outgoing message.
   const [reply, setReply] = useState<ReplyContext | null>(null);
+
+  const listRef = useRef<FlatList<ChatMessage>>(null);
 
   // Mirror the active reply into the out-of-band slot so a photo sent from the
   // pushed camera/gallery flow (which cannot reach this route's state) carries
@@ -209,6 +215,7 @@ export default function ChatViewScreen() {
       media_url: m.media_url,
       audio_url: m.audio_url,
       duration_ms: m.duration_ms,
+      ref: messageKey(m),
     }),
     [user?.id, isGroup, chatName],
   );
@@ -222,6 +229,22 @@ export default function ChatViewScreen() {
       return r.from_name ?? chatName;
     },
     [user?.id, chatName],
+  );
+
+  // Tapping the quoted block scrolls the thread back to the message it replied
+  // to. The list is inverted (index 0 is the newest), so flip the history index.
+  const scrollToOriginal = useCallback(
+    (r: ReplyContext) => {
+      if (!r.ref) return;
+      const msgIndex = messages.findIndex((m) => messageKey(m) === r.ref);
+      if (msgIndex < 0) return;
+      listRef.current?.scrollToIndex({
+        index: messages.length - 1 - msgIndex,
+        animated: true,
+        viewPosition: 0.5,
+      });
+    },
+    [messages],
   );
 
   const send = useCallback(
@@ -329,11 +352,25 @@ export default function ChatViewScreen() {
         />
 
         <FlatList
+          ref={listRef}
           data={reversed}
           inverted
-          keyExtractor={(item) => `${item.from}-${item.created_at}-${item.text}`}
+          keyExtractor={messageKey}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          onScrollToIndexFailed={(info) => {
+            listRef.current?.scrollToOffset({
+              offset: info.averageItemLength * info.index,
+              animated: false,
+            });
+            requestAnimationFrame(() =>
+              listRef.current?.scrollToIndex({
+                index: info.index,
+                animated: true,
+                viewPosition: 0.5,
+              }),
+            );
+          }}
           ListFooterComponent={
             dateLabel ? (
               <View className="self-center" style={{ marginBottom: wuzyLayout.itemGap }}>
@@ -345,6 +382,7 @@ export default function ChatViewScreen() {
           renderItem={({ item }) => {
             const outgoing = item.from === user?.id;
             const side = outgoing ? 'flex-end' : 'flex-start';
+            const rep = item.reply;
             const bubble = (
               <ChatBubble
                 text={item.text}
@@ -354,19 +392,21 @@ export default function ChatViewScreen() {
                 audioUrl={item.audio_url}
                 durationMs={item.duration_ms}
                 onReply={() => setReply(buildReply(item))}
-                squareTop={!!item.reply}
-                stretch={!!item.reply}
+                squareTop={!!rep}
+                stretch={!!rep}
               />
             );
             return (
               <View style={{ alignItems: side }}>
-                {item.reply ? (
+                {rep ? (
                   <View style={{ alignItems: 'stretch', maxWidth: '75%' }}>
                     <ReplyBubble
-                      reply={item.reply}
+                      reply={rep}
                       outgoing={outgoing}
-                      label={replyLabel(item.reply)}
+                      label={replyLabel(rep)}
                       stacked
+                      onPress={() => scrollToOriginal(rep)}
+                      mediaRight={rep.from !== user?.id}
                     />
                     {bubble}
                   </View>

@@ -176,24 +176,24 @@ export async function getMessages(
 }
 
 /** Latest message per thread, used to build the chat list (preview, order, highlight).
- * Photos with no caption read "Photo"; voice notes read "Voice note". */
+ *  Raw fields only; the chat list formats the display preview. */
 export type ThreadSummaryRow = {
   kind: ThreadKind;
   thread_id: number;
-  text: string;
+  from_id: number;
+  from_name: string | null;
+  text: string | null;
+  media_url: string | null;
+  audio_url: string | null;
+  duration_ms: number | null;
   created_at: string;
 };
 
 export async function getThreadSummaries(ownerId: number): Promise<ThreadSummaryRow[]> {
   const db = await getDb();
   return db.getAllAsync<ThreadSummaryRow>(
-    `SELECT m.kind, m.thread_id,
-       CASE
-         WHEN m.audio_url IS NOT NULL THEN 'Voice note'
-         WHEN m.media_url IS NOT NULL AND (m.text IS NULL OR m.text = '') THEN 'Photo'
-         ELSE m.text
-       END AS text,
-       m.created_at
+    `SELECT m.kind, m.thread_id, m.from_id, m.from_name, m.text,
+       m.media_url, m.audio_url, m.duration_ms, m.created_at
      FROM messages m
      JOIN (
        SELECT kind, thread_id, MAX(id) AS max_id

@@ -13,14 +13,13 @@ interface QuestCardProps {
   onClaim: () => Promise<void>;
 }
 
-/** One quest line: name, tier line, progress pill with the counter inside, and on
- * the right Claim (solid), the action (outlined) or Done (muted). */
+/** One unfinished quest: name, tier line, progress pill with the counter inside,
+ * and on the right Claim (solid) or the action (outlined). */
 export function QuestCard({ quest, action, claiming, onClaim }: QuestCardProps) {
   const tiers = quest.tiers;
   const index = quest.active_tier_index ?? tiers.length - 1;
   const tier = tiers[index];
-  const done = quest.completed;
-  const fraction = done ? 1 : Math.min(1, tier.current_progress / tier.target_count);
+  const fraction = Math.min(1, tier.current_progress / tier.target_count);
 
   const [note, setNote] = useState<string | null>(null);
   const pop = useSharedValue(1);
@@ -51,14 +50,12 @@ export function QuestCard({ quest, action, claiming, onClaim }: QuestCardProps) 
     control = <Pill variant="solid" loading />;
   } else if (quest.claimable) {
     control = <Pill variant="solid" label="Claim" onPress={handleClaim} />;
-  } else if (done) {
-    control = <Pill variant="muted" label="Done" />;
   } else if (action) {
     control = <Pill variant="outline" label={action.label} onPress={action.onPress} />;
   }
 
   return (
-    <View className="rounded-3xl bg-wuzy-surface p-4" style={done ? { opacity: 0.5 } : undefined}>
+    <View className="rounded-3xl bg-wuzy-surface p-4">
       <View className="flex-row items-center" style={{ gap: wuzyLayout.itemGap }}>
         <View className="flex-1" style={{ gap: 4 }}>
           <Text
@@ -66,8 +63,7 @@ export function QuestCard({ quest, action, claiming, onClaim }: QuestCardProps) 
             style={{
               fontFamily: wuzyFonts.semibold,
               fontSize: wuzyType.body,
-              color: done ? wuzyColors.gray : wuzyColors.white,
-              textDecorationLine: done ? 'line-through' : 'none',
+              color: wuzyColors.white,
             }}>
             {quest.name}
           </Text>
@@ -80,8 +76,8 @@ export function QuestCard({ quest, action, claiming, onClaim }: QuestCardProps) 
             <Text
               numberOfLines={1}
               className="text-center"
-              style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.caption, color: done ? wuzyColors.gray : wuzyColors.white }}>
-              {done ? tier.target_count : tier.current_progress} / {tier.target_count} {tier.progress_unit}
+              style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.caption, color: wuzyColors.white }}>
+              {tier.current_progress} / {tier.target_count} {tier.progress_unit}
             </Text>
           </View>
 
@@ -104,19 +100,14 @@ function Pill({
   onPress,
   loading,
 }: {
-  variant: 'solid' | 'outline' | 'muted';
+  variant: 'solid' | 'outline';
   label?: string;
   onPress?: () => void;
   loading?: boolean;
 }) {
   const disabled = loading || !onPress;
-  const className =
-    variant === 'solid'
-      ? 'bg-wuzy-yellow'
-      : variant === 'outline'
-        ? 'border border-wuzy-yellow/50'
-        : 'border border-white/20';
-  const color = variant === 'solid' ? wuzyColors.bg : variant === 'outline' ? wuzyColors.yellow : wuzyColors.gray;
+  const className = variant === 'solid' ? 'bg-wuzy-yellow' : 'border border-wuzy-yellow/50';
+  const color = variant === 'solid' ? wuzyColors.bg : wuzyColors.yellow;
   return (
     <Pressable
       onPress={onPress}

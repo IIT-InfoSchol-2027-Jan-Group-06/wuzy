@@ -23,10 +23,10 @@ interface QuestsSectionProps {
   onClaim: (key: string) => Promise<void>;
 }
 
-/** Every quest line in catalog order, each card wired to its claim and action. */
+/** Every unfinished quest in catalog order, each card wired to its claim and action. */
 export function QuestsSection({ quests, claiming, onClaim }: QuestsSectionProps) {
   const router = useRouter();
-  const rows = [...quests].sort((a, b) => a.sort_order - b.sort_order);
+  const rows = quests.filter((q) => !q.completed).sort((a, b) => a.sort_order - b.sort_order);
   return (
     <View style={{ gap: wuzyLayout.itemGap }}>
       <View>
@@ -37,6 +37,11 @@ export function QuestsSection({ quests, claiming, onClaim }: QuestsSectionProps)
           Do the thing, claim the reward
         </Text>
       </View>
+      {rows.length === 0 && (
+        <Text style={{ fontFamily: wuzyFonts.body, fontSize: wuzyType.small, color: wuzyColors.gray }}>
+          Every quest is done. New ones are coming.
+        </Text>
+      )}
       {rows.map((quest) => {
         const action = ACTIONS[quest.key];
         return (

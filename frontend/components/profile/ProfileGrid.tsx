@@ -10,12 +10,14 @@ export function ProfileGrid({
   gridItemSize,
   gap,
   onEmptyPress,
+  onPostPress,
 }: {
   posts: ApiPost[];
   loading: boolean;
   gridItemSize: number;
   gap: number;
   onEmptyPress?: () => void;
+  onPostPress?: (post: ApiPost) => void;
 }) {
   if (loading) {
     return <ActivityIndicator size="small" color={wuzyColors.yellow} style={{ marginTop: wuzyLayout.gap }} />;
@@ -24,12 +26,18 @@ export function ProfileGrid({
   return (
     <View className="flex-row flex-wrap" style={{ gap, marginTop: wuzyLayout.itemGap }}>
       {posts.map((post) => (
-        <Image
+        <Pressable
           key={post.id}
-          source={{ uri: assetUrl(post.media_url) }}
-          style={{ width: gridItemSize, height: gridItemSize }}
-          resizeMode="cover"
-        />
+          onPress={onPostPress ? () => onPostPress(post) : undefined}
+          accessibilityRole={onPostPress ? 'button' : undefined}
+          accessibilityLabel={onPostPress ? `Open post by ${post.user?.username ?? 'Unknown'}` : undefined}
+          style={{ width: gridItemSize, height: gridItemSize }}>
+          <Image
+            source={{ uri: assetUrl(post.media_url) }}
+            style={{ width: '100%', height: '100%' }}
+            resizeMode="cover"
+          />
+        </Pressable>
       ))}
       {posts.length === 0 && onEmptyPress && (
         <Pressable onPress={onEmptyPress} className="items-center self-center" style={{ paddingVertical: wuzyLayout.gap }}>

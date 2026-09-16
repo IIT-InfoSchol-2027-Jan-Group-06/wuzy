@@ -31,7 +31,7 @@ def seed_media():
     """Copy committed seed images into the storage dir if it is empty."""
     if not SEED_MEDIA.exists():
         return
-    for kind in ("post", "avatar"):
+    for kind in ("post", "avatar", "event"):
         src = SEED_MEDIA / kind
         dst = STORAGE_ROOT / kind
         if not src.is_dir():
@@ -43,6 +43,22 @@ def seed_media():
             target = dst / image.name
             if not target.exists():
                 shutil.copy(image, target)
+    # Profile grid pictures live per user in grid_pricture/<username>/. The
+    # numbered files are the curated set; copy them into the post dir under a
+    # per-user name so nothing collides and no file is moved out of its folder.
+    grid = SEED_MEDIA / "grid_pricture"
+    if grid.is_dir():
+        post_dir = STORAGE_ROOT / "post"
+        post_dir.mkdir(parents=True, exist_ok=True)
+        for user_dir in sorted(grid.iterdir()):
+            if not user_dir.is_dir():
+                continue
+            for image in sorted(user_dir.iterdir()):
+                if not image.is_file() or not image.stem.isdigit():
+                    continue
+                target = post_dir / f"grid_{user_dir.name}_{image.name}"
+                if not target.exists():
+                    shutil.copy(image, target)
 
 
 # Demo accounts: (email, password, username, display_name, bio, hobbies, avatar)
@@ -107,12 +123,14 @@ CONNECTIONS = [
 ]
 
 # Posts per user: (media, caption, location, save_to_profile)
+# Grid pictures come from seed_media/grid_pricture/<username>/ and are seeded
+# as permanent profile posts.
 POSTS = {
     "abhiruk": [
-        ("post1.png", "Golden hour doesn't get better than this", "new york", True),
-        ("post3.png", "New setup, who dis", "colombo", True),
-        ("event1.png", "Front row for the live set", "colombo", True),
-        ("event5.png", "Going live in 10", "colombo", False),
+        ("grid_abhiruk_1.png", "Golden hour doesn't get better than this", "colombo", True),
+        ("grid_abhiruk_2.png", "Day on the go", "colombo", True),
+        ("grid_abhiruk_3.png", "Made with care", "colombo", True),
+        ("grid_abhiruk_4.png", "Worth the wait", "colombo", True),
     ],
     "ravindu644": [
         ("post2.png", "Morning run squad", "colombo", True),
@@ -120,19 +138,21 @@ POSTS = {
         ("post4.png", "Post-gym refuel", "colombo", True),
     ],
     "sethuki": [
-        ("post4.png", "Sketching the skyline", "kandy", True),
-        ("event3.png", "Gallery opening night", "colombo", True),
-        ("event7.png", "Print making workshop", "colombo", True),
+        ("grid_sethuki_1.png", "Sketching the skyline", "kandy", True),
+        ("grid_sethuki_2.png", "Lines and light", "kandy", True),
+        ("grid_sethuki_3.png", "Everyday details", "kandy", True),
+        ("grid_sethuki_4.png", "Still learning", "kandy", True),
     ],
     "azma": [
-        ("post1,jpeg", "Market colours", "colombo", True),
-        ("post1.png", "Market colours", "colombo", True),
-        ("event4.png", "Sunrise at the coast", "mirissa", True),
+        ("grid_azma_1.png", "Market colours", "colombo", True),
+        ("grid_azma_2.png", "Salt in the air", "mirissa", True),
+        ("grid_azma_3.png", "New plate, old favourites", "colombo", True),
+        ("grid_azma_4.png", "Golden frame", "galle", True),
     ],
     "charuki": [
-        ("event3.png", "DJ set going off", "colombo", True),
-        ("post3.png", "Studio session", "colombo", True),
-        ("post2.png", "Grooving on the beach set", "mount lavinia", False),
+        ("grid_charuki_1.png", "Setting up the set", "colombo", True),
+        ("grid_charuki_2.png", "Studio session", "colombo", True),
+        ("grid_charuki_3.png", "Grooving all day", "mount lavinia", True),
     ],
 }
 
@@ -141,43 +161,428 @@ POSTS = {
 
 # Events on the Explore page. Each tuple is
 # (title, description, host, category, tags, venue, location, price,
-#  starts_in_days, starts_in_hours). Tags are the interest vocabulary the
-# recommendation engine matches against a user's hobbies, so they mirror the
-# demo accounts' hobbies (Tech, Music, Gaming, Fitness, Sports, Travel, Art,
-# Design, Reading, Food, Photography, Dance, Movies).
+#  starts_in_days, starts_in_hours, image). image is a file in
+# seed_media/event/ served from /uploads/event/. Tags are the interest
+# vocabulary the recommendation engine matches against a user's hobbies, so
+# they mirror the demo accounts' hobbies (Tech, Music, Gaming, Fitness,
+# Sports, Travel, Art, Design, Reading, Food, Photography, Dance, Movies).
 EVENTS = [
-    ("Lagos Afrobeat Night", "Afrobeats and highlife with a live band on the rooftop.", "The Velvet Room", "music", ["music", "dance"], "88 Plams", "Lekki, Lagos", "₦15,000", 0, 6),
-    ("Indie Rock Night", "Three local indie bands, one sticky floor, hometown crowd.", "The Velvet Room", "music", ["music", "nightlife"], "Garden Bar", "Galle Face, Colombo", "₦8,000", 1, 20),
-    ("DJ Sunset Set", "House set that rides the sun down over the water.", "Charuki C.", "music", ["music", "dance", "travel"], "Beach Deck", "Mount Lavinia", "₦5,000", 2, 17),
-    ("Startup Pitch Night", "Founders get five minutes each; the room picks a winner.", "Innovation Hub", "tech", ["tech", "design"], "WTC Auditorium", "Bourbon Street, Lagos", "$20", 0, 9),
-    ("Tech Conference", "Keynotes and workshops on the stack that pays the bills.", "DevFest Lagos", "tech", ["tech", "startups"], "Landmark Centre", "Victoria Island, Lagos", "$89", 5, 9),
-    ("Hackathon Weekend", "48 hours, one theme, whatever you can build by Sunday.", "HackClub", "tech", ["tech", "gaming"], "Hub Space", "Colombo", "Free", 3, 9),
-    ("Esports Arena Finals", "Grand finals night for the city's ranked teams.", "Arena 300", "sports", ["gaming", "sports"], "Arena 300", "Galle Road, Colombo", "₦7,000", 1, 18),
-    ("Morning Beach Run", "Sunrise 5k along the shoreline, all paces welcome.", "Run Club", "sports", ["fitness", "sports", "travel"], "Beach Road", "Mount Lavinia", "Free", 0, 6),
-    ("Sunrise Yoga", "Slow vinyasa on a terrace before the heat kicks in.", "Flow Studio", "sports", ["fitness", "wellness"], "Sky Lounge", "Colombo", "₦3,000", 2, 6),
-    ("Gallery Opening Night", "New collection of painterly realism, wine and all.", "Sethuki K.", "art", ["art", "design", "photography"], "Lumen Gallery", "Kandy", "Free", 1, 19),
-    ("Print Making Workshop", "Hand-carve a block and pull your own edition.", "Paper & Press", "art", ["art", "design"], "Old Town Studio", "Colombo", "₦4,500", 4, 10),
-    ("Book Nook Meetup", "This month's read plus a round of barely book talk.", "The Reading Room", "art", ["reading", "art"], "Barefoot Cafe", "Colombo", "Free", 6, 17),
-    ("Food & Wine Expo", "Tastings, pairings, and a whole row of street food.", "Gourmet Collective", "food", ["food", "wine"], "Convention Centre", "Victoria Island, Lagos", "₦10,000", 3, 12),
-    ("Street Food Fest", "Two dozen stalls, chopsticks at the ready.", "City Eats", "food", ["food", "photography"], "Havelock Town", "Colombo", "₦2,000", 2, 19),
-    ("Movie Night Premiere", "Opening night screening followed by a Q&A.", "CineClub", "movies", ["movies", "cinema"], "Regal Theatre", "Colombo", "₦5,000", 0, 21),
-    ("Comedy Open Mic", "Local comedians testing their best material on you.", "Laugh Factory", "movies", ["movies", "comedy"], "The Comedy Cellar", "Lekki, Lagos", "₦6,000", 4, 20),
-    ("Sunday Gospel Brunch", "Live gospel and soul over bottomless iced tea.", "The Velvet Room", "music", ["music", "food"], "Garden Bar", "Galle Face, Colombo", "₦7,000", 0, 10),
-    ("Afro Pop Afterparty", "The DJ keeps the Afrobeat groove going past midnight.", "Charuki C.", "music", ["music", "dance"], "The Cellar", "Galle Face, Colombo", "₦4,000", 3, 22),
-    ("Vinyl Listening Session", "Bring a record, spin a story, listen with strangers.", "Sound Archive", "music", ["music", "reading"], "Old Town Studio", "Colombo", "₦2,000", 7, 18),
-    ("Backend Builds Cafe", "Brown-bag lunch, whiteboard talks, long-lived threads.", "Innovation Hub", "tech", ["tech", "design"], "Hub Space", "Colombo", "Free", 0, 12),
-    ("Indie Game Jams", "Weekend sprint to ship one tiny playable game.", "Game Bloc", "tech", ["gaming", "tech"], "Arena 300", "Victoria Island, Lagos", "$15", 6, 9),
-    ("AI Studio Hours", "Open lab: fine-tune, test, break, and retry models.", "DevFest Lagos", "tech", ["tech", "startups"], "Landmark Centre", "Victoria Island, Lagos", "$10", 9, 10),
-    ("Night T20 Tournament", "Floodlit cricket, loud stands, local derby energy.", "City Strikers", "sports", ["sports", "gaming"], "Oval Grounds", "Colombo", "₦3,000", 2, 18),
-    ("Trail Run Challenge", "Scrambles, river crossings, and a finisher medal.", "Run Club", "sports", ["fitness", "sports"], "Beach Road", "Mount Lavinia", "₦5,000", 8, 6),
-    ("Iron Yoga & Brews", "Sunrise flexibility, then a cold-brew hang.", "Flow Studio", "sports", ["fitness", "wellness"], "Sky Lounge", "Colombo", "₦4,000", 11, 7),
-    ("Clay & Coffee", "Wheel-throwing workshop with a stoneware gallery.", "Paper & Press", "art", ["art", "design"], "Old Town Studio", "Colombo", "₦6,500", 0, 14),
-    ("Silk Screen Saturdays", "Pull limited-edition prints by hand.", "Print Social", "art", ["art", "reading"], "Hub Space", "Colombo", "₦5,000", 5, 11),
-    ("Zine Fair", "Risky, radical, and self-published pages everywhere.", "The Reading Room", "art", ["reading", "art"], "Barefoot Cafe", "Colombo", "₦2,500", 10, 12),
-    ("Chocolate & Wine Pairing", "Single-origin bars meeting a flight of reds.", "Gourmet Collective", "food", ["food", "wine"], "Convention Centre", "Victoria Island, Lagos", "₦8,000", 0, 17),
-    ("Ramen Night Market", "Midnight bowls, charcoal grills, cash only.", "City Eats", "food", ["food", "photography"], "Havelock Town", "Colombo", "₦3,000", 4, 21),
-    ("Sci-Fi Double Feature", "Two cult classics back to back on 35mm.", "CineClub", "movies", ["movies", "cinema"], "Regal Theatre", "Colombo", "₦6,000", 0, 20),
-    ("Producers Circle Screening", "Early cut, live feedback, snacks at the back.", "CineClub", "movies", ["movies", "tech"], "The Comedy Cellar", "Lekki, Lagos", "$12", 12, 19),
+    (
+        "Afrobeat Rooftop Night",
+        "Afrobeats and highlife with a live band on the rooftop.",
+        "The Velvet Room",
+        "music",
+        ["music", "dance"],
+        "The Rooftop",
+        "Colombo 03",
+        "Rs 5,000",
+        0,
+        6,
+        "event1.png",
+    ),
+    (
+        "Indie Rock Night",
+        "Three local indie bands, one sticky floor, hometown crowd.",
+        "The Velvet Room",
+        "music",
+        ["music", "nightlife"],
+        "Garden Bar",
+        "Galle Face, Colombo",
+        "Rs 2,500",
+        1,
+        20,
+        "event2.png",
+    ),
+    (
+        "DJ Sunset Set",
+        "House set that rides the sun down over the water.",
+        "Charuki C.",
+        "music",
+        ["music", "dance", "travel"],
+        "Beach Deck",
+        "Mount Lavinia",
+        "Rs 2,000",
+        2,
+        17,
+        "event3.png",
+    ),
+    (
+        "Startup Pitch Night",
+        "Founders get five minutes each; the room picks a winner.",
+        "Innovation Hub",
+        "tech",
+        ["tech", "design"],
+        "WTC Auditorium",
+        "WTC, Colombo 03",
+        "Rs 6,000",
+        0,
+        9,
+        "event4.png",
+    ),
+    (
+        "Tech Conference",
+        "Keynotes and workshops on the stack that pays the bills.",
+        "DevFest Lanka",
+        "tech",
+        ["tech", "startups"],
+        "BMICH",
+        "Colombo 07",
+        "Rs 15,000",
+        5,
+        9,
+        "event5.png",
+    ),
+    (
+        "Hackathon Weekend",
+        "48 hours, one theme, whatever you can build by Sunday.",
+        "HackClub",
+        "tech",
+        ["tech", "gaming"],
+        "Hub Space",
+        "Colombo 03",
+        "Free",
+        3,
+        9,
+        "event6.png",
+    ),
+    (
+        "Esports Arena Finals",
+        "Grand finals night for the city's ranked teams.",
+        "Echelon Arena",
+        "sports",
+        ["gaming", "sports"],
+        "Echelon Arena",
+        "Galle Road, Colombo",
+        "Rs 2,500",
+        1,
+        18,
+        "event7.png",
+    ),
+    (
+        "Morning Beach Run",
+        "Sunrise 5k along the shoreline, all paces welcome.",
+        "Run Club",
+        "sports",
+        ["fitness", "sports", "travel"],
+        "Beach Road",
+        "Mount Lavinia",
+        "Free",
+        0,
+        6,
+        "event8.png",
+    ),
+    (
+        "Sunrise Yoga",
+        "Slow vinyasa on a terrace before the heat kicks in.",
+        "Flow Studio",
+        "sports",
+        ["fitness", "wellness"],
+        "Sky Lounge",
+        "Colombo",
+        "Rs 1,200",
+        2,
+        6,
+        "event9.png",
+    ),
+    (
+        "Gallery Opening Night",
+        "New collection of painterly realism, wine and all.",
+        "Sethuki K.",
+        "art",
+        ["art", "design", "photography"],
+        "Lumen Gallery",
+        "Kandy",
+        "Free",
+        1,
+        19,
+        "event10.png",
+    ),
+    (
+        "Print Making Workshop",
+        "Hand-carve a block and pull your own edition.",
+        "Paper & Press",
+        "art",
+        ["art", "design"],
+        "Old Town Studio",
+        "Colombo",
+        "Rs 1,500",
+        4,
+        10,
+        "event11.png",
+    ),
+    (
+        "Book Nook Meetup",
+        "This month's read plus a round of barely book talk.",
+        "The Reading Room",
+        "art",
+        ["reading", "art"],
+        "Barefoot Cafe",
+        "Colombo",
+        "Free",
+        6,
+        17,
+        "event12.png",
+    ),
+    (
+        "Food & Wine Expo",
+        "Tastings, pairings, and a whole row of street food.",
+        "Gourmet Collective",
+        "food",
+        ["food", "wine"],
+        "BMICH",
+        "Colombo 07",
+        "Rs 3,500",
+        3,
+        12,
+        "event13.png",
+    ),
+    (
+        "Street Food Fest",
+        "Two dozen stalls, chopsticks at the ready.",
+        "City Eats",
+        "food",
+        ["food", "photography"],
+        "Havelock Town",
+        "Colombo",
+        "Rs 800",
+        2,
+        19,
+        "event14.png",
+    ),
+    (
+        "Movie Night Premiere",
+        "Opening night screening followed by a Q&A.",
+        "CineClub",
+        "movies",
+        ["movies", "cinema"],
+        "Regal Theatre",
+        "Colombo",
+        "Rs 1,500",
+        0,
+        21,
+        "event15.png",
+    ),
+    (
+        "Comedy Open Mic",
+        "Local comedians testing their best material on you.",
+        "Laugh Factory",
+        "movies",
+        ["movies", "comedy"],
+        "The Comedy Club",
+        "Bambalapitiya, Colombo 04",
+        "Rs 2,000",
+        4,
+        20,
+        "event16.png",
+    ),
+    (
+        "Sunday Gospel Brunch",
+        "Live gospel and soul over bottomless iced tea.",
+        "The Velvet Room",
+        "music",
+        ["music", "food"],
+        "Garden Bar",
+        "Galle Face, Colombo",
+        "Rs 2,500",
+        0,
+        10,
+        "event17.png",
+    ),
+    (
+        "Afro Pop Afterparty",
+        "The DJ keeps the Afrobeat groove going past midnight.",
+        "Charuki C.",
+        "music",
+        ["music", "dance"],
+        "The Cellar",
+        "Galle Face, Colombo",
+        "Rs 1,500",
+        3,
+        22,
+        "event1.png",
+    ),
+    (
+        "Vinyl Listening Session",
+        "Bring a record, spin a story, listen with strangers.",
+        "Sound Archive",
+        "music",
+        ["music", "reading"],
+        "Old Town Studio",
+        "Colombo",
+        "Rs 800",
+        7,
+        18,
+        "event2.png",
+    ),
+    (
+        "Backend Builds Cafe",
+        "Brown-bag lunch, whiteboard talks, long-lived threads.",
+        "Innovation Hub",
+        "tech",
+        ["tech", "design"],
+        "Hub Space",
+        "Colombo",
+        "Free",
+        0,
+        12,
+        "event3.png",
+    ),
+    (
+        "Indie Game Jams",
+        "Weekend sprint to ship one tiny playable game.",
+        "Game Bloc",
+        "tech",
+        ["gaming", "tech"],
+        "Echelon Arena",
+        "Kandy",
+        "Rs 5,000",
+        6,
+        9,
+        "event4.png",
+    ),
+    (
+        "AI Studio Hours",
+        "Open lab: fine-tune, test, break, and retry models.",
+        "DevFest Lanka",
+        "tech",
+        ["tech", "startups"],
+        "Cinnamon Grand",
+        "Colombo 03",
+        "Rs 2,000",
+        9,
+        10,
+        "event5.png",
+    ),
+    (
+        "Night T20 Tournament",
+        "Floodlit cricket, loud stands, local derby energy.",
+        "City Strikers",
+        "sports",
+        ["sports", "gaming"],
+        "Oval Grounds",
+        "Colombo",
+        "Rs 1,000",
+        2,
+        18,
+        "event6.png",
+    ),
+    (
+        "Trail Run Challenge",
+        "Scrambles, river crossings, and a finisher medal.",
+        "Run Club",
+        "sports",
+        ["fitness", "sports"],
+        "Beach Road",
+        "Mount Lavinia",
+        "Rs 1,500",
+        8,
+        6,
+        "event7.png",
+    ),
+    (
+        "Iron Yoga & Brews",
+        "Sunrise flexibility, then a cold-brew hang.",
+        "Flow Studio",
+        "sports",
+        ["fitness", "wellness"],
+        "Sky Lounge",
+        "Colombo",
+        "Rs 1,200",
+        11,
+        7,
+        "event8.png",
+    ),
+    (
+        "Clay & Coffee",
+        "Wheel-throwing workshop with a stoneware gallery.",
+        "Paper & Press",
+        "art",
+        ["art", "design"],
+        "Old Town Studio",
+        "Colombo",
+        "Rs 2,200",
+        0,
+        14,
+        "event9.png",
+    ),
+    (
+        "Silk Screen Saturdays",
+        "Pull limited-edition prints by hand.",
+        "Print Social",
+        "art",
+        ["art", "reading"],
+        "Hub Space",
+        "Colombo",
+        "Rs 1,800",
+        5,
+        11,
+        "event10.png",
+    ),
+    (
+        "Zine Fair",
+        "Risky, radical, and self-published pages everywhere.",
+        "The Reading Room",
+        "art",
+        ["reading", "art"],
+        "Barefoot Cafe",
+        "Colombo",
+        "Rs 900",
+        10,
+        12,
+        "event11.png",
+    ),
+    (
+        "Chocolate & Wine Pairing",
+        "Single-origin bars meeting a flight of reds.",
+        "Gourmet Collective",
+        "food",
+        ["food", "wine"],
+        "Cinnamon Grand",
+        "Colombo 03",
+        "Rs 2,800",
+        0,
+        17,
+        "event12.png",
+    ),
+    (
+        "Ramen Night Market",
+        "Midnight bowls, charcoal grills, cash only.",
+        "City Eats",
+        "food",
+        ["food", "photography"],
+        "Havelock Town",
+        "Colombo",
+        "Rs 1,000",
+        4,
+        21,
+        "event13.png",
+    ),
+    (
+        "Sci-Fi Double Feature",
+        "Two cult classics back to back on 35mm.",
+        "CineClub",
+        "movies",
+        ["movies", "cinema"],
+        "Regal Theatre",
+        "Colombo",
+        "Rs 2,000",
+        0,
+        20,
+        "event14.png",
+    ),
+    (
+        "Producers Circle Screening",
+        "Early cut, live feedback, snacks at the back.",
+        "CineClub",
+        "movies",
+        ["movies", "tech"],
+        "Chaplin Cinemas",
+        "Bambalapitiya, Colombo 04",
+        "Rs 3,500",
+        12,
+        19,
+        "event15.png",
+    ),
 ]
 
 # Demo engagement heat for the recommendation engine. Each entry is
@@ -255,17 +660,27 @@ def seed_events(session: Session) -> None:
     if session.exec(select(Event)).first():
         return
 
-    usernames = {u.username: u.id for u in session.exec(select(User)).all()}
+    users = session.exec(select(User)).all()
+    usernames = {u.username: u.id for u in users}
+    # Events hosted by a demo account reuse that user's uploaded profile
+    # picture; real venues (The Velvet Room, Run Club, ...) keep a placeholder.
+    host_avatars = {
+        (u.display_name or u.username).split(" ", 1)[0].lower(): u.avatar_url
+        for u in users
+        if u.avatar_url
+    }
     event_ids = []
     base = datetime.now(UTC)
     for index in range(len(EVENTS)):
-        title, description, host, category, tags, venue, location, price, days, hours = EVENTS[index]
+        title, description, host, category, tags, venue, location, price, days, hours, image = EVENTS[index]
         event = Event(
             title=title,
             description=description,
-            image_url=f"https://picsum.photos/seed/event{index + 1}/400/600",
+            image_url=f"/uploads/event/{image}",
             host_name=host,
-            host_avatar_url=f"https://picsum.photos/seed/host{index + 1}/50/50",
+            host_avatar_url=host_avatars.get(
+                host.split(" ", 1)[0].lower()
+            ) or f"https://picsum.photos/seed/host{index + 1}/50/50",
             category=category,
             tags=tags,
             venue=venue,

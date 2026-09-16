@@ -27,22 +27,25 @@ export interface CelebrationData {
 }
 
 const BADGE = 200;
-const CONFETTI_MS = 1300;
-const PIECE_MS = 1100;
+const CONFETTI_MS = 1400;
+const PIECE_MS = 1200;
 // Party-popper colours: the only place the app steps outside the yellow palette, on purpose.
 const CONFETTI_COLORS = [wuzyColors.yellow, '#FF4D8D', '#8A5CF6', '#FF9F43', '#3ED6F0', wuzyColors.online, wuzyColors.white];
 
 // ponytail: a tiny fixed-seed generator so the burst is identical every time and
 // nothing random happens during render.
 const rnd = (i: number, k: number) => ((i * 9301 + k * 49297 + 233) % 233280) / 233280;
-const PIECES = Array.from({ length: 36 }, (_, i) => ({
-  angle: ((i / 36) * 360 + rnd(i, 1) * 10) * (Math.PI / 180),
-  dist: 0.22 + rnd(i, 2) * 0.28,
-  w: 6 + Math.round(rnd(i, 3) * 6),
-  h: 10 + Math.round(rnd(i, 4) * 6),
+// Every piece gets its own direction, speed and weight so the cloud is irregular.
+const PIECES = Array.from({ length: 72 }, (_, i) => ({
+  angle: rnd(i, 1) * Math.PI * 2,
+  speed: 0.12 + rnd(i, 2) * 0.53,
+  gravity: 0.6 + rnd(i, 7) * 0.8,
+  w: 5 + Math.round(rnd(i, 3) * 7),
+  h: 8 + Math.round(rnd(i, 4) * 8),
+  round: i % 4 === 0,
   color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
-  delay: rnd(i, 5) * 120,
-  spin: (rnd(i, 6) - 0.5) * 1080,
+  delay: rnd(i, 5) * 150,
+  spin: (rnd(i, 6) - 0.5) * 1440,
 }));
 
 /** Full-screen reward moment after a claim: headline, the badge or the XP, a
@@ -182,7 +185,7 @@ function Stage({
       {!reduceMotion && (
         <View pointerEvents="none" style={{ position: 'absolute', left: '50%', top: '50%', width: 0, height: 0 }}>
           {PIECES.map((piece, i) => (
-            <Piece key={i} clock={clock} {...piece} dist={piece.dist * height} />
+            <Piece key={i} clock={clock} {...piece} speed={piece.speed * height} gravity={piece.gravity * height} />
           ))}
         </View>
       )}
@@ -190,36 +193,45 @@ function Stage({
   );
 }
 
-/** One confetti rectangle: shoots out from the centre, then gravity pulls it down while it spins and fades. */
+/** One confetti piece: bursts out fast, drag slows it, gravity pulls it down, it spins and fades late. */
 function Piece({
   clock,
   angle,
-  dist,
+  speed,
+  gravity,
   w,
   h,
+  round,
   color,
   delay,
   spin,
 }: {
   clock: SharedValue<number>;
   angle: number;
-  dist: number;
+  speed: number;
+  gravity: number;
   w: number;
   h: number;
+  round: boolean;
   color: string;
   delay: number;
   spin: number;
 }) {
   const style = useAnimatedStyle(() => {
     const t = Math.min(1, Math.max(0, (clock.value * CONFETTI_MS - delay) / PIECE_MS));
+    const eased = 1 - (1 - t) * (1 - t) * (1 - t);
     return {
-      opacity: t === 0 ? 0 : 1 - t,
+      opacity: t === 0 ? 0 : t < 0.6 ? 1 : (1 - t) / 0.4,
       transform: [
-        { translateX: Math.cos(angle) * dist * t },
-        { translateY: Math.sin(angle) * dist * t + 1.1 * dist * t * t },
+        { translateX: Math.cos(angle) * speed * eased },
+        { translateY: Math.sin(angle) * speed * eased + gravity * t * t },
         { rotate: `${spin * t}deg` },
       ],
     };
   });
-  return <Animated.View style={[{ position: 'absolute', width: w, height: h, borderRadius: 1, backgroundColor: color }, style]} />;
+  return (
+    <Animated.View
+      style={[{ position: 'absolute', width: w, height: h, borderRadius: round ? w / 2 : 1, backgroundColor: color }, style]}
+    />
+  );
 }

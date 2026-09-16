@@ -27,25 +27,35 @@ export interface CelebrationData {
 }
 
 const BADGE = 200;
-const CONFETTI_MS = 1400;
-const PIECE_MS = 1200;
+const CONFETTI_MS = 2600;
 // Party-popper colours: the only place the app steps outside the yellow palette, on purpose.
 const CONFETTI_COLORS = [wuzyColors.yellow, '#FF4D8D', '#8A5CF6', '#FF9F43', '#3ED6F0', wuzyColors.online, wuzyColors.white];
 
-// ponytail: a tiny fixed-seed generator so the burst is identical every time and
-// nothing random happens during render.
-const rnd = (i: number, k: number) => ((i * 9301 + k * 49297 + 233) % 233280) / 233280;
-// Every piece gets its own direction, speed and weight so the cloud is irregular.
-const PIECES = Array.from({ length: 72 }, (_, i) => ({
+// ponytail: a small integer hash so the burst is identical every run and nothing
+// random happens during render. It must scramble, not step: a linear sequence
+// here lines the pieces up on a spiral and the blast reads as a ring.
+const rnd = (i: number, k: number) => {
+  let x = (i * 374761393 + k * 668265263) >>> 0;
+  x = Math.imul(x ^ (x >>> 13), 1274126177) >>> 0;
+  return ((x ^ (x >>> 16)) >>> 0) / 4294967296;
+};
+// Each piece: its own direction, a speed skewed toward slow (most pieces stay
+// near the centre, a few reach the edges), drag, weight, launch wave and life.
+const PIECES = Array.from({ length: 180 }, (_, i) => ({
   angle: rnd(i, 1) * Math.PI * 2,
-  speed: 0.12 + rnd(i, 2) * 0.53,
-  gravity: 0.6 + rnd(i, 7) * 0.8,
-  w: 5 + Math.round(rnd(i, 3) * 7),
-  h: 8 + Math.round(rnd(i, 4) * 8),
-  round: i % 4 === 0,
-  color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
-  delay: rnd(i, 5) * 150,
-  spin: (rnd(i, 6) - 0.5) * 1440,
+  speed: 0.25 + 0.75 * rnd(i, 2) ** 2,
+  drag: 3 + rnd(i, 3) * 4,
+  gravity: 0.25 + rnd(i, 4) * 0.35,
+  delay: rnd(i, 5) * 450,
+  life: 1300 + rnd(i, 6) * 800,
+  wobbleAmp: 6 + rnd(i, 7) * 16,
+  wobbleFreq: 4 + rnd(i, 8) * 5,
+  tumbleFreq: 5 + rnd(i, 9) * 6,
+  spin: (rnd(i, 10) - 0.5) * 1800,
+  w: 5 + Math.round(rnd(i, 11) * 5),
+  h: 7 + Math.round(rnd(i, 12) * 8),
+  round: i % 5 === 0,
+  color: CONFETTI_COLORS[Math.floor(rnd(i, 13) * CONFETTI_COLORS.length)],
 }));
 
 /** Full-screen reward moment after a claim: headline, the badge or the XP, a
@@ -127,7 +137,7 @@ function Stage({
       badgeO.value = withDelay(150, withTiming(1, { duration: 200 }));
       clock.value = withDelay(150, withTiming(1, { duration: CONFETTI_MS, easing: Easing.linear }));
       hintO.value = withDelay(
-        1200,
+        1400,
         withSequence(
           withTiming(1, { duration: 300 }),
           withRepeat(withTiming(0.45, { duration: 800, easing: Easing.inOut(Easing.sin) }), -1, true),
@@ -193,39 +203,35 @@ function Stage({
   );
 }
 
-/** One confetti piece: bursts out fast, drag slows it, gravity pulls it down, it spins and fades late. */
+/** One confetti piece: a hard shove that drag bleeds off, then it flutters
+ * sideways, tumbles, and gravity pulls it down while it fades late. */
 function Piece({
   clock,
   angle,
   speed,
+  drag,
   gravity,
+  delay,
+  life,
+  wobbleAmp,
+  wobbleFreq,
+  tumbleFreq,
+  spin,
   w,
   h,
   round,
   color,
-  delay,
-  spin,
-}: {
-  clock: SharedValue<number>;
-  angle: number;
-  speed: number;
-  gravity: number;
-  w: number;
-  h: number;
-  round: boolean;
-  color: string;
-  delay: number;
-  spin: number;
-}) {
+}: (typeof PIECES)[number] & { clock: SharedValue<number> }) {
   const style = useAnimatedStyle(() => {
-    const t = Math.min(1, Math.max(0, (clock.value * CONFETTI_MS - delay) / PIECE_MS));
-    const eased = 1 - (1 - t) * (1 - t) * (1 - t);
+    const t = Math.min(1, Math.max(0, (clock.value * CONFETTI_MS - delay) / life));
+    const travel = 1 - Math.exp(-drag * t);
     return {
-      opacity: t === 0 ? 0 : t < 0.6 ? 1 : (1 - t) / 0.4,
+      opacity: t === 0 ? 0 : t < 0.7 ? 1 : (1 - t) / 0.3,
       transform: [
-        { translateX: Math.cos(angle) * speed * eased },
-        { translateY: Math.sin(angle) * speed * eased + gravity * t * t },
+        { translateX: Math.cos(angle) * speed * travel + Math.sin(t * wobbleFreq + angle) * wobbleAmp },
+        { translateY: Math.sin(angle) * speed * travel + gravity * t * t },
         { rotate: `${spin * t}deg` },
+        { scaleX: 0.35 + 0.65 * Math.abs(Math.cos(t * tumbleFreq)) },
       ],
     };
   });

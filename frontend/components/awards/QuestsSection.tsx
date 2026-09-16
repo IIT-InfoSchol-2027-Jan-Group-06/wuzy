@@ -26,7 +26,10 @@ interface QuestsSectionProps {
 /** Every unfinished quest in catalog order, each card wired to its claim and action. */
 export function QuestsSection({ quests, claiming, onClaim }: QuestsSectionProps) {
   const router = useRouter();
-  const rows = quests.filter((q) => !q.completed).sort((a, b) => a.sort_order - b.sort_order);
+  // Claimable quests float to the top; the rest keep catalog order.
+  const rows = quests
+    .filter((q) => !q.completed)
+    .sort((a, b) => Number(b.claimable) - Number(a.claimable) || a.sort_order - b.sort_order);
   return (
     <View style={{ gap: wuzyLayout.itemGap }}>
       <View>

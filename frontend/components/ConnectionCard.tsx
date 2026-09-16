@@ -1,6 +1,5 @@
-import { useEffect, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import { Image, Pressable, Text, View } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 import { GlassNavButton } from '@/components/GlassNavButton';
 import { TagSection } from '@/components/TagSection';
@@ -9,51 +8,36 @@ import type { Connection } from '@/constants/connection-data';
 
 const AVATAR = 56;
 
-// The Wheel keeps a fixed 132 slot per card. The expanded card stretches taller and overlays its neighbours.
+// The wheel keeps a fixed 132 slot per card; the popup shows the same card taller.
 const COMPRESSED_HEIGHT = 132;
-const EXPANDED_HEIGHT = 215;
+const EXPANDED_HEIGHT = 240;
 
 interface ConnectionCardProps {
   connection: Connection;
-  /** Taller with action buttons below the interests; overlays the wheel slot. */
+  /** Renders the action row below the tags; only the popup sets this. */
   expanded?: boolean;
-  /** Explicit expanded height (e.g. the approved referral card with its QR). */
-  heightOverride?: number;
+  /** Tap anywhere on the collapsed card surface to open it. */
+  onPress?: () => void;
+  /** Avatar tap while open; closes the popup. */
   onAvatarPress?: () => void;
-  /** Opens the connection's profile; only wired when the card is expanded. */
+  /** Opens the connection's profile; only wired when the card is open. */
   onProfilePress?: () => void;
-  /** Wired to the expanded card's "Refer to a friend" button. */
+  /** Wired to the popup card's "Refer to a friend" button. */
   onReferPress?: () => void;
-  /** Rendered inside the expanded card instead of the action buttons. */
+  /** Rendered inside the open card instead of the action buttons. */
   expandedContent?: ReactNode;
 }
 
-/** Connection card: name on the left, avatar with online dot on the right, interest tags below. Tapping the card surface expands it; the avatar also collapses it while open. */
+/** Connection card: name on the left, avatar with online dot on the right, interest tags below. Tapping the card surface opens it in the centered popup owned by `ConnectionList`; the card itself never grows in the wheel. */
 export function ConnectionCard({
   connection,
   expanded = false,
-  heightOverride,
+  onPress,
   onAvatarPress,
   onProfilePress,
   onReferPress,
   expandedContent,
 }: ConnectionCardProps) {
-  const expandedSV = useSharedValue(false);
-
-  useEffect(() => {
-    expandedSV.value = expanded;
-  }, [expanded, expandedSV]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    height: withTiming(
-      expandedSV.value ? heightOverride ?? EXPANDED_HEIGHT : COMPRESSED_HEIGHT,
-      { duration: 250 },
-    ),
-    // Both sides of the comparison are explicit: neighbours sit low, the expanded card sits clearly higher.
-    zIndex: expandedSV.value ? 100 : 1,
-    elevation: expandedSV.value ? 100 : 1,
-  }));
-
   const avatar = (
     <Image source={connection.avatar} style={{ width: AVATAR, height: AVATAR, borderRadius: AVATAR / 2 }} resizeMode="cover" />
   );
@@ -77,8 +61,7 @@ export function ConnectionCard({
           <Pressable
             onPress={onAvatarPress}
             accessibilityRole="button"
-            accessibilityLabel={expanded ? `Collapse ${connection.name}` : `Expand ${connection.name}`}
-            accessibilityState={{ expanded }}>
+            accessibilityLabel={`Close ${connection.name}`}>
             {avatar}
             {onlineDot}
           </Pressable>
@@ -118,35 +101,31 @@ export function ConnectionCard({
     </>
   );
 
-  // Collapsed: the whole card surface is the expand trigger. Expanded: the
-  // surface stops responding so the inner buttons keep their own taps, and
-  // collapse stays with the avatar tap or an outside tap.
-  return (
-    <Animated.View
-      needsOffscreenAlphaCompositing={expanded}
-      renderToHardwareTextureAndroid={expanded}
-      style={[
-        animatedStyle,
-        {
-          borderRadius: 24,
-          backgroundColor: wuzyColors.surface,
-          shadowColor: '#000000',
-          shadowOpacity: 0.4,
-          shadowRadius: 12,
-          shadowOffset: { width: 0, height: 10 },
-        },
-      ]}>
-      {onAvatarPress && !expanded ? (
-        <Pressable
-          onPress={onAvatarPress}
-          accessibilityRole="button"
-          accessibilityLabel={`Expand ${connection.name}`}
-          style={{ flex: 1, justifyContent: 'center', padding: 16 }}>
-          {cardContent}
-        </Pressable>
-      ) : (
+  const surfaceStyle = {
+    height: expanded ? EXPANDED_HEIGHT : COMPRESSED_HEIGHT,
+    borderRadius: 24,
+    backgroundColor: wuzyColors.surface,
+    shadowColor: '#000000',
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 10 },
+  };
+
+  if (!expanded) {
+    return (
+      <Pressable
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={`Open ${connection.name}`}
+        style={surfaceStyle}>
         <View style={{ flex: 1, justifyContent: 'center', padding: 16 }}>{cardContent}</View>
-      )}
-    </Animated.View>
+      </Pressable>
+    );
+  }
+
+  return (
+    <View style={surfaceStyle}>
+      <View style={{ flex: 1, justifyContent: 'center', padding: 16 }}>{cardContent}</View>
+    </View>
   );
 }

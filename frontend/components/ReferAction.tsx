@@ -20,8 +20,6 @@ interface ReferActionProps {
   otherName: string;
   /** Latest referral state for this card pair. */
   state: ReferCardState;
-  /** True while the card is collapsing to compressed size; show the Send Request pill. */
-  collapsing: boolean;
   onSend?: () => void;
   /** Fired once the 1s outcome flash (Connection made / Referral Denied) completes. */
   onAutoCollapse?: () => void;
@@ -43,7 +41,6 @@ export function ReferAction({
   name,
   otherName,
   state,
-  collapsing,
   onSend,
   onAutoCollapse,
 }: ReferActionProps) {
@@ -54,14 +51,14 @@ export function ReferAction({
     onAutoCollapseRef.current = onAutoCollapse;
   }, [onAutoCollapse]);
 
-  // A resolved card flashes its outcome for 1 second, then collapses itself.
+  // A resolved card flashes its outcome for 1 second, then closes itself.
   // The effect only restarts when the overall state actually changes.
   const resolved = state.overall === 'accepted' || state.overall === 'declined';
   useEffect(() => {
-    if (!resolved || collapsing) return;
+    if (!resolved) return;
     const timer = setTimeout(() => onAutoCollapseRef.current?.(), 1000);
     return () => clearTimeout(timer);
-  }, [resolved, collapsing]);
+  }, [resolved]);
 
   const sendPill = (
     <GlassNavButton
@@ -90,7 +87,7 @@ export function ReferAction({
     }
   }
 
-  if (collapsing || state.overall === 'idle') {
+  if (state.overall === 'idle') {
     return <View style={{ marginTop: 35, alignItems: 'center' }}>{sendPill}</View>;
   }
 

@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 
+import { ConnectionCardPopup } from '@/components/ConnectionCardPopup';
 import { ConnectionList } from '@/components/ConnectionList';
 import { ReferAction, type ReferCardState } from '@/components/ReferAction';
 import { Screen } from '@/components/Screen';
@@ -13,10 +14,6 @@ import { useOutgoingReferrals } from '@/hooks/useOutgoingReferrals';
 import { consumeReferral, getUserConnections, type ApiReferralRequest } from '@/lib/api';
 import { isReferralConsumedLocally, markReferralConsumedLocally } from '@/lib/referral-flow';
 import { acquireChat, subscribeNotifications } from '@/lib/ws';
-
-const COMPRESSED_HEIGHT = 132;
-// The card collapse animation duration, so state settles after it finishes.
-const COLLAPSE_MS = 260;
 
 type RecipientStatus = 'pending' | 'accepted' | 'declined';
 
@@ -42,12 +39,8 @@ export default function ReferFriendScreen() {
   const { connections, loading } = useConnections();
   const { referrals, send, reload } = useOutgoingReferrals();
 
-  // Lifted from the list so the resolved flows can close a card.
+  // The card whose popup is open, so the resolved flows can close it.
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  // Shows the Send Request pill while a resolved card compresses in place.
-  const [collapsingId, setCollapsingId] = useState<string | null>(null);
-  // Drives the height shrink itself, so the pill can hold at full size first.
-  const [shrinkingId, setShrinkingId] = useState<string | null>(null);
 
   // The referred user's own connections: introducing someone they already know
   // is pointless, so they are filtered out below. Fetched fresh on every focus.
@@ -60,6 +53,8 @@ export default function ReferFriendScreen() {
     () => connections.filter((c) => c.id !== id && !referredConnections.has(c.id)),
     [connections, id, referredConnections],
   );
+
+  const expandedConnection = expandedId ? (referable.find((c) => c.id === expandedId) ?? null) : null;
 
   // A resolved referral stops driving its card once the sender has finished
   // seeing it, whether the server knows (consumed) or this session does.
@@ -153,24 +148,8 @@ export default function ReferFriendScreen() {
     [referrals, referredId, resolvedFor, isConsumed],
   );
 
-  // Compress the card, content switching back to the Send Request pill while
-  // it shrinks. The outcome has already been seen by the time this runs, so
-  // the pill and the shrink start together instead of holding on screen.
-  const collapseCard = useCallback(
-    (cardId: string) => {
-      setCollapsingId(cardId);
-      setShrinkingId(cardId);
-      setTimeout(() => {
-        setExpandedId((cur) => (cur === cardId ? null : cur));
-        setCollapsingId((cur) => (cur === cardId ? null : cur));
-        setShrinkingId((cur) => (cur === cardId ? null : cur));
-      }, COLLAPSE_MS);
-    },
-    [],
-  );
-
-  // After the 1s outcome flash the card consumes the referral and compresses
-  // in place, staying on this screen so a new request can be sent.
+  // After the 1s outcome flash the card consumes the referral and its popup
+  // closes, staying on this screen so a new request can be sent.
   const handleAutoCollapse = useCallback(
     (cardId: string) => {
       const resolved = resolvedFor(Number(cardId));
@@ -178,13 +157,30 @@ export default function ReferFriendScreen() {
         markReferralConsumedLocally(resolved.id);
         consumeReferral(resolved.id).catch((error) => console.error('[refer] consume failed', error));
       }
-      collapseCard(cardId);
+      setExpandedId((cur) => (cur === cardId ? null : cur));
     },
-    [resolvedFor, collapseCard],
+    [resolvedFor],
   );
 
   return (
-    <Screen>
+    <Screen
+      overlay={
+        <ConnectionCardPopup
+          connection={expandedConnection}
+          onClose={() => setExpandedId(null)}
+          expandedContent={
+            expandedConnection ? (
+              <ReferAction
+                name={name ?? ''}
+                otherName={expandedConnection.name}
+                state={cardState(Number(expandedConnection.id))}
+                onSend={() => send(referredId, Number(expandedConnection.id))}
+                onAutoCollapse={() => handleAutoCollapse(expandedConnection.id)}
+              />
+            ) : null
+          }
+        />
+      }>
       <View style={{ flex: 1, gap: wuzyLayout.itemGap }}>
         <ScreenHeader title="Refer to :" />
         <ConnectionList
@@ -192,19 +188,7 @@ export default function ReferFriendScreen() {
           loading={loading || referredLoading}
           emptyLabel="No connections to refer to"
           showCount={false}
-          expandedId={expandedId}
-          onExpandedChange={setExpandedId}
-          heightFor={(c) => (shrinkingId === c.id ? COMPRESSED_HEIGHT : undefined)}
-          expandedContent={(c) => (
-            <ReferAction
-              name={name ?? ''}
-              otherName={c.name}
-              state={cardState(Number(c.id))}
-              collapsing={collapsingId === c.id}
-              onSend={() => send(referredId, Number(c.id))}
-              onAutoCollapse={() => handleAutoCollapse(c.id)}
-            />
-          )}
+          onCardPress={(c) => setExpandedId(c.id)}
         />
       </View>
     </Screen>

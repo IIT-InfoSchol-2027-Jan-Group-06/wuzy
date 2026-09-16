@@ -332,8 +332,7 @@ export function MessageBar({
         style={[
           {
             position: 'absolute',
-            left: 0,
-            right: 0,
+            right: 16,
             bottom: wuzyLayout.control + 10,
             alignItems: 'center',
           },
@@ -341,9 +340,8 @@ export function MessageBar({
         ]}>
         <View
           style={{
-            flexDirection: 'row',
-            justifyContent: 'space-evenly',
-            width: '100%',
+            flexDirection: 'column',
+            gap: wuzyLayout.itemGap,
             backgroundColor: wuzyColors.surface,
             borderColor: wuzyColors.surfaceBorder,
             borderWidth: 1,
@@ -352,18 +350,6 @@ export function MessageBar({
           }}>
           <GlassNavButton icon="camera-outline" tintColor={wuzyColors.yellowDim} onPress={openCamera} accessibilityLabel="Camera" />
           <GlassNavButton icon="images-outline" tintColor={wuzyColors.yellowDim} onPress={onOpenGallery} accessibilityLabel="Gallery" />
-          <GlassNavButton
-            icon="location-outline"
-            tintColor={wuzyColors.yellowDim}
-            onPress={() => onAttachOpenChange(false)}
-            accessibilityLabel="Location"
-          />
-          <GlassNavButton
-            icon="calendar-outline"
-            tintColor={wuzyColors.yellowDim}
-            onPress={() => onAttachOpenChange(false)}
-            accessibilityLabel="Calendar"
-          />
         </View>
       </Animated.View>
       <View
@@ -399,20 +385,20 @@ export function MessageBar({
             <Animated.View
               style={[{ flexDirection: 'row', alignItems: 'center', gap, overflow: 'hidden' }, iconsStyle]}>
               <Pressable
-                onPress={() => onAttachOpenChange(!attachOpen)}
-                hitSlop={10}
-                accessibilityRole="button"
-                accessibilityLabel="Attach"
-                style={{ alignItems: 'center', justifyContent: 'center' }}>
-                <Ionicons name="attach-outline" size={iconSize} color={wuzyColors.white} />
-              </Pressable>
-              <Pressable
                 onPress={startRecording}
                 hitSlop={10}
                 accessibilityRole="button"
                 accessibilityLabel="Record voice note"
                 style={{ alignItems: 'center', justifyContent: 'center' }}>
                 <Ionicons name="mic-outline" size={iconSize} color={wuzyColors.white} />
+              </Pressable>
+              <Pressable
+                onPress={() => onAttachOpenChange(!attachOpen)}
+                hitSlop={10}
+                accessibilityRole="button"
+                accessibilityLabel="Attach"
+                style={{ alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name="attach-outline" size={iconSize} color={wuzyColors.white} />
               </Pressable>
             </Animated.View>
             <Animated.View style={[{ alignItems: 'flex-end', overflow: 'hidden' }, sendStyle]}>

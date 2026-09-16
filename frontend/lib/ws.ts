@@ -7,6 +7,19 @@ import { getPendingMessages, markMessagesSent, saveMessage, type ThreadKind } fr
  * `media_url` is an optional photo URL; the caption text rides in `text`.
  * Voice notes are `voice_note` frames with `audio_url` + `duration_ms` (no
  * text); the server routes them exactly like messages. */
+/** The message being replied to, embedded in an outgoing frame so the reply
+ *  block can render above the new message. Client-side only: the server and
+ *  the local cache ignore it. */
+export type ReplyContext = {
+  type: 'message' | 'voice_note';
+  from: number;
+  from_name?: string | null;
+  text: string;
+  media_url?: string | null;
+  audio_url?: string | null;
+  duration_ms?: number | null;
+};
+
 export type ChatMessage = {
   type: 'message' | 'voice_note';
   from: number;
@@ -19,6 +32,7 @@ export type ChatMessage = {
   audio_url?: string | null;
   duration_ms?: number | null;
   created_at: string;
+  reply?: ReplyContext | null;
 };
 
 export type ChatThread = { kind: 'dm' | 'group'; id: number };
@@ -151,6 +165,7 @@ export function sendDm(
   text: string,
   mediaUrl?: string,
   extras?: MessageExtras,
+  reply?: ReplyContext,
 ): ChatMessage {
   const message: ChatMessage = {
     type: extras ? 'voice_note' : 'message',
@@ -161,6 +176,7 @@ export function sendDm(
     media_url: mediaUrl ?? null,
     audio_url: extras?.audioUrl ?? null,
     duration_ms: extras?.durationMs ?? null,
+    reply: reply ?? null,
     created_at: new Date().toISOString(),
   };
   persistAndSend(from, 'dm', message);
@@ -173,6 +189,7 @@ export function sendGroup(
   text: string,
   mediaUrl?: string,
   extras?: MessageExtras,
+  reply?: ReplyContext,
 ): ChatMessage {
   const message: ChatMessage = {
     type: extras ? 'voice_note' : 'message',
@@ -182,6 +199,7 @@ export function sendGroup(
     media_url: mediaUrl ?? null,
     audio_url: extras?.audioUrl ?? null,
     duration_ms: extras?.durationMs ?? null,
+    reply: reply ?? null,
     created_at: new Date().toISOString(),
   };
   persistAndSend(from, 'group', message);
@@ -209,6 +227,7 @@ async function flushPending(ownerId: number): Promise<void> {
       media_url: m.media_url ?? null,
       audio_url: m.audio_url ?? null,
       duration_ms: m.duration_ms ?? null,
+      reply: m.reply ?? null,
       created_at: m.created_at,
       ...(m.kind === 'dm'
         ? { to: m.to_id ?? undefined, conversation_id: m.thread_id }

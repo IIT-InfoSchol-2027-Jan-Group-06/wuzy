@@ -1,6 +1,7 @@
 import { Image } from 'expo-image';
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import { Text, View } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
 import { VoiceNoteBubble } from '@/components/chat/VoiceNoteBubble';
 import { wuzyColors, wuzyFonts, wuzyType } from '@/constants/wuzy-theme';
@@ -11,7 +12,9 @@ const NICK = 2;
 // Standard image-message radius, slightly tighter than the bubble's.
 const IMAGE_RADIUS = Math.round(RADIUS * 0.75);
 
-export const ChatBubble = memo(function ChatBubble({
+/** The bubble's content (name, voice, image, text) without its frosted chrome.
+ *  Shared by ChatBubble and the reply preview blocks. */
+export const BubbleContent = memo(function BubbleContent({
   text,
   outgoing,
   name,
@@ -30,25 +33,10 @@ export const ChatBubble = memo(function ChatBubble({
   /** Voice-note length in milliseconds, for the time label. */
   durationMs?: number | null;
 }) {
-  const bubbleStyle = outgoing
-    ? {
-        backgroundColor: wuzyColors.yellowMuted,
-        shadowColor: wuzyColors.yellowMuted,
-        shadowOpacity: 0.1,
-        shadowRadius: 7.5,
-        shadowOffset: { width: 0, height: 0 },
-      }
-    : {
-        backgroundColor: wuzyColors.glassFill,
-        borderWidth: 1,
-        borderColor: wuzyColors.glassBorder,
-      };
-
   const pad = mediaUrl ? { paddingHorizontal: 16 } : {};
 
   // A bare picture keeps the standard image radius on all four corners. A
-  // picture with a caption gets the bubble's asymmetric tail corner on top
-  // (NICK on the outgoing/incoming tail side) and sharp bottom corners so the
+  // picture with a caption gets a square top and sharp bottom corners so the
   // caption block connects cleanly underneath it.
   const mediaRadius =
     mediaUrl && text
@@ -61,18 +49,7 @@ export const ChatBubble = memo(function ChatBubble({
       : { borderRadius: IMAGE_RADIUS };
 
   return (
-    <View
-      style={{
-        alignSelf: outgoing ? 'flex-end' : 'flex-start',
-        maxWidth: '75%',
-        paddingVertical: mediaUrl || audioUrl ? 0 : 12,
-        paddingHorizontal: mediaUrl || audioUrl ? 0 : 16,
-        borderTopLeftRadius: outgoing ? RADIUS : NICK,
-        borderTopRightRadius: outgoing ? NICK : RADIUS,
-        borderBottomLeftRadius: RADIUS,
-        borderBottomRightRadius: RADIUS,
-        ...bubbleStyle,
-      }}>
+    <>
       {name && !outgoing ? (
         <Text
           style={{
@@ -118,6 +95,87 @@ export const ChatBubble = memo(function ChatBubble({
           {text}
         </Text>
       ) : null}
-    </View>
+    </>
+  );
+});
+
+export const ChatBubble = memo(function ChatBubble({
+  text,
+  outgoing,
+  name,
+  mediaUrl,
+  audioUrl,
+  durationMs,
+  onSwipeLeft,
+  onSwipeRight,
+}: {
+  text: string;
+  outgoing: boolean;
+  /** Sender name, shown above incoming group messages. */
+  name?: string;
+  /** Photo URL (server-relative). Rendered above the caption in one bubble. */
+  mediaUrl?: string | null;
+  /** Voice-note audio URL (server-relative); renders a playable voice bubble. */
+  audioUrl?: string | null;
+  /** Voice-note length in milliseconds, for the time label. */
+  durationMs?: number | null;
+  /** Swipe right on an outgoing message: reply to self. */
+  onSwipeRight?: () => void;
+  /** Swipe left on an incoming message: reply to the sender. */
+  onSwipeLeft?: () => void;
+}) {
+  const bubbleStyle = outgoing
+    ? {
+        backgroundColor: wuzyColors.yellow,
+        shadowColor: wuzyColors.yellow,
+        shadowOpacity: 0.1,
+        shadowRadius: 7.5,
+        shadowOffset: { width: 0, height: 0 },
+      }
+    : {
+        backgroundColor: wuzyColors.glassFill,
+        borderWidth: 1,
+        borderColor: wuzyColors.glassBorder,
+      };
+
+  // A horizontal swipe (24dp) on the existing side triggers a reply: right
+  // swipes reply to your own outgoing message, left swipes reply to a received
+  // one. Vertical swipes leave the list scroll alone.
+  const gesture = useMemo(
+    () =>
+      Gesture.Pan()
+        .runOnJS(true)
+        .activeOffsetX([-24, 24])
+        .onEnd((e) => {
+          if (outgoing && e.translationX > 0) onSwipeRight?.();
+          else if (!outgoing && e.translationX < 0) onSwipeLeft?.();
+        }),
+    [outgoing, onSwipeLeft, onSwipeRight],
+  );
+
+  return (
+    <GestureDetector gesture={gesture}>
+      <View
+        style={{
+          alignSelf: outgoing ? 'flex-end' : 'flex-start',
+          maxWidth: '75%',
+          paddingVertical: mediaUrl || audioUrl ? 0 : 12,
+          paddingHorizontal: mediaUrl || audioUrl ? 0 : 16,
+          borderTopLeftRadius: outgoing ? RADIUS : NICK,
+          borderTopRightRadius: outgoing ? NICK : RADIUS,
+          borderBottomLeftRadius: RADIUS,
+          borderBottomRightRadius: RADIUS,
+          ...bubbleStyle,
+        }}>
+        <BubbleContent
+          text={text}
+          outgoing={outgoing}
+          name={name}
+          mediaUrl={mediaUrl}
+          audioUrl={audioUrl}
+          durationMs={durationMs}
+        />
+      </View>
+    </GestureDetector>
   );
 });

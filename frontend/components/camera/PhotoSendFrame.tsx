@@ -10,6 +10,7 @@ import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-th
 import { useAuth } from '@/context/auth';
 import { uploadImage } from '@/lib/api';
 import { markThreadActive } from '@/lib/chat-activity';
+import { getPendingReply, setPendingReply } from '@/lib/media';
 import { sendDm, sendGroup } from '@/lib/ws';
 
 // The Send button grew 40% in every dimension, then shrank 20%: 1.4 x 0.8 = 1.12x the original.
@@ -48,14 +49,16 @@ export function PhotoSendFrame({
       setSending(true);
       const { url } = await uploadImage('post', imageUri);
       const text = caption.trim();
+      const pendingReply = getPendingReply();
       if (kind === 'group') {
-        sendGroup(user.id, threadId, text, url);
+        sendGroup(user.id, threadId, text, url, undefined, pendingReply ?? undefined);
       } else if (otherUserId) {
-        sendDm(user.id, Number(otherUserId), threadId, text, url);
+        sendDm(user.id, Number(otherUserId), threadId, text, url, undefined, pendingReply ?? undefined);
       } else {
         setSending(false);
         return;
       }
+      setPendingReply(null);
       markThreadActive({ kind: kind === 'group' ? 'group' : 'dm', id: threadId });
       onSent();
     } catch (e) {

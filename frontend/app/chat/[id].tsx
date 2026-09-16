@@ -8,6 +8,7 @@ import { ChatBubble } from '@/components/chat/ChatBubble';
 import { ChatHeader } from '@/components/chat/ChatHeader';
 import { GalleryPopup } from '@/components/chat/GalleryPopup';
 import { MessageBar } from '@/components/chat/MessageBar';
+import { ReplyBubble, ReplyPreview } from '@/components/chat/ReplyPreview';
 import { Chip } from '@/components/Chip';
 import { Screen } from '@/components/Screen';
 import { wuzyColors, wuzyLayout } from '@/constants/wuzy-theme';
@@ -16,8 +17,8 @@ import { useChatUnread } from '@/context/chat-unread';
 import { apiGet, assetUrl, type ApiUser } from '@/lib/api';
 import { markThreadActive } from '@/lib/chat-activity';
 import { getMessages, type ThreadKind } from '@/lib/chat-db';
-import { setPendingPhoto } from '@/lib/media';
-import { acquireChat, sendDm, sendGroup, subscribeChat, type ChatMessage } from '@/lib/ws';
+import { getPendingReply, setPendingPhoto, setPendingReply } from '@/lib/media';
+import { acquireChat, sendDm, sendGroup, subscribeChat, type ChatMessage, type ReplyContext } from '@/lib/ws';
 
 const defaultAvatar = require('@/assets/images/avatar1.jpg');
 
@@ -42,6 +43,16 @@ export default function ChatViewScreen() {
   // gallery's X button).
   const [attachOpen, setAttachOpen] = useState(false);
   const [galleryOpen, setGalleryOpen] = useState(false);
+  // The message currently being replied to. Drives the preview above the bar
+  // and, once sent, the reply block attached to the outgoing message.
+  const [reply, setReply] = useState<ReplyContext | null>(null);
+
+  // Mirror the active reply into the out-of-band slot so a photo sent from the
+  // pushed camera/gallery flow (which cannot reach this route's state) carries
+  // the quote too. Cleared the same way the local reply is.
+  useEffect(() => {
+    setPendingReply(reply);
+  }, [reply]);
 
   // TEMP DEBUG: console.log keyboard + KAV metrics for the avoidance fix. Remove after.
   const insets = useSafeAreaInsets();
@@ -109,6 +120,7 @@ export default function ChatViewScreen() {
       media_url: m.media_url,
       audio_url: m.audio_url,
       duration_ms: m.duration_ms,
+      reply: m.reply ?? null,
       created_at: m.created_at,
     }));
     setMessages(history);
@@ -121,6 +133,10 @@ export default function ChatViewScreen() {
       // Any return from a pushed flow (camera, gallery send) lands on the
       // thread with the attach sheet collapsed.
       setAttachOpen(false);
+      // A photo send consumed the pending reply in the pushed flow, so drop the
+      // stale preview above the bar. An abandoned flow leaves the slot set and
+      // the reply survives.
+      if (getPendingReply() === null) setReply(null);
     }, [reloadHistory]),
   );
 
@@ -179,17 +195,53 @@ export default function ChatViewScreen() {
     };
   }, [user, threadId, threadKind, isGroup, router, markThreadRead]);
 
+  // Pin a message as the current reply context. Swiping your own message
+  // replies to yourself; swiping an incoming one replies to the sender.
+  // The server fills from_name for group frames, but DMs can arrive without
+  // it, so fall back to the resolved peer (the thread's chatName) whenever the
+  // replied-to message is not your own.
+  const buildReply = useCallback(
+    (m: ChatMessage): ReplyContext => ({
+      type: m.audio_url ? 'voice_note' : 'message',
+      from: m.from,
+      from_name: m.from_name ?? (!isGroup && m.from !== user?.id ? chatName : null),
+      text: m.text,
+      media_url: m.media_url,
+      audio_url: m.audio_url,
+      duration_ms: m.duration_ms,
+    }),
+    [user?.id, isGroup, chatName],
+  );
+
+  // APR label for a reply block: the picture's caption when it has one,
+  // otherwise "You" for your own message or the original sender's name.
+  const replyLabel = useCallback(
+    (r: ReplyContext): string => {
+      if (r.media_url && r.text) return r.text;
+      if (r.from === user?.id) return 'You';
+      return r.from_name ?? chatName;
+    },
+    [user?.id, chatName],
+  );
+
   const send = useCallback(
     (text: string) => {
       if (!user) return;
       if (isGroup) {
-        setMessages((prev) => [...prev, sendGroup(user.id, threadId, text)]);
+        setMessages((prev) => [
+          ...prev,
+          sendGroup(user.id, threadId, text, undefined, undefined, reply ?? undefined),
+        ]);
       } else if (otherUserId) {
-        setMessages((prev) => [...prev, sendDm(user.id, otherUserId, threadId, text)]);
+        setMessages((prev) => [
+          ...prev,
+          sendDm(user.id, otherUserId, threadId, text, undefined, undefined, reply ?? undefined),
+        ]);
       }
+      setReply(null);
       markThreadActive({ kind: threadKind, id: threadId });
     },
-    [user, isGroup, threadId, threadKind, otherUserId],
+    [user, isGroup, threadId, threadKind, otherUserId, reply],
   );
 
   const openGallery = () => {
@@ -229,17 +281,26 @@ export default function ChatViewScreen() {
       if (isGroup) {
         setMessages((prev) => [
           ...prev,
-          sendGroup(user.id, threadId, '', undefined, { audioUrl, durationMs }),
+          sendGroup(user.id, threadId, '', undefined, { audioUrl, durationMs }, reply ?? undefined),
         ]);
       } else if (otherUserId) {
         setMessages((prev) => [
           ...prev,
-          sendDm(user.id, otherUserId, threadId, '', undefined, { audioUrl, durationMs }),
+          sendDm(
+            user.id,
+            otherUserId,
+            threadId,
+            '',
+            undefined,
+            { audioUrl, durationMs },
+            reply ?? undefined,
+          ),
         ]);
       }
+      setReply(null);
       markThreadActive({ kind: threadKind, id: threadId });
     },
-    [user, isGroup, threadId, threadKind, otherUserId],
+    [user, isGroup, threadId, threadKind, otherUserId, reply],
   );
 
   if (loading) {
@@ -281,17 +342,46 @@ export default function ChatViewScreen() {
             ) : null
           }
           contentContainerStyle={{ paddingVertical: wuzyLayout.gap, gap: wuzyLayout.itemGap }}
-          renderItem={({ item }) => (
-            <ChatBubble
-              text={item.text}
-              outgoing={item.from === user?.id}
-              name={isGroup && item.from !== user?.id ? item.from_name ?? undefined : undefined}
-              mediaUrl={item.media_url}
-              audioUrl={item.audio_url}
-              durationMs={item.duration_ms}
-            />
-          )}
+          renderItem={({ item }) => {
+            const outgoing = item.from === user?.id;
+            return (
+              <View
+                style={{
+                  gap: outgoing ? 0 : wuzyLayout.itemGap / 2,
+                  alignItems: outgoing ? 'flex-end' : 'flex-start',
+                }}>
+                {item.reply ? (
+                  <View
+                    style={{
+                      alignSelf: outgoing ? 'flex-end' : 'flex-start',
+                      maxWidth: '75%',
+                    }}>
+                    <ReplyBubble reply={item.reply} outgoing={outgoing} label={replyLabel(item.reply)} />
+                  </View>
+                ) : null}
+                <ChatBubble
+                  text={item.text}
+                  outgoing={outgoing}
+                  name={isGroup && !outgoing ? item.from_name ?? undefined : undefined}
+                  mediaUrl={item.media_url}
+                  audioUrl={item.audio_url}
+                  durationMs={item.duration_ms}
+                  onSwipeLeft={outgoing ? undefined : () => setReply(buildReply(item))}
+                  onSwipeRight={outgoing ? () => setReply(buildReply(item)) : undefined}
+                />
+              </View>
+            );
+          }}
         />
+
+        {reply && (
+          <ReplyPreview
+            reply={reply}
+            outgoing
+            label={replyLabel(reply)}
+            onClose={() => setReply(null)}
+          />
+        )}
 
         <View style={{ paddingBottom: wuzyLayout.itemGap }}>
           <MessageBar

@@ -1,7 +1,7 @@
 import * as SQLite from 'expo-sqlite';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-import type { ChatMessage } from '@/lib/ws';
+import type { ChatMessage, ReplyContext } from '@/lib/ws';
 
 export type ThreadKind = 'dm' | 'group';
 
@@ -22,12 +22,13 @@ export type StoredMessage = {
   media_url?: string | null;
   audio_url?: string | null;
   duration_ms?: number | null;
+  reply?: ReplyContext | null;
   created_at: string;
   pending?: number;
   is_read?: number;
 };
 
-const DB_VERSION = 5;
+const DB_VERSION = 6;
 
 let dbPromise: Promise<SQLiteDatabase> | null = null;
 
@@ -60,6 +61,7 @@ function getDb(): Promise<SQLiteDatabase> {
             media_url TEXT,
             audio_url TEXT,
             duration_ms INTEGER,
+            reply_json TEXT,
             created_at TEXT NOT NULL,
             pending INTEGER NOT NULL DEFAULT 0,
             is_read INTEGER NOT NULL DEFAULT 1
@@ -75,6 +77,16 @@ function getDb(): Promise<SQLiteDatabase> {
   return dbPromise;
 }
 
+/** Parse the stored reply_json column back into a ReplyContext, or null. */
+function parseReply(json: string | null | undefined): ReplyContext | null {
+  if (!json) return null;
+  try {
+    return JSON.parse(json) as ReplyContext;
+  } catch {
+    return null;
+  }
+}
+
 /** Normalize a wire frame into a stored row for the given thread kind. */
 function toStored(kind: ThreadKind, message: ChatMessage) {
   return {
@@ -86,6 +98,7 @@ function toStored(kind: ThreadKind, message: ChatMessage) {
     media_url: message.media_url ?? null,
     audio_url: message.audio_url ?? null,
     duration_ms: message.duration_ms ?? null,
+    reply: message.reply ?? null,
     created_at: message.created_at,
   };
 }
@@ -99,8 +112,8 @@ export async function saveMessage(
   const db = await getDb();
   const row = toStored(kind, message);
   await db.runAsync(
-    `INSERT INTO messages (owner_id, kind, thread_id, from_id, from_name, to_id, text, media_url, audio_url, duration_ms, created_at, pending, is_read)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO messages (owner_id, kind, thread_id, from_id, from_name, to_id, text, media_url, audio_url, duration_ms, reply_json, created_at, pending, is_read)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ownerId,
     kind,
     row.thread_id,
@@ -111,6 +124,7 @@ export async function saveMessage(
     row.media_url,
     row.audio_url,
     row.duration_ms,
+    row.reply ? JSON.stringify(row.reply) : null,
     row.created_at,
     opts.pending ? 1 : 0,
     opts.isRead === false ? 0 : 1,
@@ -133,9 +147,10 @@ export async function getMessages(
     media_url: string | null;
     audio_url: string | null;
     duration_ms: number | null;
+    reply_json: string | null;
     created_at: string;
   }>(
-    `SELECT kind, thread_id, from_id, from_name, text, media_url, audio_url, duration_ms, created_at
+    `SELECT kind, thread_id, from_id, from_name, text, media_url, audio_url, duration_ms, reply_json, created_at
      FROM messages
      WHERE owner_id = ? AND kind = ? AND thread_id = ?
      ORDER BY id DESC
@@ -155,6 +170,7 @@ export async function getMessages(
       media_url: r.media_url,
       audio_url: r.audio_url,
       duration_ms: r.duration_ms,
+      reply: parseReply(r.reply_json),
       created_at: r.created_at,
     }));
 }
@@ -305,11 +321,12 @@ export async function getPendingMessages(ownerId: number): Promise<StoredMessage
     media_url: string | null;
     audio_url: string | null;
     duration_ms: number | null;
+    reply_json: string | null;
     created_at: string;
     pending: number;
     is_read: number;
   }>(
-    `SELECT id, kind, thread_id, from_id, from_name, to_id, text, media_url, audio_url, duration_ms, created_at, pending, is_read
+    `SELECT id, kind, thread_id, from_id, from_name, to_id, text, media_url, audio_url, duration_ms, reply_json, created_at, pending, is_read
      FROM messages
      WHERE owner_id = ? AND pending = 1
      ORDER BY id ASC`,
@@ -326,6 +343,7 @@ export async function getPendingMessages(ownerId: number): Promise<StoredMessage
     media_url: r.media_url,
     audio_url: r.audio_url,
     duration_ms: r.duration_ms,
+    reply: parseReply(r.reply_json),
     created_at: r.created_at,
     pending: r.pending,
     is_read: r.is_read,

@@ -102,6 +102,7 @@ function RootNavigator() {
           <Stack.Screen name="edit-profile" />
           <Stack.Screen name="ticket" />
           <Stack.Screen name="ticket-vault" />
+          <Stack.Screen name="badges" />
           <Stack.Screen name="upload" />
         </Stack.Protected>
       </Stack>

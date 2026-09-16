@@ -3,13 +3,7 @@ import { Text, View } from 'react-native';
 
 import { QuestCard } from '@/components/awards/QuestCard';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
-import type { ApiQuest, QuestCategory } from '@/lib/api';
-
-const GROUPS: { category: QuestCategory; title: string; subtitle: string }[] = [
-  { category: 'social', title: 'Social', subtitle: 'Grow your circle' },
-  { category: 'events', title: 'Events', subtitle: 'Get out there' },
-  { category: 'habits', title: 'Habits', subtitle: 'Show up every day' },
-];
+import type { ApiQuest } from '@/lib/api';
 
 /** Where each quest's action pill takes the user. Quests missing here show "Auto". */
 const ACTIONS: Record<string, { label: string; route: Href }> = {
@@ -29,37 +23,30 @@ interface QuestsSectionProps {
   onClaim: (key: string) => Promise<void>;
 }
 
-/** The quest lines grouped by category, each card wired to its claim and action. */
+/** Every quest line in catalog order, each card wired to its claim and action. */
 export function QuestsSection({ quests, claiming, onClaim }: QuestsSectionProps) {
   const router = useRouter();
+  const rows = [...quests].sort((a, b) => a.sort_order - b.sort_order);
   return (
-    <View style={{ gap: wuzyLayout.gap }}>
-      {GROUPS.map(({ category, title, subtitle }) => {
-        const rows = quests.filter((q) => q.category === category).sort((a, b) => a.sort_order - b.sort_order);
-        if (rows.length === 0) return null;
+    <View style={{ gap: wuzyLayout.itemGap }}>
+      <View>
+        <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.section, color: wuzyColors.yellow }}>
+          Quests
+        </Text>
+        <Text style={{ fontFamily: wuzyFonts.body, fontSize: wuzyType.small, color: wuzyColors.gray }}>
+          Do the thing, claim the reward
+        </Text>
+      </View>
+      {rows.map((quest) => {
+        const action = ACTIONS[quest.key];
         return (
-          <View key={category} style={{ gap: wuzyLayout.itemGap }}>
-            <View>
-              <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.section, color: wuzyColors.yellow }}>
-                {title}
-              </Text>
-              <Text style={{ fontFamily: wuzyFonts.body, fontSize: wuzyType.small, color: wuzyColors.gray }}>
-                {subtitle}
-              </Text>
-            </View>
-            {rows.map((quest) => {
-              const action = ACTIONS[quest.key];
-              return (
-                <QuestCard
-                  key={quest.key}
-                  quest={quest}
-                  action={action ? { label: action.label, onPress: () => router.push(action.route) } : { label: 'Auto' }}
-                  claiming={claiming === quest.key}
-                  onClaim={() => onClaim(quest.key)}
-                />
-              );
-            })}
-          </View>
+          <QuestCard
+            key={quest.key}
+            quest={quest}
+            action={action ? { label: action.label, onPress: () => router.push(action.route) } : { label: 'Auto' }}
+            claiming={claiming === quest.key}
+            onClaim={() => onClaim(quest.key)}
+          />
         );
       })}
     </View>

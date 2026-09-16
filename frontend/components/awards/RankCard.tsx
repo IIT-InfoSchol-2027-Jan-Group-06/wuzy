@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   cancelAnimation,
   useAnimatedStyle,
@@ -20,11 +21,14 @@ interface RankCardProps {
   deck: number[];
   /** The rank before the last dashboard change, or null on first load. */
   previousRankIndex: number | null;
+  badgesEarned: number;
+  badgesTotal: number;
+  onBadgesPress: () => void;
 }
 
 /** Rank name, XP bar to the next rank and the rank's badge. The bar snaps on
  * mount and eases on change; a rank-up crossfades the badge exactly once. */
-export function RankCard({ xp, deck, previousRankIndex }: RankCardProps) {
+export function RankCard({ xp, deck, previousRankIndex, badgesEarned, badgesTotal, onBadgesPress }: RankCardProps) {
   const span = xp.next_threshold == null ? 0 : xp.next_threshold - xp.rank_threshold;
   const fraction = span === 0 ? 1 : Math.min(1, Math.max(0, (xp.total_xp - xp.rank_threshold) / span));
   const maxRank = xp.next_rank == null;
@@ -126,6 +130,17 @@ export function RankCard({ xp, deck, previousRankIndex }: RankCardProps) {
             ? `${xp.next_threshold - xp.total_xp} XP to ${xp.next_rank}`
             : 'Max rank'}
         </Text>
+        <Pressable
+          onPress={onBadgesPress}
+          accessibilityRole="button"
+          accessibilityLabel="See all badges"
+          className="flex-row items-center active:opacity-80"
+          style={{ gap: 2, marginTop: 4 }}>
+          <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.small, color: wuzyColors.yellow }}>
+            Badges {badgesEarned} of {badgesTotal}
+          </Text>
+          <Ionicons name="chevron-forward" size={16} color={wuzyColors.yellow} />
+        </Pressable>
       </View>
     </View>
   );

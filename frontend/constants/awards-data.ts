@@ -1,6 +1,6 @@
 import type { ImageSourcePropType } from 'react-native';
 
-import type { ApiAwardRead } from '@/lib/api';
+import type { ApiAwardRead, ApiQuestDashboard } from '@/lib/api';
 
 // All sticker art in the game. The backend stores only badge ids (1..15);
 // this array maps a badge id to its artwork. Which id a user earns for a
@@ -38,6 +38,25 @@ export const RANKS = ['Bronze', 'Silver', 'Gold', 'Diamond'] as const;
 
 /** Deck slots 10..13 hold the four ranks' art; 0..9 belong to quests. */
 export const RANK_SLOT = 10;
+
+/** Which of the deck's slots the user has earned: quest slots by a completed
+ * quest's badge, rank slots by the rank reached. Slots past both are never earned. */
+export function earnedSlots(d: ApiQuestDashboard): boolean[] {
+  return d.deck.map((badgeId, slot) => {
+    if (slot < RANK_SLOT) return d.quests.some((q) => q.completed && q.badge_id === badgeId);
+    const rank = slot - RANK_SLOT;
+    return rank < RANKS.length && rank <= d.xp.rank_index;
+  });
+}
+
+/** What a deck slot is for: the quest name, the rank it rewards, or a placeholder. */
+export function slotLabel(d: ApiQuestDashboard, slot: number): string {
+  const quest = d.quests.find((q) => q.badge_id === d.deck[slot]);
+  if (quest) return quest.name;
+  const rank = slot - RANK_SLOT;
+  if (rank >= 0 && rank < RANKS.length) return `Rank reward: ${RANKS[rank]}`;
+  return 'Coming soon';
+}
 
 /** Stickers a profile shows: every award row that carried a badge, oldest first. */
 export function earnedStickers(

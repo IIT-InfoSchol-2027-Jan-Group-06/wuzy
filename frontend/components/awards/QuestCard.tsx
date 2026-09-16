@@ -37,8 +37,8 @@ interface QuestCardProps {
   onClaim: () => Promise<void>;
 }
 
-/** One quest line: name, tier line, progress pill with the counter inside, tier
- * dots, and on the right Claim (solid), the action (outlined) or Done (muted). */
+/** One quest line: name, tier line, progress pill with the counter inside, and on
+ * the right Claim (solid), the action (outlined) or Done (muted). */
 export function QuestCard({ quest, action, claiming, onClaim }: QuestCardProps) {
   const tiers = quest.tiers;
   const index = quest.active_tier_index ?? tiers.length - 1;
@@ -122,23 +122,6 @@ export function QuestCard({ quest, action, claiming, onClaim }: QuestCardProps) 
               style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.caption, color: done ? wuzyColors.gray : wuzyColors.white }}>
               {done ? tier.target_count : tier.current_progress} / {tier.target_count} {tier.progress_unit}
             </Text>
-          </View>
-
-          <View className="flex-row items-center" style={{ gap: 5, marginTop: 2 }}>
-            {tiers.map((t, i) => {
-              const active = !done && i === index;
-              return (
-                <View
-                  key={t.id}
-                  style={{
-                    width: active ? 14 : 6,
-                    height: 6,
-                    borderRadius: 3,
-                    backgroundColor: t.claimed || active ? wuzyColors.yellow : 'rgba(255,255,255,0.15)',
-                  }}
-                />
-              );
-            })}
           </View>
 
           {note ? (

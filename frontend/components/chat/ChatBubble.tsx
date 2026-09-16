@@ -107,6 +107,8 @@ export const ChatBubble = memo(function ChatBubble({
   audioUrl,
   durationMs,
   onReply,
+  squareTop,
+  stretch,
 }: {
   text: string;
   outgoing: boolean;
@@ -120,6 +122,10 @@ export const ChatBubble = memo(function ChatBubble({
   durationMs?: number | null;
   /** Swipe right to reply: own message replies to self, a received one to its sender. */
   onReply?: () => void;
+  /** Sits under a quoted reply block: square the touching top corners. */
+  squareTop?: boolean;
+  /** Fill the reply stack's width instead of sizing to its own content. */
+  stretch?: boolean;
 }) {
   const bubbleStyle = outgoing
     ? {
@@ -152,12 +158,12 @@ export const ChatBubble = memo(function ChatBubble({
     <GestureDetector gesture={gesture}>
       <View
         style={{
-          alignSelf: outgoing ? 'flex-end' : 'flex-start',
-          maxWidth: '75%',
+          alignSelf: stretch ? 'stretch' : outgoing ? 'flex-end' : 'flex-start',
+          ...(stretch ? {} : { maxWidth: '75%' }),
           paddingVertical: mediaUrl || audioUrl ? 0 : 12,
           paddingHorizontal: mediaUrl || audioUrl ? 0 : 16,
-          borderTopLeftRadius: outgoing ? RADIUS : NICK,
-          borderTopRightRadius: outgoing ? NICK : RADIUS,
+          borderTopLeftRadius: squareTop ? 0 : outgoing ? RADIUS : NICK,
+          borderTopRightRadius: squareTop ? 0 : outgoing ? NICK : RADIUS,
           borderBottomLeftRadius: RADIUS,
           borderBottomRightRadius: RADIUS,
           ...bubbleStyle,

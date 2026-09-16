@@ -8,6 +8,7 @@ import { assetUrl } from '@/lib/api';
 import type { ReplyContext } from '@/lib/ws';
 
 const RADIUS = 16;
+const NICK = 2;
 const RECEIVER_BUBBLE = 'rgba(84, 82, 56, 0.35)';
 const THUMB = 53;
 
@@ -19,21 +20,41 @@ function ReplyBlock({
   reply,
   outgoing,
   label,
+  stacked,
   onClose,
 }: {
   reply: ReplyContext;
   outgoing: boolean;
   label: string;
+  /** True for the quoted block stacked above a sent message: square its bottom
+   *  corners so it sits flush on the message, keep the normal top treatment. */
+  stacked?: boolean;
   onClose?: () => void;
 }) {
   const isMedia = !!reply.media_url;
   const isVoice = !!reply.audio_url;
   const previewText = reply.text || 'Photo';
 
+  const corners = stacked
+    ? outgoing
+      ? {
+          borderTopLeftRadius: NICK,
+          borderTopRightRadius: RADIUS,
+          borderBottomLeftRadius: 0,
+          borderBottomRightRadius: 0,
+        }
+      : {
+          borderTopLeftRadius: RADIUS,
+          borderTopRightRadius: NICK,
+          borderBottomLeftRadius: 0,
+          borderBottomRightRadius: 0,
+        }
+    : { borderRadius: RADIUS };
+
   return (
     <View
       style={{
-        borderRadius: RADIUS,
+        ...corners,
         backgroundColor: 'rgba(255, 255, 255, 0.08)',
         borderWidth: 1,
         borderColor: 'rgba(255, 255, 255, 0.12)',
@@ -88,7 +109,7 @@ function ReplyBlock({
         {isMedia && (
           <Image
             source={{ uri: assetUrl(reply.media_url!) }}
-            style={{ width: THUMB, aspectRatio: 1 }}
+            style={{ width: THUMB, aspectRatio: 1, marginLeft: 5 }}
             contentFit="cover"
           />
         )}
@@ -125,12 +146,15 @@ export function ReplyBubble({
   reply,
   outgoing,
   label,
+  stacked,
 }: {
   reply: ReplyContext;
   outgoing: boolean;
   label: string;
+  /** Stacked above the sent message: square the touching bottom corners. */
+  stacked?: boolean;
 }) {
-  return <ReplyBlock reply={reply} outgoing={outgoing} label={label} />;
+  return <ReplyBlock reply={reply} outgoing={outgoing} label={label} stacked={stacked} />;
 }
 
 /** Reply preview pinned above the typing bar. Same layout as the sent-message

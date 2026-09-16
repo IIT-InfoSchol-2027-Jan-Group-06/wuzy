@@ -344,30 +344,35 @@ export default function ChatViewScreen() {
           contentContainerStyle={{ paddingVertical: wuzyLayout.gap, gap: wuzyLayout.itemGap }}
           renderItem={({ item }) => {
             const outgoing = item.from === user?.id;
+            const side = outgoing ? 'flex-end' : 'flex-start';
+            const bubble = (
+              <ChatBubble
+                text={item.text}
+                outgoing={outgoing}
+                name={isGroup && !outgoing ? item.from_name ?? undefined : undefined}
+                mediaUrl={item.media_url}
+                audioUrl={item.audio_url}
+                durationMs={item.duration_ms}
+                onReply={() => setReply(buildReply(item))}
+                squareTop={!!item.reply}
+                stretch={!!item.reply}
+              />
+            );
             return (
-              <View
-                style={{
-                  gap: outgoing ? 0 : wuzyLayout.itemGap / 2,
-                  alignItems: outgoing ? 'flex-end' : 'flex-start',
-                }}>
+              <View style={{ alignItems: side }}>
                 {item.reply ? (
-                  <View
-                    style={{
-                      alignSelf: outgoing ? 'flex-end' : 'flex-start',
-                      maxWidth: '75%',
-                    }}>
-                    <ReplyBubble reply={item.reply} outgoing={outgoing} label={replyLabel(item.reply)} />
+                  <View style={{ alignItems: 'stretch', maxWidth: '75%' }}>
+                    <ReplyBubble
+                      reply={item.reply}
+                      outgoing={outgoing}
+                      label={replyLabel(item.reply)}
+                      stacked
+                    />
+                    {bubble}
                   </View>
-                ) : null}
-                <ChatBubble
-                  text={item.text}
-                  outgoing={outgoing}
-                  name={isGroup && !outgoing ? item.from_name ?? undefined : undefined}
-                  mediaUrl={item.media_url}
-                  audioUrl={item.audio_url}
-                  durationMs={item.duration_ms}
-                  onReply={() => setReply(buildReply(item))}
-                />
+                ) : (
+                  bubble
+                )}
               </View>
             );
           }}

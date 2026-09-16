@@ -13,7 +13,7 @@ interface QuestCardProps {
   onClaim: () => Promise<void>;
 }
 
-/** One unfinished quest: name, tier line, progress pill with the counter inside,
+/** One unfinished quest: name, progress pill with the counter inside,
  * and on the right Claim (solid) or the action (outlined). */
 export function QuestCard({ quest, action, claiming, onClaim }: QuestCardProps) {
   const tiers = quest.tiers;
@@ -67,10 +67,6 @@ export function QuestCard({ quest, action, claiming, onClaim }: QuestCardProps) 
             }}>
             {quest.name}
           </Text>
-          <Text numberOfLines={1} style={{ fontFamily: wuzyFonts.body, fontSize: wuzyType.caption, color: wuzyColors.yellow }}>
-            Tier {index + 1} of {tiers.length} · {tier.name}
-          </Text>
-
           <View className="justify-center overflow-hidden rounded-full bg-white/10" style={{ height: 24, marginTop: 4 }}>
             <View className="absolute left-0 top-0 h-full rounded-full bg-wuzy-yellow" style={{ width: `${Math.round(fraction * 100)}%` }} />
             <Text

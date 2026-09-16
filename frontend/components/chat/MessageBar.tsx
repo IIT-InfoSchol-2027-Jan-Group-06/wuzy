@@ -332,9 +332,11 @@ export function MessageBar({
         style={[
           {
             position: 'absolute',
-            right: 16,
+            left: 0,
+            right: 0,
             bottom: wuzyLayout.control + 10,
-            alignItems: 'center',
+            alignItems: 'flex-end',
+            paddingRight: 16,
           },
           sheetStyle,
         ]}>

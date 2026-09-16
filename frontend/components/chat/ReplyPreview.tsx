@@ -106,7 +106,7 @@ function ReplyBlock({
               alignSelf: 'flex-start',
               marginTop: 10,
               marginRight: 10,
-              marginLeft: 6,
+              marginLeft: 'auto',
               alignItems: 'center',
               justifyContent: 'center',
             }}>

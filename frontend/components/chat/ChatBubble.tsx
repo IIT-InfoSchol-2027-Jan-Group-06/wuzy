@@ -106,8 +106,7 @@ export const ChatBubble = memo(function ChatBubble({
   mediaUrl,
   audioUrl,
   durationMs,
-  onSwipeLeft,
-  onSwipeRight,
+  onReply,
 }: {
   text: string;
   outgoing: boolean;
@@ -119,10 +118,8 @@ export const ChatBubble = memo(function ChatBubble({
   audioUrl?: string | null;
   /** Voice-note length in milliseconds, for the time label. */
   durationMs?: number | null;
-  /** Swipe right on an outgoing message: reply to self. */
-  onSwipeRight?: () => void;
-  /** Swipe left on an incoming message: reply to the sender. */
-  onSwipeLeft?: () => void;
+  /** Swipe right to reply: own message replies to self, a received one to its sender. */
+  onReply?: () => void;
 }) {
   const bubbleStyle = outgoing
     ? {
@@ -138,19 +135,17 @@ export const ChatBubble = memo(function ChatBubble({
         borderColor: wuzyColors.glassBorder,
       };
 
-  // A horizontal swipe (24dp) on the existing side triggers a reply: right
-  // swipes reply to your own outgoing message, left swipes reply to a received
-  // one. Vertical swipes leave the list scroll alone.
+  // A rightward swipe (24dp) triggers a reply on both sent and received
+  // messages. Vertical swipes leave the list scroll alone.
   const gesture = useMemo(
     () =>
       Gesture.Pan()
         .runOnJS(true)
         .activeOffsetX([-24, 24])
         .onEnd((e) => {
-          if (outgoing && e.translationX > 0) onSwipeRight?.();
-          else if (!outgoing && e.translationX < 0) onSwipeLeft?.();
+          if (e.translationX > 0) onReply?.();
         }),
-    [outgoing, onSwipeLeft, onSwipeRight],
+    [onReply],
   );
 
   return (

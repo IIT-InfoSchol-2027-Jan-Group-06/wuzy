@@ -366,8 +366,7 @@ export default function ChatViewScreen() {
                   mediaUrl={item.media_url}
                   audioUrl={item.audio_url}
                   durationMs={item.duration_ms}
-                  onSwipeLeft={outgoing ? undefined : () => setReply(buildReply(item))}
-                  onSwipeRight={outgoing ? () => setReply(buildReply(item)) : undefined}
+                  onReply={() => setReply(buildReply(item))}
                 />
               </View>
             );

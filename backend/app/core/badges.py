@@ -1,9 +1,9 @@
-"""Badge deck helpers: every user's personal sticker deck.
+"""Badge decks and ranks.
 
-Each user gets a deterministic shuffle of the 15 badge ids, seeded by their
-user id so the same account always sees the same stickers. The deck is stored
-on the user row the first time it is needed, and each Award records the badge
-id it granted so the profile can show exactly which sticker was earned.
+Every user gets a deterministic shuffle of the 15 badge ids, seeded by their
+user id, stored on the user row the first time it is needed. Deck slots 0..9
+are the badges quests grant (by the quest's sort_order); slots 10..13 are the
+art for the four ranks.
 """
 
 from sqlmodel import Session
@@ -11,37 +11,27 @@ from sqlmodel import Session
 from app.models.user import User
 
 BADGE_COUNT = 15
+RANK_SLOT = 10
 
-# Canonical order for assigning badge ids to quests/custom tasks. Mirrors the
-# slot order the frontend uses so a quest maps to the same kind of badge for
-# every user; only *which* badge art that slot holds changes per user.
-AWARD_SLOTS = [
-    "Daily Login",
-    "Social Network",
-    "Purchase Ticket",
-    "Complete Profile",
-    "Ticket Sharing",
-]
+RANKS = [("Bronze", 0), ("Silver", 250), ("Gold", 600), ("Diamond", 1100)]
 
 
-def badge_slot(award_type: str) -> int:
-    """Return the canonical slot index for an award type, or None."""
-    if award_type == "ticket_purchase":
-        award_type = "Purchase Ticket"
-    elif award_type == "profile_complete":
-        award_type = "Complete Profile"
-    try:
-        return AWARD_SLOTS.index(award_type)
-    except ValueError:
-        return -1
+def rank_for(total_xp: int) -> dict:
+    """The rank a total XP sits in, plus the thresholds the XP bar needs."""
+    index = max(i for i, (_, threshold) in enumerate(RANKS) if total_xp >= threshold)
+    nxt = RANKS[index + 1] if index + 1 < len(RANKS) else None
+    return {
+        "total_xp": total_xp,
+        "rank": RANKS[index][0],
+        "rank_index": index,
+        "next_rank": nxt[0] if nxt else None,
+        "rank_threshold": RANKS[index][1],
+        "next_threshold": nxt[1] if nxt else None,
+    }
 
 
 def build_deck(user_id: int) -> list[int]:
-    """A deterministic Fisher-Yates shuffle of badge ids 1..15 for a user.
-
-    Pure function so a deck can be rebuilt from the same user id on different
-    devices; no randomness source is involved.
-    """
+    """A deterministic Fisher-Yates shuffle of badge ids 1..15 for a user."""
     deck = list(range(1, BADGE_COUNT + 1))
     seed = user_id * 2654435761 % (2**32)
     for i in range(len(deck) - 1, 0, -1):
@@ -62,14 +52,3 @@ def deck_for(session: Session, user_id: int) -> list[int]:
         session.commit()
         session.refresh(user)
     return user.badge_deck
-
-
-def badge_id_for(session: Session, user_id: int, award_type: str) -> int | None:
-    """The badge id a user's deck grants for an award type, or None."""
-    slot = badge_slot(award_type)
-    if slot < 0:
-        return None
-    deck = deck_for(session, user_id)
-    if slot >= len(deck):
-        return None
-    return deck[slot]

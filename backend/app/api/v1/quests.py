@@ -1,148 +1,119 @@
-"""Quest endpoints: tasks made of ordered subtasks with a claim step.
+"""Quests: tiered tasks counted by real actions, claimed for XP and badges.
 
-GET  /quests/                         - Dashboard: every task, its active
-                                        subtask and the subtask totals
-GET  /quests/user/{user_id}           - Public dashboard for any user
-POST /quests/{quest_id}/progress      - Increment a counted action (bump),
-                                        capped at the active subtask's target
-POST /quests/{quest_id}/claim         - Claim the active subtask once the
-                                        counter has reached its target,
-                                        advancing to the next one
+GET  /quests/               - the caller's dashboard: xp, deck, every quest with tiers
+GET  /quests/user/{user_id} - the same for any user (profiles)
+POST /quests/{key}/claim    - claim the active tier once its counter hits the target
+POST /quests/daily-login    - count today toward the daily streak (server dedupes by date)
+
+Other routers call record() when the counted action happens, so progress can
+never be faked from the client.
 """
 
+from collections import defaultdict
+from datetime import UTC, datetime, timedelta
+
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session, select
+from sqlalchemy import and_, or_
+from sqlmodel import Session, col, select
 
 from app.core.auth import get_current_user_id
-from app.core.badges import badge_id_for
+from app.core.badges import RANK_SLOT, deck_for, rank_for
 from app.db.session import get_session
 from app.models.quest import Quest, QuestSubtask, QuestSubtaskProgress
 from app.models.ticket import Award
 from app.models.user import User
-from app.schemas.quest import QuestRead, QuestsDashboard, QuestSubtaskRead
+from app.schemas.quest import QuestRead, QuestsDashboard, TierRead, XpRead
 
 router = APIRouter()
 
 
-def _subtasks_for(quest_id: int, session: Session) -> list[QuestSubtask]:
-    """The task's subtasks in display order."""
-    return list(
-        session.exec(
-            select(QuestSubtask)
-            .where(QuestSubtask.quest_id == quest_id)
-            .order_by(QuestSubtask.sort_order)
-        ).all()
-    )
+def record(
+    session: Session, user_id: int, key: str, *, amount: int = 1, set_to: int | None = None
+) -> None:
+    """Advance a user's active tier of a quest. The caller commits.
 
-
-def _get_or_create_subtask_progress(
-    subtask_id: int, user_id: int, session: Session
-) -> QuestSubtaskProgress:
+    Unknown keys and fully claimed quests are no-ops. set_to replaces the
+    counter (streaks), amount adds to it.
+    """
     row = session.exec(
-        select(QuestSubtaskProgress).where(
-            QuestSubtaskProgress.subtask_id == subtask_id,
-            QuestSubtaskProgress.user_id == user_id,
+        select(QuestSubtask, QuestSubtaskProgress)
+        .join(Quest, col(Quest.id) == col(QuestSubtask.quest_id))
+        .outerjoin(
+            QuestSubtaskProgress,
+            and_(
+                col(QuestSubtaskProgress.subtask_id) == col(QuestSubtask.id),
+                col(QuestSubtaskProgress.user_id) == user_id,
+            ),
         )
+        .where(Quest.key == key)
+        .where(
+            or_(
+                col(QuestSubtaskProgress.id).is_(None),
+                col(QuestSubtaskProgress.claimed).is_(False),
+            )
+        )
+        .order_by(col(QuestSubtask.sort_order))
+        .limit(1)
     ).first()
     if row is None:
-        row = QuestSubtaskProgress(user_id=user_id, subtask_id=subtask_id)
-        session.add(row)
-        session.commit()
-        session.refresh(row)
-    return row
-
-
-def _active_step(
-    quest: Quest, user_id: int, session: Session
-) -> tuple[list[QuestSubtask], QuestSubtask | None, QuestSubtaskProgress | None, int]:
-    """Return subtasks, the first unclaimed one, its progress row and index.
-
-    Every subtask is guaranteed a progress row (created on demand), so the
-    active subtask is simply the earliest unclaimed one. index is the
-    0-based position of the active subtask inside the task.
-    """
-    subtasks = _subtasks_for(quest.id, session)
-    for index, subtask in enumerate(subtasks):
-        progress = _get_or_create_subtask_progress(subtask.id, user_id, session)
-        if not progress.claimed:
-            return subtasks, subtask, progress, index
-    return subtasks, None, None, -1
-
-
-def _claimed_steps(subtasks: list[QuestSubtask], user_id: int, session: Session) -> int:
-    """How many subtasks the user has already claimed in this task."""
-    count = 0
-    for subtask in subtasks:
-        row = session.exec(
-            select(QuestSubtaskProgress).where(
-                QuestSubtaskProgress.subtask_id == subtask.id,
-                QuestSubtaskProgress.user_id == user_id,
-            )
-        ).first()
-        if row is not None and row.claimed:
-            count += 1
-    return count
-
-
-def bump_quest_for(user_id: int, quest_name: str, session: Session) -> None:
-    """Increment a named quest's active subtask counter by one.
-
-    Used by routers that re-create a quest's counted action elsewhere (a new
-    connection, say). No-op when the quest is unknown or out of subtasks.
-    """
-    quest = session.exec(select(Quest).where(Quest.name == quest_name)).first()
-    if quest is None:
         return
-    _, active, progress, _ = _active_step(quest, user_id, session)
-    if active is None or progress is None:
-        return
-    if progress.current_progress < active.target_count:
-        progress.current_progress += 1
-        session.add(progress)
+    tier, progress = row
+    if progress is None:
+        progress = QuestSubtaskProgress(user_id=user_id, subtask_id=tier.id)
+    value = set_to if set_to is not None else progress.current_progress + amount
+    # ponytail: overflow past the active tier's target is dropped, not carried over.
+    progress.current_progress = min(tier.target_count, value)
+    session.add(progress)
 
 
-def _read(
-    quest: Quest,
-    subtasks: list[QuestSubtask],
-    active: QuestSubtask | None,
-    progress: QuestSubtaskProgress | None,
-    step_index: int,
-    claimed_steps: int,
-) -> QuestRead:
-    """Build the API response for a task."""
-    active_subtask = None
-    if active and progress:
-        active_subtask = QuestSubtaskRead(
-            id=active.id,
-            name=active.name,
-            description=active.description,
-            target_count=active.target_count,
-            progress_unit=active.progress_unit,
-            reward_xp=active.reward_xp,
-            reward_sticker=active.reward_sticker,
-            current_progress=progress.current_progress,
-            claimed=progress.claimed,
-        )
-    return QuestRead(
-        id=quest.id,
-        name=quest.name,
-        description=quest.description,
-        active_subtask=active_subtask,
-        subtask_step=step_index + 1,
-        subtask_total=len(subtasks),
-        claimed_steps=claimed_steps,
-    )
+def dashboard(session: Session, user_id: int) -> QuestsDashboard:
+    """Build the whole dashboard with a fixed number of queries."""
+    deck = deck_for(session, user_id)
+    user = session.get(User, user_id)
+    quests = session.exec(select(Quest).order_by(col(Quest.sort_order))).all()
+    tiers_by_quest: dict[int, list[QuestSubtask]] = defaultdict(list)
+    for tier in session.exec(select(QuestSubtask).order_by(col(QuestSubtask.sort_order))).all():
+        tiers_by_quest[tier.quest_id].append(tier)
+    progress = {
+        p.subtask_id: p
+        for p in session.exec(
+            select(QuestSubtaskProgress).where(QuestSubtaskProgress.user_id == user_id)
+        ).all()
+    }
 
-
-def _dashboard_for_user(user_id: int, session: Session) -> QuestsDashboard:
-    """Build the full quest dashboard for any user id."""
-    quests = session.exec(select(Quest).order_by(Quest.sort_order)).all()
-    dashboard = []
+    out = []
     for quest in quests:
-        subtasks, active, progress, step_index = _active_step(quest, user_id, session)
-        claimed_steps = _claimed_steps(subtasks, user_id, session)
-        dashboard.append(_read(quest, subtasks, active, progress, step_index, claimed_steps))
-    return QuestsDashboard(quests=dashboard)
+        tiers = []
+        for tier in tiers_by_quest[quest.id]:
+            p = progress.get(tier.id)
+            tiers.append(
+                TierRead(
+                    id=tier.id,
+                    name=tier.name,
+                    target_count=tier.target_count,
+                    progress_unit=tier.progress_unit,
+                    reward_xp=tier.reward_xp,
+                    current_progress=p.current_progress if p else 0,
+                    claimed=bool(p and p.claimed),
+                )
+            )
+        active = next((i for i, t in enumerate(tiers) if not t.claimed), None)
+        out.append(
+            QuestRead(
+                key=quest.key,
+                name=quest.name,
+                description=quest.description,
+                category=quest.category,
+                sort_order=quest.sort_order,
+                badge_id=deck[quest.sort_order] if quest.sort_order < RANK_SLOT else None,
+                tiers=tiers,
+                active_tier_index=active,
+                claimable=active is not None
+                and tiers[active].current_progress >= tiers[active].target_count,
+                completed=active is None and bool(tiers),
+            )
+        )
+    return QuestsDashboard(xp=XpRead(**rank_for(user.total_xp)), deck=deck, quests=out)
 
 
 @router.get("/", response_model=QuestsDashboard)
@@ -150,94 +121,86 @@ def get_quests(
     current_user_id: int = Depends(get_current_user_id),
     session: Session = Depends(get_session),
 ):
-    """Return every task with the caller's active subtask and claim state."""
-    return _dashboard_for_user(current_user_id, session)
+    return dashboard(session, current_user_id)
 
 
 @router.get("/user/{user_id}", response_model=QuestsDashboard)
-def get_user_quests(
-    user_id: int,
-    session: Session = Depends(get_session),
-):
-    """Return every task with a specific user's progress (public, no auth required)."""
-    user = session.get(User, user_id)
-    if not user:
+def get_user_quests(user_id: int, session: Session = Depends(get_session)):
+    """Any user's dashboard, for profiles. Public like the rest of the profile data."""
+    if session.get(User, user_id) is None:
         raise HTTPException(status_code=404, detail="User not found")
-    return _dashboard_for_user(user_id, session)
+    return dashboard(session, user_id)
 
 
-@router.post("/{quest_id}/progress", response_model=QuestRead)
-def bump_progress(
-    quest_id: int,
+@router.post("/daily-login", response_model=QuestsDashboard)
+def daily_login(
     current_user_id: int = Depends(get_current_user_id),
     session: Session = Depends(get_session),
 ):
-    """Increment the active subtask's counter by one, capped at its target.
-
-    Returns the refreshed task state. The response shows the same state
-    when the counter is already at (or above) the target.
-    """
-    quest = session.get(Quest, quest_id)
-    if not quest:
-        raise HTTPException(status_code=404, detail="Quest not found")
-
-    subtasks, active, progress, step_index = _active_step(quest, current_user_id, session)
-    if active is None or progress is None:
-        raise HTTPException(status_code=400, detail="Quest already complete")
-
-    if progress.current_progress < active.target_count:
-        progress.current_progress += 1
-        session.add(progress)
-        session.commit()
-        session.refresh(progress)
-
-    claimed_steps = _claimed_steps(subtasks, current_user_id, session)
-    return _read(quest, subtasks, active, progress, step_index, claimed_steps)
-
-
-@router.post("/{quest_id}/claim", response_model=QuestRead)
-def claim_level(
-    quest_id: int,
-    current_user_id: int = Depends(get_current_user_id),
-    session: Session = Depends(get_session),
-):
-    """Claim the active subtask once its counter has reached its target.
-
-    On the final subtask this awards the task reward; the API response
-    then has no active_subtask, which the client reads as the whole task
-    done. Claiming before the counter hits the target returns 400.
-    """
-    quest = session.get(Quest, quest_id)
-    if not quest:
-        raise HTTPException(status_code=404, detail="Quest not found")
-
-    subtasks, active, progress, _ = _active_step(quest, current_user_id, session)
-    if active is None or progress is None:
-        raise HTTPException(status_code=400, detail="Quest already complete")
-
-    if progress.current_progress < active.target_count:
-        raise HTTPException(status_code=400, detail="Subtask target not reached")
-
-    progress.claimed = True
-    session.add(progress)
-
-    # Grant the subtask's reward: an Award row and XP added to the user.
+    """Count today toward the streak. Same day is a no-op; a missed day restarts it."""
+    # ponytail: the server's UTC day decides, not the phone's clock.
+    today = datetime.now(UTC).date()
     user = session.get(User, current_user_id)
-    if user is not None:
-        award = Award(
-            user_id=current_user_id,
-            award_type=quest.name,
-            reward_xp=active.reward_xp,
-            badge_id=badge_id_for(session, current_user_id, quest.name),
-        )
-        session.add(award)
-        user.total_xp += active.reward_xp
+    if user.last_login_date != today:
+        continues = user.last_login_date == today - timedelta(days=1)
+        user.login_streak = user.login_streak + 1 if continues else 1
+        user.last_login_date = today
+        record(session, current_user_id, "daily_streak", set_to=user.login_streak)
         session.add(user)
+        session.commit()
+    return dashboard(session, current_user_id)
 
+
+@router.post("/{key}/claim", response_model=QuestsDashboard)
+def claim(
+    key: str,
+    current_user_id: int = Depends(get_current_user_id),
+    session: Session = Depends(get_session),
+):
+    """Claim the active tier: XP for every tier, the badge on the last one."""
+    quest = session.exec(select(Quest).where(Quest.key == key)).first()
+    if quest is None:
+        raise HTTPException(status_code=404, detail="Quest not found")
+    deck = deck_for(session, current_user_id)
+    tiers = session.exec(
+        select(QuestSubtask)
+        .where(QuestSubtask.quest_id == quest.id)
+        .order_by(col(QuestSubtask.sort_order))
+    ).all()
+    progress = {
+        p.subtask_id: p
+        for p in session.exec(
+            select(QuestSubtaskProgress).where(
+                QuestSubtaskProgress.user_id == current_user_id,
+                col(QuestSubtaskProgress.subtask_id).in_([t.id for t in tiers]),
+            )
+        ).all()
+    }
+    index = next(
+        (i for i, t in enumerate(tiers) if not (progress.get(t.id) and progress[t.id].claimed)),
+        None,
+    )
+    if index is None:
+        raise HTTPException(status_code=400, detail="Quest already complete")
+    tier = tiers[index]
+    row = progress.get(tier.id)
+    if row is None or row.current_progress < tier.target_count:
+        raise HTTPException(status_code=400, detail="Tier target not reached")
+
+    row.claimed = True
+    user = session.get(User, current_user_id)
+    user.total_xp += tier.reward_xp
+    final = index == len(tiers) - 1
+    session.add(
+        Award(
+            user_id=current_user_id,
+            award_type=key,
+            tier=index + 1,
+            reward_xp=tier.reward_xp,
+            badge_id=deck[quest.sort_order] if final and quest.sort_order < RANK_SLOT else None,
+        )
+    )
+    session.add(row)
+    session.add(user)
     session.commit()
-    session.refresh(progress)
-
-    # Recompute the next active subtask now that this one is claimed.
-    _, next_active, next_progress, next_index = _active_step(quest, current_user_id, session)
-    claimed_steps = _claimed_steps(subtasks, current_user_id, session)
-    return _read(quest, subtasks, next_active, next_progress, next_index, claimed_steps)
+    return dashboard(session, current_user_id)

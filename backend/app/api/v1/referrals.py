@@ -15,6 +15,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
+from app.api.v1.quests import record
 from app.api.v1.ws import notify
 from app.core.auth import get_current_user_id
 from app.db.session import engine, get_session
@@ -182,12 +183,10 @@ def _connect_pair(a_id: int, b_id: int) -> None:
         if b_id not in followed_back:
             session.add(Follow(follower_id=b_id, followed_id=a_id))
             b_added = True
-        if a_added or b_added:
-            from app.api.v1.quests import bump_quest_for
-            if a_added:
-                bump_quest_for(a_id, "Social Network", session)
-            if b_added:
-                bump_quest_for(b_id, "Social Network", session)
+        if a_added:
+            record(session, a_id, "social_network")
+        if b_added:
+            record(session, b_id, "social_network")
         session.commit()
 
 
@@ -296,6 +295,8 @@ def respond_referral(
     session.refresh(request)
     if request.status == ACCEPTED:
         _connect_pair(request.first_user_id, request.second_user_id)
+        record(session, request.sender_id, "matchmaker")
+        session.commit()
     _notify_response(session, request, session.get(User, current_user_id))
     return _read(session, request)
 

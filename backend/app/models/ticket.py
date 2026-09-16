@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 
 
 class Ticket(SQLModel, table=True):
-    """A ticket purchased by a user. Each purchase grants an award."""
+    """A ticket a user holds, bought or gifted. event_id is null for legacy rows."""
 
     __tablename__ = "ticket"
 
@@ -17,18 +17,19 @@ class Ticket(SQLModel, table=True):
     ticket_type: str = Field(default="standard")
     purchased_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     award_granted: bool = Field(default=False)
-
-    user: "User" = Relationship(back_populates="tickets")
+    event_id: int | None = Field(default=None, foreign_key="event.id")
+    gifted_by: int | None = Field(default=None, foreign_key="user.id")
 
 
 class Award(SQLModel, table=True):
-    """An award granted to a user for completing an action."""
+    """The XP ledger: one row per claimed quest tier. badge_id is set on the final tier only."""
 
     __tablename__ = "award"
 
     id: int | None = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id", index=True)
-    award_type: str = Field(default="ticket_purchase")
+    award_type: str = Field(default="")
+    tier: int | None = Field(default=None)
     reward_xp: int = Field(default=0)
     badge_id: int | None = Field(default=None, index=True)
     awarded_at: datetime = Field(default_factory=lambda: datetime.now(UTC))

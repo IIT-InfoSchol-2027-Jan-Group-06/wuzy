@@ -44,6 +44,8 @@ class UserRead(BaseModel):
 
 
 class UserUpdate(BaseModel):
+    """Editable profile fields. Only the fields sent are changed."""
+
     display_name: str | None = None
     bio: str | None = None
     hobbies: list[str] | None = None

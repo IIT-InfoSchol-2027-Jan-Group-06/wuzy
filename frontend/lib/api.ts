@@ -1,7 +1,7 @@
 import Constants from 'expo-constants';
 import { File } from 'expo-file-system';
 
-import { getLastLoginDate, getToken, setLastLoginDate, setToken } from '@/lib/auth-token';
+import { getToken, setToken } from '@/lib/auth-token';
 
 /**
  * Base URL for the Wuzy backend.
@@ -31,16 +31,26 @@ async function authHeaders(): Promise<Record<string, string>> {
   return headers;
 }
 
-async function handleResponse<T>(res: Response, path: string): Promise<T> {
-  if (!res.ok) {
-    throw new Error(`${res.status === 401 ? 'Unauthorized' : `Request failed`}: ${res.status}`);
+/** Surface the backend's `detail` so screens can show it, falling back to the status. */
+async function throwHttpError(res: Response): Promise<never> {
+  let detail: string | undefined;
+  try {
+    const body = await res.json();
+    detail = typeof body?.detail === 'string' ? body.detail : body?.detail?.[0]?.msg;
+  } catch {
+    // No JSON body.
   }
+  throw new Error(detail ?? (res.status === 401 ? 'Unauthorized' : `Request failed: ${res.status}`));
+}
+
+async function handleResponse<T>(res: Response): Promise<T> {
+  if (!res.ok) await throwHttpError(res);
   return res.json() as Promise<T>;
 }
 
 export async function apiGet<T>(path: string): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, { headers: await authHeaders() });
-  return handleResponse<T>(res, path);
+  return handleResponse<T>(res);
 }
 
 export async function apiPost<T>(path: string, body: unknown): Promise<T> {
@@ -49,7 +59,16 @@ export async function apiPost<T>(path: string, body: unknown): Promise<T> {
     headers: { ...API_HEADERS, ...(await authHeaders()) },
     body: JSON.stringify(body),
   });
-  return handleResponse<T>(res, path);
+  return handleResponse<T>(res);
+}
+
+export async function apiPatch<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${API_URL}${path}`, {
+    method: 'PATCH',
+    headers: { ...API_HEADERS, ...(await authHeaders()) },
+    body: JSON.stringify(body),
+  });
+  return handleResponse<T>(res);
 }
 
 /** Fire-and-forget POST that returns 204 with no body (e.g. view recording, push token registration). */
@@ -59,9 +78,7 @@ export async function apiPostNoContent(path: string, body?: unknown): Promise<vo
     headers: { ...API_HEADERS, ...(await authHeaders()) },
     body: body != null ? JSON.stringify(body) : undefined,
   });
-  if (!res.ok) {
-    throw new Error(`Request failed: ${res.status}`);
-  }
+  if (!res.ok) await throwHttpError(res);
 }
 
 /** Record that the current user viewed a post. Idempotent. */
@@ -125,15 +142,6 @@ export function apiEngageEvent(eventId: number, kind: 'view' | 'going'): Promise
   return apiPostNoContent(`/events/${eventId}/engage`, { kind });
 }
 
-export async function apiPatch<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
-    method: 'PATCH',
-    headers: { ...API_HEADERS, ...(await authHeaders()) },
-    body: JSON.stringify(body),
-  });
-  return handleResponse<T>(res, path);
-}
-
 export interface AuthSession {
   access_token: string;
   token_type: string;
@@ -147,7 +155,7 @@ export async function apiLogin(email: string, password: string): Promise<AuthSes
     headers: API_HEADERS,
     body: JSON.stringify({ email, password }),
   });
-  const session = await handleResponse<AuthSession>(res, '/auth/login');
+  const session = await handleResponse<AuthSession>(res);
   await setToken(session.access_token);
   return session;
 }
@@ -167,10 +175,7 @@ export async function uploadImage(kind: 'post' | 'avatar' | 'audio', uri: string
     headers: await authHeaders(),
     body: form,
   });
-  if (!res.ok) {
-    throw new Error(`Upload failed: ${res.status}`);
-  }
-  return res.json() as Promise<{ url: string; kind: string }>;
+  return handleResponse<{ url: string; kind: string }>(res);
 }
 
 /** Turns a backend-relative path (e.g. /uploads/post/x.png) into a full URL. */
@@ -235,30 +240,55 @@ export interface ApiGroup {
   members: ApiUser[];
 }
 
-export interface ApiQuestSubtask {
+export type QuestCategory = 'social' | 'events' | 'habits';
+
+export interface ApiQuestTier {
   id: number;
   name: string;
-  description: string;
   target_count: number;
   progress_unit: string;
   reward_xp: number;
-  reward_sticker: boolean;
   current_progress: number;
   claimed: boolean;
 }
 
+/** One quest line. active_tier_index is null once every tier is claimed. */
 export interface ApiQuest {
-  id: number;
+  key: string;
   name: string;
   description: string;
-  active_subtask: ApiQuestSubtask | null;
-  subtask_step: number;
-  subtask_total: number;
-  claimed_steps: number;
+  category: QuestCategory;
+  sort_order: number;
+  badge_id: number | null;
+  tiers: ApiQuestTier[];
+  active_tier_index: number | null;
+  claimable: boolean;
+  completed: boolean;
 }
 
-export interface ApiQuestsDashboard {
+export interface ApiQuestXp {
+  total_xp: number;
+  rank: string;
+  rank_index: number;
+  next_rank: string | null;
+  rank_threshold: number;
+  next_threshold: number | null;
+}
+
+/** Everything the Awards tab shows, in one response. */
+export interface ApiQuestDashboard {
+  xp: ApiQuestXp;
+  deck: number[];
   quests: ApiQuest[];
+}
+
+export interface ApiTicketEvent {
+  id: number;
+  title: string;
+  image_url: string | null;
+  start_time: string;
+  venue: string | null;
+  location: string | null;
 }
 
 export interface ApiTicketRead {
@@ -266,37 +296,39 @@ export interface ApiTicketRead {
   user_id: number;
   ticket_type: string;
   purchased_at: string;
-  award_granted: boolean;
+  event_id: number | null;
+  gifted_by: number | null;
+  event: ApiTicketEvent | null;
 }
 
 export interface ApiAwardRead {
   id: number;
   user_id: number;
   award_type: string;
+  tier: number | null;
   reward_xp: number;
   badge_id: number | null;
   awarded_at: string;
 }
 
-export interface TicketPurchaseResponse {
-  ticket: ApiTicketRead;
-  award: ApiAwardRead | null;
+export function apiGetQuestDashboard(): Promise<ApiQuestDashboard> {
+  return apiGet<ApiQuestDashboard>('/quests/');
 }
 
-export function apiGetQuests(): Promise<ApiQuestsDashboard> {
-  return apiGet<ApiQuestsDashboard>('/quests/');
+/** Claim the active tier of a quest. Returns the refreshed dashboard. */
+export function apiClaimQuest(key: string): Promise<ApiQuestDashboard> {
+  return apiPost<ApiQuestDashboard>(`/quests/${key}/claim`, {});
 }
 
-export function apiGetUserQuests(userId: number): Promise<ApiQuestsDashboard> {
-  return apiGet<ApiQuestsDashboard>(`/quests/user/${userId}`);
+/** Count today toward the daily streak. The server dedupes by date. */
+export function apiDailyLogin(): Promise<ApiQuestDashboard> {
+  return apiPost<ApiQuestDashboard>('/quests/daily-login', {});
 }
 
-export function apiBumpQuestProgress(questId: number): Promise<ApiQuest> {
-  return apiPost<ApiQuest>(`/quests/${questId}/progress`, {});
-}
-
-export function apiClaimQuest(questId: number): Promise<ApiQuest> {
-  return apiPost<ApiQuest>(`/quests/${questId}/claim`, {});
+export function apiUpdateMe(
+  patch: Partial<Pick<ApiUser, 'display_name' | 'bio' | 'hobbies' | 'avatar_url'>>,
+): Promise<ApiUser> {
+  return apiPatch<ApiUser>('/users/me', patch);
 }
 
 /** A referral request: the sender introduced two users to each other. */
@@ -371,72 +403,30 @@ export function consumeReferral(id: number): Promise<ApiReferralRequest> {
   return apiPost<ApiReferralRequest>(`/referrals/${id}/consume`, {});
 }
 
-export async function apiPurchaseTicket(): Promise<TicketPurchaseResponse> {
-  return apiPost<TicketPurchaseResponse>('/tickets/purchase', {});
+export function apiPurchaseTickets(quantity: number, eventId?: number): Promise<ApiTicketRead[]> {
+  return apiPost<ApiTicketRead[]>('/tickets/purchase', { quantity, event_id: eventId ?? null });
 }
 
-/** Claim the ticket badge once enough tickets are bought. Idempotent. */
-export async function apiClaimTicketAward(): Promise<ApiAwardRead> {
-  return apiPost<ApiAwardRead>('/tickets/claim-award', {});
+/** Count a share of my ticket. Call it only after the share sheet confirms. */
+export function apiShareTicket(ticketId: number): Promise<void> {
+  return apiPostNoContent(`/tickets/${ticketId}/share`);
 }
 
-export async function apiGetTickets(): Promise<ApiTicketRead[]> {
+/** Buy a ticket for a connection. They get the ticket and a notification. */
+export function apiGiftTicket(toUserId: number, eventId: number): Promise<ApiTicketRead> {
+  return apiPost<ApiTicketRead>('/tickets/gift', { to_user_id: toUserId, event_id: eventId });
+}
+
+export function apiGetTickets(): Promise<ApiTicketRead[]> {
   return apiGet<ApiTicketRead[]>('/tickets/');
 }
 
-export async function apiCompleteProfile(): Promise<ApiAwardRead> {
-  return apiPost<ApiAwardRead>('/awards/complete-profile', {});
-}
-
-export async function apiGetAwards(): Promise<ApiAwardRead[]> {
+export function apiGetAwards(): Promise<ApiAwardRead[]> {
   return apiGet<ApiAwardRead[]>('/awards/');
 }
 
-export async function apiGetUserAwards(userId: number): Promise<ApiAwardRead[]> {
+export function apiGetUserAwards(userId: number): Promise<ApiAwardRead[]> {
   return apiGet<ApiAwardRead[]>(`/awards/user/${userId}`);
-}
-
-/** The current user's personal badge deck (persisted on the user row). */
-export function apiGetMyDeck(): Promise<number[]> {
-  return apiGet<number[]>('/awards/deck');
-}
-
-/** Any user's personal badge deck (public). */
-export function apiGetUserDeck(userId: number): Promise<number[]> {
-  return apiGet<number[]>(`/awards/user/${userId}/deck`);
-}
-
-export interface UserXpData {
-  total_xp: number;
-  rank: string;
-  progress_pct: number;
-  next_rank: string | null;
-  xp_in_rank: number;
-  xp_to_next: number;
-}
-
-export function apiGetUserXp(): Promise<UserXpData> {
-  return apiGet<UserXpData>('/users/me/xp');
-}
-
-/** Record a daily login and bump the Daily Login quest progress once per calendar day. */
-export async function apiRecordDailyLogin(): Promise<void> {
-  const token = await getToken();
-  if (!token) return;
-  try {
-    const today = new Date().toISOString().slice(0, 10);
-    const last = await getLastLoginDate();
-    if (last === today) return;
-
-    const data = await apiGetQuests();
-    const quest = data.quests.find((q) => q.name === 'Daily Login');
-    if (quest && quest.active_subtask) {
-      await apiBumpQuestProgress(quest.id);
-      await setLastLoginDate(today);
-    }
-  } catch {
-    // Ignore offline or transient failures
-  }
 }
 
 /** Compact "ago" label: 5m, 2h, 1d, 12 Aug. Empty for missing timestamps. */

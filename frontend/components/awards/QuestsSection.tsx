@@ -1,113 +1,74 @@
-import { useRouter } from 'expo-router';
-import { Text, View } from 'react-native';
+import { useRouter, type Href } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { Pressable, Text, View } from 'react-native';
 
 import { QuestCard } from '@/components/awards/QuestCard';
-import { wuzyColors, wuzyFonts, wuzyType } from '@/constants/wuzy-theme';
+import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 import type { ApiQuest } from '@/lib/api';
 
-/** Maps each task to its right-column action (or none). */
-const actionFor: Record<string, { label: string; route: string }> = {
-  'Social Network': { label: 'Add', route: '/connect' },
-  'Ticket Sharing': { label: 'Share', route: '/ticket-vault' },
-  'Complete Profile': { label: 'Complete', route: '/(tabs)/profile' },
-  'Purchase Ticket': { label: 'Purchase', route: '/ticket' },
+/** Where each quest's action pill takes the user. Quests missing here show "Auto". */
+const ACTIONS: Record<string, { label: string; route: Href }> = {
+  social_network: { label: 'Add', route: '/connect' },
+  matchmaker: { label: 'Refer', route: '/connections' },
+  squad_up: { label: 'Group', route: '/new-group' },
+  explorer: { label: 'Explore', route: '/(tabs)/explore' },
+  ticket_holder: { label: 'Buy', route: '/ticket' },
+  ticket_sharing: { label: 'Share', route: '/ticket-vault' },
+  gift_giver: { label: 'Gift', route: '/(tabs)/explore' },
+  complete_profile: { label: 'Edit', route: '/edit-profile' },
 };
 
 interface QuestsSectionProps {
   quests: ApiQuest[];
-  onClaimed?: () => void;
-  completedTasks?: Set<string>;
-  onClaimTask?: (name: string) => () => Promise<void>;
-  /** How many tickets the user has bought; drives the Purchase Ticket progress. */
-  ticketCount?: number;
+  claiming: string | null;
+  onClaim: (key: string) => Promise<void>;
+  badgesEarned: number;
+  badgesTotal: number;
+  onBadgesPress: () => void;
 }
 
-/** Tasks header, then the task cards including quests and custom tasks. */
-export function QuestsSection({ quests, onClaimed, completedTasks, onClaimTask, ticketCount }: QuestsSectionProps) {
+/** Every unfinished quest in catalog order, each card wired to its claim and action. */
+export function QuestsSection({ quests, claiming, onClaim, badgesEarned, badgesTotal, onBadgesPress }: QuestsSectionProps) {
   const router = useRouter();
-
-  const taskNames = ['Purchase Ticket', 'Complete Profile'];
-  const taskDescriptions: Record<string, string> = {
-    'Purchase Ticket': 'Buy 5 tickets to fill the bar',
-    'Complete Profile': 'Fill in your profile to earn 100 XP',
-  };
-
-  // Display order: Daily Login leads the board, Ticket Sharing closes it.
-  const taskOrder = [
-    'Daily Login',
-    'Social Network',
-    'Purchase Ticket',
-    'Complete Profile',
-    'Ticket Sharing',
-  ];
-
+  // Claimable quests float to the top; the rest keep catalog order.
+  const rows = quests
+    .filter((q) => !q.completed)
+    .sort((a, b) => Number(b.claimable) - Number(a.claimable) || a.sort_order - b.sort_order);
   return (
-    <View className="mt-[16px]">
-      <Text style={{ fontFamily: wuzyFonts.bold, fontSize: wuzyType.body, color: wuzyColors.yellow }}>
-        Tasks
-      </Text>
-
-      <Text
-        style={{
-          marginTop: 4,
-          fontFamily: wuzyFonts.body,
-          fontSize: wuzyType.small,
-          color: wuzyColors.gray,
-        }}>
-        Complete tasks to collect exclusive badges
-      </Text>
-
-      <View className="mt-[16px] gap-[12px]">
-        {taskOrder.map((name) => {
-          if (taskNames.includes(name)) {
-            const isPurchaseTicket = name === 'Purchase Ticket';
-            const purchaseCount = Math.min(5, ticketCount ?? 0);
-            const isDone = completedTasks?.has(name) ?? false;
-            const action = actionFor[name];
-            const actionLabel = action?.label ?? (name === 'Purchase Ticket' ? 'Purchase' : 'Complete');
-            return (
-              <QuestCard
-                key={name}
-                quest={{
-                  id: name === 'Complete Profile' ? -2 : -1,
-                  name,
-                  description: taskDescriptions[name],
-                  active_subtask: isDone ? null : {
-                    id: 0,
-                    name,
-                    description: taskDescriptions[name],
-                    target_count: isPurchaseTicket ? 5 : 1,
-                    progress_unit: isPurchaseTicket ? 'times' : 'once',
-                    reward_xp: name === 'Purchase Ticket' ? 50 : 100,
-                    reward_sticker: false,
-                    current_progress: isPurchaseTicket ? purchaseCount : 0,
-                    claimed: false,
-                  },
-                  subtask_step: 1,
-                  subtask_total: 1,
-                  claimed_steps: isDone ? 1 : 0,
-                }}
-                actionLabel={actionLabel}
-                onAction={action ? () => router.push(action.route as never) : undefined}
-                onClaimed={onClaimed}
-                onClaimCustom={onClaimTask?.(name)}
-              />
-            );
-          }
-          const quest = quests.find((q) => q.name === name);
-          if (!quest) return null;
-          const action = actionFor[name];
-          return (
-            <QuestCard
-              key={quest.id}
-              quest={quest}
-              actionLabel={action?.label}
-              onAction={action ? () => router.push(action.route as never) : undefined}
-              onClaimed={onClaimed}
-            />
-          );
-        })}
+    <View style={{ gap: wuzyLayout.itemGap }}>
+      <View className="flex-row items-center justify-between">
+        <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.section, color: wuzyColors.yellow }}>
+          Quests
+        </Text>
+        <Pressable
+          onPress={onBadgesPress}
+          accessibilityRole="button"
+          accessibilityLabel="See all badges"
+          className="flex-row items-center active:opacity-80"
+          style={{ gap: 2 }}>
+          <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.small, color: wuzyColors.yellowMuted }}>
+            Badges {badgesEarned} of {badgesTotal}
+          </Text>
+          <Ionicons name="chevron-forward" size={16} color={wuzyColors.yellowMuted} />
+        </Pressable>
       </View>
+      {rows.length === 0 && (
+        <Text style={{ fontFamily: wuzyFonts.body, fontSize: wuzyType.small, color: wuzyColors.gray }}>
+          Every quest is done. New ones are coming.
+        </Text>
+      )}
+      {rows.map((quest) => {
+        const action = ACTIONS[quest.key];
+        return (
+          <QuestCard
+            key={quest.key}
+            quest={quest}
+            action={action ? { label: action.label, onPress: () => router.push(action.route) } : { label: 'Auto' }}
+            claiming={claiming === quest.key}
+            onClaim={() => onClaim(quest.key)}
+          />
+        );
+      })}
     </View>
   );
 }

@@ -7,7 +7,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
-import { apiGetEvent, apiGetRecommendedEvents, apiPurchaseTicket, assetUrl, type ApiRecommendedEvent } from '@/lib/api';
+import { apiGetEvent, apiGetRecommendedEvents, apiPurchaseTickets, assetUrl, type ApiRecommendedEvent } from '@/lib/api';
 
 const card = { backgroundColor: wuzyColors.surface, borderRadius: 24, borderWidth: 1, borderColor: wuzyColors.glassBorder };
 
@@ -47,7 +47,7 @@ export default function TicketScreen() {
     setPurchasing(true);
     setPurchaseSuccess(false);
     try {
-      await apiPurchaseTicket();
+      await apiPurchaseTickets(ticketCount, event?.id);
       setPurchaseSuccess(true);
     } catch {
       Alert.alert('Error', 'Failed to purchase ticket');

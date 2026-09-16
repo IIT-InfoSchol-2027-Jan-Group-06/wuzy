@@ -92,6 +92,17 @@ backend/
 | `GET` | `/feed/discover` | Yes | Ephemeral posts alive for this session (X-Session-Id) + all permanent posts |
 | `POST` | `/feed/{id}/view` | Yes | Record a view tagged with X-Session-Id (idempotent 204) |
 | `GET` | `/feed/profile/{user_id}` | No | Permanent posts for a user's profile |
+| `PATCH` | `/users/me` | Yes | Edit profile; a full profile completes the Complete Profile quest |
+| `GET` | `/quests/` | Yes | Quest dashboard: xp and rank, badge deck, every quest with tiers |
+| `GET` | `/quests/user/{id}` | No | Any user's quest dashboard (profiles) |
+| `POST` | `/quests/{key}/claim` | Yes | Claim the active tier; XP per tier, badge on the last |
+| `POST` | `/quests/daily-login` | Yes | Count today toward the streak (server dedupes by date) |
+| `POST` | `/tickets/purchase` | Yes | Buy 1..10 tickets, optionally for an event |
+| `POST` | `/tickets/{id}/share` | Yes | Count a share of your own ticket (204) |
+| `POST` | `/tickets/gift` | Yes | Gift a ticket to a connection; they get a notification |
+| `GET` | `/tickets/` | Yes | My tickets with their event slice |
+| `GET` | `/awards/` | Yes | My XP ledger rows; rows with badge_id are profile stickers |
+| `GET` | `/awards/user/{id}` | No | Any user's awards |
 
 ### Conventions
 

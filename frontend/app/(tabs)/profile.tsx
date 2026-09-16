@@ -5,6 +5,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 
 import { GlassNavButton } from '@/components/GlassNavButton';
 import { ProfileGrid, ProfileHero } from '@/components/profile';
+import { PostViewerPopup } from '@/components/postcard/PostViewerPopup';
 import { Screen } from '@/components/Screen';
 import { TagSection } from '@/components/TagSection';
 import { accountFor } from '@/constants/accounts';
@@ -25,6 +26,7 @@ export default function ProfileScreen() {
   const [loadingPosts, setLoadingPosts] = useState(true);
   const [awards, setAwards] = useState<ApiAwardRead[]>([]);
   const [awardsLoaded, setAwardsLoaded] = useState(false);
+  const [openPost, setOpenPost] = useState<ApiPost | null>(null);
 
   const loadPhotos = useCallback(async () => {
     if (!user) return;
@@ -82,7 +84,16 @@ export default function ProfileScreen() {
   );
 
   return (
-    <Screen scroll padded={false} style={{ paddingTop: 0 }}>
+    <Screen
+      scroll
+      padded={false}
+      style={{ paddingTop: 0 }}
+      overlay={
+        <PostViewerPopup
+          post={openPost}
+          onClose={() => setOpenPost(null)}
+        />
+      }>
       <ProfileHero
         background={user.avatar_url ? { uri: assetUrl(user.avatar_url) } : extra.backgroundImage}
         name={user.display_name ?? user.username}
@@ -109,7 +120,7 @@ export default function ProfileScreen() {
         <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.section, color: wuzyColors.yellow, textAlign: 'center' }}>Timeline</Text>
       </View>
 
-      <ProfileGrid posts={photos} loading={loadingPosts} gridItemSize={gridItemSize} gap={GRID_GAP} onEmptyPress={() => router.push('/upload')} />
+      <ProfileGrid posts={photos} loading={loadingPosts} gridItemSize={gridItemSize} gap={GRID_GAP} onEmptyPress={() => router.push('/upload')} onPostPress={setOpenPost} />
     </Screen>
   );
 }

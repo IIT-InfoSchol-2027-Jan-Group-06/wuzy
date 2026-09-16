@@ -6,6 +6,7 @@ tables on startup for local dev; Alembic handles migrated schemas elsewhere.
 """
 
 import asyncio
+import mimetypes
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -64,6 +65,8 @@ app.include_router(awards.router, prefix="/awards", tags=["awards"])
 app.include_router(notifications.router, prefix="/notifications", tags=["notifications"])
 
 # Serve uploaded files from the storage directory so /uploads/* URLs resolve.
+# Seed media is webp; register the type or it is served as octet-stream.
+mimetypes.add_type("image/webp", ".webp")
 storage_dir = Path("storage")
 storage_dir.mkdir(parents=True, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=storage_dir), name="uploads")

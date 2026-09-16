@@ -3,13 +3,14 @@ import { Text, View, useWindowDimensions } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 
 import { ProfileGrid, ProfileHero } from '@/components/profile';
+import { PostViewerPopup } from '@/components/postcard/PostViewerPopup';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { TagSection } from '@/components/TagSection';
 import { accountFor } from '@/constants/accounts';
 import { earnedStickers } from '@/constants/awards-data';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
-import { apiGet, apiGetUserAwards, type ApiAwardRead, type ApiPost, type ApiUser } from '@/lib/api';
+import { apiGet, apiGetUserAwards, assetUrl, type ApiAwardRead, type ApiPost, type ApiUser } from '@/lib/api';
 
 const GRID_GAP = 2;
 
@@ -22,6 +23,7 @@ export default function UserProfileScreen() {
   const [photos, setPhotos] = useState<ApiPost[]>([]);
   const [awards, setAwards] = useState<ApiAwardRead[]>([]);
   const [loading, setLoading] = useState(true);
+  const [openPost, setOpenPost] = useState<ApiPost | null>(null);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -65,13 +67,16 @@ export default function UserProfileScreen() {
       padded={false}
       style={{ paddingTop: 0 }}
       overlay={
-        // Floats over the hero. box-none so the hero underneath still scrolls.
-        <View pointerEvents="box-none" className="absolute left-0 right-0" style={{ top: wuzyLayout.top, paddingHorizontal: wuzyLayout.side }}>
-          <ScreenHeader title="" />
-        </View>
+        <>
+          {/* Floats over the hero. box-none so the hero underneath still scrolls. */}
+          <View pointerEvents="box-none" className="absolute left-0 right-0" style={{ top: wuzyLayout.top, paddingHorizontal: wuzyLayout.side }}>
+            <ScreenHeader title="" />
+          </View>
+          <PostViewerPopup post={openPost} onClose={() => setOpenPost(null)} />
+        </>
       }>
       <ProfileHero
-        background={accountFor(profile.username).backgroundImage}
+        background={profile.avatar_url ? { uri: assetUrl(profile.avatar_url) } : accountFor(profile.username).backgroundImage}
         name={name}
         awardsCount={earnedAwards.length}
         awards={earnedAwards}
@@ -84,7 +89,7 @@ export default function UserProfileScreen() {
         <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.section, color: wuzyColors.yellow, textAlign: 'center' }}>Timeline</Text>
       </View>
 
-      <ProfileGrid posts={photos} loading={loading} gridItemSize={gridItemSize} gap={GRID_GAP} />
+      <ProfileGrid posts={photos} loading={loading} gridItemSize={gridItemSize} gap={GRID_GAP} onPostPress={setOpenPost} />
     </Screen>
   );
 }

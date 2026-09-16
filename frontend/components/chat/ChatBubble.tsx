@@ -40,13 +40,15 @@ export const BubbleContent = memo(function BubbleContent({
 
   // A bare picture keeps the standard image radius on all four corners. A
   // picture with a caption gets a square top and sharp bottom corners so the
-  // caption block connects cleanly underneath it. Under a reply block both
-  // cases zero the top corners so the picture sits flush on the quoted block.
+  // caption block connects cleanly underneath it. Sent pictures round both top
+  // corners (top-right matches top-left); received ones keep the tight tail
+  // corner. Under a reply block both cases zero the top corners so the
+  // picture sits flush on the quoted block.
   const mediaRadius =
     mediaUrl && text
       ? {
           borderTopLeftRadius: squareTop ? 0 : outgoing ? RADIUS : NICK,
-          borderTopRightRadius: squareTop ? 0 : outgoing ? NICK : RADIUS,
+          borderTopRightRadius: squareTop ? 0 : RADIUS,
           borderBottomLeftRadius: 0,
           borderBottomRightRadius: 0,
         }
@@ -165,6 +167,29 @@ export const ChatBubble = memo(function ChatBubble({
     [onReply],
   );
 
+  // The bubble's top corners follow the image's own corners on picture
+  // messages, so the chrome never peeks past the photo (the corner "tips").
+  const topRadius = squareTop
+    ? 0
+    : mediaUrl
+      ? text
+        ? outgoing
+          ? RADIUS
+          : NICK
+        : IMAGE_RADIUS
+      : outgoing
+        ? RADIUS
+        : NICK;
+  const topRightRadius = squareTop
+    ? 0
+    : mediaUrl
+      ? text
+        ? RADIUS
+        : IMAGE_RADIUS
+      : outgoing
+        ? NICK
+        : RADIUS;
+
   return (
     <GestureDetector gesture={gesture}>
       <View
@@ -173,8 +198,8 @@ export const ChatBubble = memo(function ChatBubble({
           ...(stretch ? {} : { maxWidth: '75%' }),
           paddingVertical: mediaUrl || audioUrl ? 0 : 12,
           paddingHorizontal: mediaUrl || audioUrl ? 0 : 16,
-          borderTopLeftRadius: squareTop ? 0 : outgoing ? RADIUS : NICK,
-          borderTopRightRadius: squareTop ? 0 : outgoing ? NICK : RADIUS,
+          borderTopLeftRadius: topRadius,
+          borderTopRightRadius: topRightRadius,
           borderBottomLeftRadius: RADIUS,
           borderBottomRightRadius: RADIUS,
           ...bubbleStyle,

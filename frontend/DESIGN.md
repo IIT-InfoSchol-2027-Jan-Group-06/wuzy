@@ -88,6 +88,10 @@ Full-bleed content inside a padded screen uses `marginHorizontal: -wuzyLayout.si
 - `import { TabHeader } from '@/components/TabHeader';`
 - Header for the tab roots: Bebas `display` title on the left, optional glass buttons in `right`. The row is exactly one GlassNavButton tall (`glass`) with no padding of its own, so the title top is always `top + (row - lineHeight) / 2` from the safe-area inset, with or without a button. Under a header, a `SearchBar` or `CategoryFilter` sits at `itemGap` (12); the first content block sits at `gap` (24).
 
+### TabHeaderTitle
+- `import { TabHeaderTitle } from '@/components/TabHeader';`
+- The fixed half of a tab header: the Bebas `display` title alone on `bg-wuzy-bg`, one `glass` tall, no `right` slot. Rendered as a sibling before a scrolling list, so the title stays put while actions that should scroll (Home's bell) travel as the first item of the list's `ListHeaderComponent`, right-aligned in their own one-circle row.
+
 ### ScreenHeader
 - `import { ScreenHeader } from '@/components/ScreenHeader';`
 - Back `GlassNavButton` on the left, uppercase Bebas `title` centered as an overlay across the whole row, optional `right` slot (share button, Share pill) of any width. The row is exactly one GlassNavButton tall, same as `TabHeader`. No padding of its own; relies on `Screen`.

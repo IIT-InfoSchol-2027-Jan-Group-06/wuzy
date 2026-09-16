@@ -1,4 +1,4 @@
-import { ActivityIndicator, FlatList, Pressable, Text } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, Text, View } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useCallback, useRef } from 'react';
 
@@ -7,7 +7,7 @@ import { GlassNavButton } from '@/components/GlassNavButton';
 import { useNavBarMetrics } from '@/components/NavBar';
 import { PostCard } from '@/components/postcard';
 import { Screen } from '@/components/Screen';
-import { TabHeader } from '@/components/TabHeader';
+import { TabHeaderTitle } from '@/components/TabHeader';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 import { useFeed } from '@/hooks/useFeed';
 import { useNotifications } from '@/hooks/useNotifications';
@@ -45,17 +45,7 @@ export default function HomeScreen() {
 
   return (
     <Screen overlay={<Fab onPress={() => router.push('/upload')} />}>
-      <TabHeader
-        title="Wuzy"
-        right={
-          <GlassNavButton
-            icon="notifications-outline"
-            badge={unread}
-            accessibilityLabel="Notifications"
-            onPress={() => router.push('/notifications')}
-          />
-        }
-      />
+      <TabHeaderTitle title="Wuzy" />
       <FlatList
         data={posts}
         keyExtractor={(item) => String(item.id)}
@@ -66,7 +56,6 @@ export default function HomeScreen() {
         onViewableItemsChanged={onViewableItemsChanged}
         style={{ marginHorizontal: -wuzyLayout.side }}
         contentContainerStyle={{
-          paddingTop: wuzyLayout.gap,
           paddingBottom: clearance,
           paddingHorizontal: wuzyLayout.side,
           gap: wuzyLayout.gap,
@@ -80,18 +69,28 @@ export default function HomeScreen() {
           ) : null
         }
         ListHeaderComponent={
-          loading ? (
-            <ActivityIndicator size="large" color={wuzyColors.yellow} style={{ marginTop: wuzyLayout.gap }} />
-          ) : error ? (
-            <Pressable onPress={refresh} className="items-center" style={{ marginTop: wuzyLayout.gap }}>
-              <Text className="text-center text-wuzy-gray" style={{ fontFamily: wuzyFonts.medium, fontSize: wuzyType.body }}>
-                {error}
-              </Text>
-              <Text className="text-wuzy-yellow" style={{ marginTop: wuzyLayout.itemGap, fontFamily: wuzyFonts.semibold, fontSize: wuzyType.body }}>
-                Tap to retry
-              </Text>
-            </Pressable>
-          ) : null
+          <View>
+            <View className="flex-row items-center justify-end" style={{ height: wuzyLayout.glass }}>
+              <GlassNavButton
+                icon="notifications-outline"
+                badge={unread}
+                accessibilityLabel="Notifications"
+                onPress={() => router.push('/notifications')}
+              />
+            </View>
+            {loading ? (
+              <ActivityIndicator size="large" color={wuzyColors.yellow} style={{ marginTop: wuzyLayout.gap }} />
+            ) : error ? (
+              <Pressable onPress={refresh} className="items-center" style={{ marginTop: wuzyLayout.gap }}>
+                <Text className="text-center text-wuzy-gray" style={{ fontFamily: wuzyFonts.medium, fontSize: wuzyType.body }}>
+                  {error}
+                </Text>
+                <Text className="text-wuzy-yellow" style={{ marginTop: wuzyLayout.itemGap, fontFamily: wuzyFonts.semibold, fontSize: wuzyType.body }}>
+                  Tap to retry
+                </Text>
+              </Pressable>
+            ) : null}
+          </View>
         }
       />
     </Screen>

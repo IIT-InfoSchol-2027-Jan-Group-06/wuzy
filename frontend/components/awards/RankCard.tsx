@@ -14,7 +14,7 @@ import { RANK_SLOT, deckImage } from '@/constants/awards-data';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 import type { ApiQuestXp } from '@/lib/api';
 
-const BADGE = 96;
+const BADGE = 180;
 
 interface RankCardProps {
   xp: ApiQuestXp;
@@ -26,8 +26,9 @@ interface RankCardProps {
   onBadgesPress: () => void;
 }
 
-/** Rank name, XP bar to the next rank and the rank's badge. The bar snaps on
- * mount and eases on change; a rank-up crossfades the badge exactly once. */
+/** A tall centred block: the rank's badge above its name, the XP count, the bar
+ * to the next rank and the badges link. The bar snaps on mount and eases on
+ * change; a rank-up crossfades the badge exactly once. */
 export function RankCard({ xp, deck, previousRankIndex, badgesEarned, badgesTotal, onBadgesPress }: RankCardProps) {
   const span = xp.next_threshold == null ? 0 : xp.next_threshold - xp.rank_threshold;
   const fraction = span === 0 ? 1 : Math.min(1, Math.max(0, (xp.total_xp - xp.rank_threshold) / span));
@@ -80,13 +81,11 @@ export function RankCard({ xp, deck, previousRankIndex, badgesEarned, badgesTota
   const glowStyle = useAnimatedStyle(() => ({ opacity: glow.value }));
 
   return (
-    <View
-      className="flex-row items-center rounded-3xl bg-wuzy-surface p-4"
-      style={{ gap: wuzyLayout.itemGap }}>
+    <View className="items-center rounded-3xl bg-wuzy-surface p-4" style={{ gap: wuzyLayout.itemGap }}>
       <View style={{ width: BADGE, height: BADGE, alignItems: 'center', justifyContent: 'center' }}>
         {maxRank && (
           <Animated.View style={[StyleSheet.absoluteFill, styles.center, glowStyle]}>
-            {[120, 96, 72].map((size, i) => (
+            {[240, 200, 160].map((size, i) => (
               <View
                 key={size}
                 style={{
@@ -115,14 +114,14 @@ export function RankCard({ xp, deck, previousRankIndex, badgesEarned, badgesTota
         />
       </View>
 
-      <View style={{ flex: 1, gap: 4 }}>
+      <View style={{ alignSelf: 'stretch', alignItems: 'center', gap: 4 }}>
         <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.section, color: wuzyColors.yellow }}>
           {xp.rank}
         </Text>
         <Text style={{ fontFamily: wuzyFonts.medium, fontSize: wuzyType.body, color: wuzyColors.white }}>
           {xp.total_xp} XP
         </Text>
-        <View className="overflow-hidden rounded-full bg-white/10" style={{ height: 8 }}>
+        <View className="overflow-hidden rounded-full bg-white/10" style={{ height: 8, alignSelf: 'stretch', marginTop: 4 }}>
           <Animated.View style={[{ height: '100%', borderRadius: 4, backgroundColor: wuzyColors.yellow }, fillStyle]} />
         </View>
         <Text style={{ fontFamily: wuzyFonts.body, fontSize: wuzyType.small, color: wuzyColors.gray }}>

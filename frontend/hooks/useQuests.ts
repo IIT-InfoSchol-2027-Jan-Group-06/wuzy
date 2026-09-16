@@ -44,7 +44,9 @@ export function useQuests() {
     async (key: string) => {
       setClaiming(key);
       try {
-        apply(await apiClaimQuest(key));
+        const next = await apiClaimQuest(key);
+        apply(next);
+        return next;
       } finally {
         setClaiming(null);
       }

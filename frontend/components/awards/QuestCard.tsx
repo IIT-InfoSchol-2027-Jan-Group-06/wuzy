@@ -1,33 +1,9 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
-import Animated, {
-  Easing,
-  cancelAnimation,
-  runOnJS,
-  useAnimatedStyle,
-  useSharedValue,
-  withSequence,
-  withSpring,
-  withTiming,
-} from 'react-native-reanimated';
+import Animated, { cancelAnimation, useAnimatedStyle, useSharedValue, withSequence, withSpring } from 'react-native-reanimated';
 
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 import type { ApiQuest } from '@/lib/api';
-
-const BURST_MS = 920;
-const PIECE_MS = 800;
-
-// Eight sparkle pieces in theme colours: angle, distance, size and start delay.
-const SPARKLES = [
-  { angle: 50, distance: 48, size: 14, color: wuzyColors.yellow, delay: 0 },
-  { angle: 72, distance: 58, size: 6, color: wuzyColors.white, delay: 60 },
-  { angle: 95, distance: 64, size: 5, color: wuzyColors.yellowSoft, delay: 90 },
-  { angle: 112, distance: 54, size: 6, color: wuzyColors.yellowMuted, delay: 40 },
-  { angle: 128, distance: 42, size: 14, color: wuzyColors.yellow, delay: 120 },
-  { angle: 62, distance: 34, size: 5, color: wuzyColors.yellowSoft, delay: 80 },
-  { angle: 80, distance: 28, size: 5, color: wuzyColors.white, delay: 110 },
-  { angle: 140, distance: 30, size: 6, color: wuzyColors.yellowMuted, delay: 50 },
-];
 
 interface QuestCardProps {
   quest: ApiQuest;
@@ -46,10 +22,8 @@ export function QuestCard({ quest, action, claiming, onClaim }: QuestCardProps) 
   const done = quest.completed;
   const fraction = done ? 1 : Math.min(1, tier.current_progress / tier.target_count);
 
-  const [celebrate, setCelebrate] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const pop = useSharedValue(1);
-  const burst = useSharedValue(0);
 
   useEffect(() => {
     if (!note) return;
@@ -57,13 +31,7 @@ export function QuestCard({ quest, action, claiming, onClaim }: QuestCardProps) 
     return () => clearTimeout(timer);
   }, [note]);
 
-  useEffect(
-    () => () => {
-      cancelAnimation(pop);
-      cancelAnimation(burst);
-    },
-    [pop, burst],
-  );
+  useEffect(() => () => cancelAnimation(pop), [pop]);
 
   const popStyle = useAnimatedStyle(() => ({ transform: [{ scale: pop.value }] }));
 
@@ -75,14 +43,7 @@ export function QuestCard({ quest, action, claiming, onClaim }: QuestCardProps) 
       setNote(error instanceof Error ? error.message : 'Could not claim');
       return;
     }
-    setCelebrate(true);
     pop.value = withSequence(withSpring(1.12, { damping: 12, stiffness: 280 }), withSpring(1, { damping: 16, stiffness: 240 })); // eslint-disable-line react-hooks/immutability
-    burst.value = withSequence( // eslint-disable-line react-hooks/immutability
-      withTiming(0, { duration: 0 }),
-      withTiming(1, { duration: BURST_MS }, (finished) => {
-        if (finished) runOnJS(setCelebrate)(false);
-      }),
-    );
   };
 
   let control;
@@ -131,16 +92,7 @@ export function QuestCard({ quest, action, claiming, onClaim }: QuestCardProps) 
           ) : null}
         </View>
 
-        <Animated.View style={popStyle}>
-          {control}
-          {celebrate && (
-            <View style={{ position: 'absolute', width: 0, height: 0, top: '50%', left: '50%' }}>
-              {SPARKLES.map((s, i) => (
-                <SparklePiece key={i} burst={burst} {...s} />
-              ))}
-            </View>
-          )}
-        </Animated.View>
+        <Animated.View style={popStyle}>{control}</Animated.View>
       </View>
     </View>
   );
@@ -179,44 +131,5 @@ function Pill({
         <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.small, color }}>{label}</Text>
       )}
     </Pressable>
-  );
-}
-
-/** One sparkle: reads the shared burst clock, waits its delay, flies out, spins and fades. */
-function SparklePiece({
-  burst,
-  angle,
-  distance,
-  size,
-  color,
-  delay,
-}: {
-  burst: { value: number };
-  angle: number;
-  distance: number;
-  size: number;
-  color: string;
-  delay: number;
-}) {
-  const style = useAnimatedStyle(() => {
-    const t = Math.min(1, Math.max(0, (burst.value * BURST_MS - delay) / PIECE_MS));
-    const p = Easing.out(Easing.cubic)(t);
-    const rad = (angle * Math.PI) / 180;
-    return {
-      opacity: 1 - p,
-      transform: [
-        { translateX: Math.cos(rad) * distance * p },
-        { translateY: -Math.sin(rad) * distance * p },
-        { rotate: `${p * 240}deg` },
-      ],
-    };
-  });
-  return (
-    <Animated.View
-      style={[
-        style,
-        { position: 'absolute', width: size, height: size, borderRadius: size > 10 ? size / 2 : 2, backgroundColor: color },
-      ]}
-    />
   );
 }

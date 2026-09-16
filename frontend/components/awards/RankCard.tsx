@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
-import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import Animated, {
   cancelAnimation,
   useAnimatedStyle,
@@ -14,22 +13,19 @@ import { RANK_SLOT, deckImage } from '@/constants/awards-data';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 import type { ApiQuestXp } from '@/lib/api';
 
-const BADGE = 180;
+const BADGE = 225;
 
 interface RankCardProps {
   xp: ApiQuestXp;
   deck: number[];
   /** The rank before the last dashboard change, or null on first load. */
   previousRankIndex: number | null;
-  badgesEarned: number;
-  badgesTotal: number;
-  onBadgesPress: () => void;
 }
 
-/** A tall centred block: the rank's badge above its name, the XP count, the bar
- * to the next rank and the badges link. The bar snaps on mount and eases on
+/** A tall centred block straight on the page: the rank's badge above its name,
+ * the XP count and the bar to the next rank. The bar snaps on mount and eases on
  * change; a rank-up crossfades the badge exactly once. */
-export function RankCard({ xp, deck, previousRankIndex, badgesEarned, badgesTotal, onBadgesPress }: RankCardProps) {
+export function RankCard({ xp, deck, previousRankIndex }: RankCardProps) {
   const span = xp.next_threshold == null ? 0 : xp.next_threshold - xp.rank_threshold;
   const fraction = span === 0 ? 1 : Math.min(1, Math.max(0, (xp.total_xp - xp.rank_threshold) / span));
   const maxRank = xp.next_rank == null;
@@ -81,11 +77,11 @@ export function RankCard({ xp, deck, previousRankIndex, badgesEarned, badgesTota
   const glowStyle = useAnimatedStyle(() => ({ opacity: glow.value }));
 
   return (
-    <View className="items-center rounded-3xl bg-wuzy-surface p-4" style={{ gap: wuzyLayout.itemGap }}>
+    <View className="items-center" style={{ gap: wuzyLayout.itemGap }}>
       <View style={{ width: BADGE, height: BADGE, alignItems: 'center', justifyContent: 'center' }}>
         {maxRank && (
           <Animated.View style={[StyleSheet.absoluteFill, styles.center, glowStyle]}>
-            {[240, 200, 160].map((size, i) => (
+            {[300, 250, 200].map((size, i) => (
               <View
                 key={size}
                 style={{
@@ -129,17 +125,6 @@ export function RankCard({ xp, deck, previousRankIndex, badgesEarned, badgesTota
             ? `${xp.next_threshold - xp.total_xp} XP to ${xp.next_rank}`
             : 'Max rank'}
         </Text>
-        <Pressable
-          onPress={onBadgesPress}
-          accessibilityRole="button"
-          accessibilityLabel="See all badges"
-          className="flex-row items-center active:opacity-80"
-          style={{ gap: 2, marginTop: 4 }}>
-          <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.small, color: wuzyColors.yellow }}>
-            Badges {badgesEarned} of {badgesTotal}
-          </Text>
-          <Ionicons name="chevron-forward" size={16} color={wuzyColors.yellow} />
-        </Pressable>
       </View>
     </View>
   );

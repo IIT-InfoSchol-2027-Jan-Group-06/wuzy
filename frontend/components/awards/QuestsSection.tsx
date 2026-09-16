@@ -1,5 +1,6 @@
 import { useRouter, type Href } from 'expo-router';
-import { Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Pressable, Text, View } from 'react-native';
 
 import { QuestCard } from '@/components/awards/QuestCard';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
@@ -21,10 +22,13 @@ interface QuestsSectionProps {
   quests: ApiQuest[];
   claiming: string | null;
   onClaim: (key: string) => Promise<void>;
+  badgesEarned: number;
+  badgesTotal: number;
+  onBadgesPress: () => void;
 }
 
 /** Every unfinished quest in catalog order, each card wired to its claim and action. */
-export function QuestsSection({ quests, claiming, onClaim }: QuestsSectionProps) {
+export function QuestsSection({ quests, claiming, onClaim, badgesEarned, badgesTotal, onBadgesPress }: QuestsSectionProps) {
   const router = useRouter();
   // Claimable quests float to the top; the rest keep catalog order.
   const rows = quests
@@ -32,13 +36,21 @@ export function QuestsSection({ quests, claiming, onClaim }: QuestsSectionProps)
     .sort((a, b) => Number(b.claimable) - Number(a.claimable) || a.sort_order - b.sort_order);
   return (
     <View style={{ gap: wuzyLayout.itemGap }}>
-      <View>
+      <View className="flex-row items-center justify-between">
         <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.section, color: wuzyColors.yellow }}>
           Quests
         </Text>
-        <Text style={{ fontFamily: wuzyFonts.body, fontSize: wuzyType.small, color: wuzyColors.gray }}>
-          Do the thing, claim the reward
-        </Text>
+        <Pressable
+          onPress={onBadgesPress}
+          accessibilityRole="button"
+          accessibilityLabel="See all badges"
+          className="flex-row items-center active:opacity-80"
+          style={{ gap: 2 }}>
+          <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.small, color: wuzyColors.yellowMuted }}>
+            Badges {badgesEarned} of {badgesTotal}
+          </Text>
+          <Ionicons name="chevron-forward" size={16} color={wuzyColors.yellowMuted} />
+        </Pressable>
       </View>
       {rows.length === 0 && (
         <Text style={{ fontFamily: wuzyFonts.body, fontSize: wuzyType.small, color: wuzyColors.gray }}>

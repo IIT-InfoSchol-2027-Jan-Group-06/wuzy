@@ -50,11 +50,15 @@ export default function AwardsScreen() {
             xp={dashboard.xp}
             deck={dashboard.deck}
             previousRankIndex={previous?.xp.rank_index ?? null}
+          />
+          <QuestsSection
+            quests={dashboard.quests}
+            claiming={claiming}
+            onClaim={handleClaim}
             badgesEarned={earnedSlots(dashboard).filter(Boolean).length}
             badgesTotal={dashboard.deck.length}
             onBadgesPress={() => router.push('/badges')}
           />
-          <QuestsSection quests={dashboard.quests} claiming={claiming} onClaim={handleClaim} />
         </>
       )}
       <Celebration celebration={celebration} onClose={() => setCelebration(null)} />

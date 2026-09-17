@@ -33,19 +33,33 @@ Run from `backend/`:
 
 ```
 docker compose up --build    # starts api + postgres, runs migrations + seed
-docker compose down -v       # tear down (no volume persists)
+docker compose down          # stop; the pgdata volume keeps the database
+docker compose down -v       # wipe the database too (reseeds on next start)
 alembic upgrade head         # apply migrations manually
 # after adding a migration, re-apply it: `docker compose restart api` re-runs
 # `alembic upgrade head` at startup; uvicorn --reload only swaps code, never DB
 alembic revision --autogenerate -m "msg"  # new migration
 ```
 
+### Hosting (Railway)
+
+One Railway project, three services: the API from this repo, plus Railway's Postgres and Redis.
+
+1. API service: deploy from the GitHub repo, set **Root Directory** to `backend` (Railway then finds `backend/railway.json` and the Dockerfile; if not, set the config path to `backend/railway.json` in Settings). The Dockerfile CMD runs `alembic upgrade head`, `seed.py`, then uvicorn on Railway's `PORT`.
+2. Variables on the API service: `DATABASE_URL=${{Postgres.DATABASE_URL}}`, `REDIS_URL=${{Redis.REDIS_URL}}`, and a long random `SECRET_KEY`. `ALGORITHM` and `ACCESS_TOKEN_EXPIRE_MINUTES` keep their defaults.
+3. Volume: add one to the API service mounted at `/app/storage`; uploads live on disk and would vanish on every deploy without it.
+4. Generate a public domain on the API service and build the app with `EXPO_PUBLIC_API_URL=https://<that-domain>`.
+
+Uvicorn runs a single worker; in-memory WebSocket state lives in Redis so that is enough for one replica. Do not scale to more replicas without moving uploads to object storage.
+
 ### Structure
 
 ```
 backend/
-├── docker-compose.yml      # api + db (postgres:16-alpine)
-├── Dockerfile              # python:3.11-slim, uvicorn dev server
+├── docker-compose.yml      # api + db + redis, pgdata volume for the database
+├── Dockerfile              # python:3.11-slim; CMD migrates, seeds, serves on $PORT
+├── railway.json            # Railway build + healthcheck config
+├── .dockerignore           # keeps storage/, .env and caches out of the image
 ├── seed.py                 # idempotent demo data seeder (runs at startup)
 ├── alembic/                # migrations (single initial migration so far)
 ├── app/

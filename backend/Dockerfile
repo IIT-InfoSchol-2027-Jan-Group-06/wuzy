@@ -17,4 +17,6 @@ COPY . .
 
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Production start (Railway and any single-container host): migrate, seed the
+# catalog, serve on the platform's PORT. docker-compose overrides this for dev.
+CMD ["sh", "-c", "alembic upgrade head && python seed.py && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

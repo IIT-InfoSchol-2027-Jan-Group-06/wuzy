@@ -21,6 +21,9 @@ services:
 
   db:
     image: postgres:16-alpine
+    # Named volume so data survives restarts and `docker compose down`.
+    volumes:
+      - pgdata:/var/lib/postgresql/data
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -44,3 +47,6 @@ services:
       interval: 5s
       timeout: 3s
       retries: 30
+
+volumes:
+  pgdata:

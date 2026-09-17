@@ -36,11 +36,11 @@ def login(client, email, password=SEED_PASSWORD) -> dict:
 def make_user(client) -> tuple[dict, dict]:
     """Create a throwaway user. Returns (user json, auth headers)."""
     name = f"u{uuid.uuid4().hex[:8]}"
-    payload = {"email": f"{name}@t.com", "username": name, "hashed_password": "pw"}
+    payload = {"email": f"{name}@t.com", "username": name, "hashed_password": "password"}
     res = client.post("/users/", json=payload)
     assert res.status_code == 201, res.text
     user = res.json()
-    return user, login(client, user["email"], "pw")
+    return user, login(client, user["email"], "password")
 
 
 def connect(client, a, a_headers, b, b_headers) -> None:

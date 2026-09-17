@@ -3,6 +3,7 @@
 POST /users/                 - Register a new account
 GET  /users/                 - List all users (used for explore / search)
 GET  /users/by-username/{username} - Resolve a Wuzy profile QR to a user
+GET  /users/availability     - Signup pre-check: is this email / username free?
 POST /users/{id}/connect     - Turn a scanned QR into a Connection (mutual follow)
 GET  /users/{id}/connections - List a user's Connections (mutual follows)
 GET  /users/{id}             - Fetch a single user's profile
@@ -28,18 +29,35 @@ def create_user(payload: UserCreate, session: Session = Depends(get_session)):
     """Register a new user. The plaintext password is hashed with bcrypt before
     storage so raw credentials never touch the database.
     """
+    if session.exec(select(User).where(User.email == payload.email)).first():
+        raise HTTPException(status_code=409, detail="Email already registered")
+    if session.exec(select(User).where(User.username == payload.username)).first():
+        raise HTTPException(status_code=409, detail="Username already taken")
     user = User(
-        email=payload.email,
-        username=payload.username,
+        **payload.model_dump(exclude={"hashed_password"}),
         hashed_password=bcrypt.hashpw(
             payload.hashed_password.encode(), bcrypt.gensalt()
         ).decode(),
-        avatar_url=payload.avatar_url,
     )
     session.add(user)
     session.commit()
     session.refresh(user)
     return user
+
+
+@router.get("/availability")
+def check_availability(
+    email: str | None = None,
+    username: str | None = None,
+    session: Session = Depends(get_session),
+) -> dict[str, bool]:
+    """True means free. The signup flow asks per page so a taken handle fails early."""
+    return {
+        "email": not email
+        or session.exec(select(User).where(User.email == email)).first() is None,
+        "username": not username
+        or session.exec(select(User).where(User.username == username)).first() is None,
+    }
 
 
 @router.get("/", response_model=list[UserRead])

@@ -69,7 +69,7 @@ backend/
 
 ### Models
 
-- **User**: id, email (unique), username (unique), hashed_password, is_active, created_at. Has `posts` relationship.
+- **User**: id, email (unique), username (unique), hashed_password, display_name, bio, hobbies (JSON list), avatar_url, gender, birthday, is_active, created_at. Has `posts` relationship.
 - **Post**: id, media_url, caption, save_to_profile (bool, indexed), user_id (FK), created_at. `save_to_profile=False` = ephemeral (disappears after the viewing app session ends), `True` = permanent (stays on profile grid).
 - **PostView**: id, user_id (FK), post_id (FK), session_id, viewed_at. Logs views keyed by the app session that recorded them. Pure tracking table, no relationships.
 
@@ -78,7 +78,8 @@ backend/
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | `GET` | `/health` | No | Health check |
-| `POST` | `/users/` | No | Create user |
+| `POST` | `/users/` | No | Create user (409 on a taken email or username, password min 8) |
+| `GET` | `/users/availability` | No | `?email=&username=`: true means free, used by signup |
 | `GET` | `/users/` | No | List all users |
 | `GET` | `/users/{id}` | No | Get user by ID |
 | `GET` | `/users/by-username/{username}` | No | Resolve a user by username (from a scanned QR) |

@@ -211,6 +211,15 @@ Full-bleed content inside a padded screen uses `marginHorizontal: -wuzyLayout.si
 
 ---
 
+## Onboarding, welcome, and login
+
+Every logged-out screen is `components/onboarding/OnboardingBackdrop`: a photo (`assets/images/onboarding-bg.jpg` by default; welcome and login pass `welcome-bg.jpg` and `login-bg.jpg`) under a `rgba(0,0,0,0.78)` scrim, the WUZY wordmark (Bebas `hero`, marginTop 36), a `GlassNavButton` back arrow at `side` / `top` (`showBack={false}` on welcome), an optional yellow question (Poppins bold `section`) and hint (`#AFA991`, `small`), then the children centered in a column with `side` gutters, `gap` between items and `paddingBottom` above the safe area (default `gap`, the Buy ticket clearance; welcome passes 108 and login 124 from the Figma frames).
+
+- **`FormInput`** (`components/onboarding/FormInput.tsx`): full width, `control` tall, radius 10, 1px yellow border over `rgba(179,175,160,0.1)`, centered Poppins medium `body` text, placeholder `#C0BDB2`. Takes every `TextInput` prop. `FormError` from the same file is the centered yellow `small` line for a validation or server message.
+- **`PillButton`** (`components/onboarding/PillButton.tsx`): 238 wide and `control` tall on the signup pages (`width` / `height` to override; welcome and login use the Figma 250 x 55 pill), Poppins bold `body`. `filled` (default, Next) and `dark` (welcome's Login) are a `GlassNavButton` stretched to a pill with a black tint (0.4 / 0.72), so they carry the back arrow's exact glass; `outline` is a yellow hairline with yellow text; `solid` is yellow with black text, the selected state. `disabled` and `busy` dim to 50%.
+- Signup is one question per route under `app/onboarding/`, in order: `index` (Individual / Organization outline pills, the latter disabled), `email`, `name`, `username`, `birthday`, `gender`, `password`, `interests`. Answers live in the context exported by `app/onboarding/_layout.tsx` (`useOnboarding()`); the last page posts them all, then logs in and lands on `/(tabs)/home`. Text pages put Next directly under the field so it stays reachable above the keyboard; gender and interests push Next to the foot with a `flex: 1` spacer. Email and username are checked against `GET /users/availability` before moving on. Gender options are `PillButton`s (solid when picked), interests are `Chip`s under a `SearchBar`, birthday is the native date picker behind a `FormInput`-shaped row (an `<input type="date">` on web); option lists live in `constants/onboarding-data.ts`.
+- `app/welcome.tsx` is the logged-out entry (Get Started, Login); `app/login.tsx` is the real login on the same backdrop with 250 x 55 fields (`style` override on `FormInput`) and a "Create an account" link. Logout returns to welcome.
+
 ## Screens
 
 Tab roots (Home, Explore, Awards, Messages, Profile) open with `TabHeader`. Pushed screens open with `ScreenHeader`.

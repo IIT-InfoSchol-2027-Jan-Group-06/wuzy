@@ -29,6 +29,8 @@ class User(SQLModel, table=True):
     bio: str | None = Field(default=None)
     hobbies: list[str] | None = Field(default=None, sa_column=Column(JSON))
     avatar_url: str | None = Field(default=None)
+    gender: str | None = Field(default=None)
+    birthday: date | None = Field(default=None)
     is_active: bool = Field(default=True)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     total_xp: int = Field(default=0)

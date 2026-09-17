@@ -1,3 +1,5 @@
+import uuid
+
 from tests.conftest import make_user
 
 
@@ -31,3 +33,44 @@ def test_connect_errors(client, user):
     assert client.post(f"/users/{me['id']}/connect", headers=headers).status_code == 400
     assert client.post("/users/999999/connect", headers=headers).status_code == 404
     assert client.post("/users/1/connect").status_code == 401
+
+
+def test_signup_stores_profile_fields(client):
+    name = f"u{uuid.uuid4().hex[:8]}"
+    payload = {
+        "email": f"{name}@t.com",
+        "username": name,
+        "hashed_password": "password",
+        "display_name": "New Person",
+        "gender": "Woman",
+        "birthday": "2004-01-31",
+        "hobbies": ["Music", "Tech"],
+    }
+    res = client.post("/users/", json=payload)
+    assert res.status_code == 201, res.text
+    body = res.json()
+    for key in ("display_name", "gender", "birthday", "hobbies"):
+        assert body[key] == payload[key]
+
+
+def test_signup_rejects_duplicates_and_weak_input(client, user):
+    existing, _ = user
+    fresh = f"u{uuid.uuid4().hex[:8]}"
+    base = {"hashed_password": "password"}
+    dup_email = {**base, "email": existing["email"], "username": fresh}
+    assert client.post("/users/", json=dup_email).status_code == 409
+    dup_name = {**base, "email": f"{fresh}@t.com", "username": existing["username"]}
+    assert client.post("/users/", json=dup_name).status_code == 409
+    short = {"email": f"{fresh}@t.com", "username": fresh, "hashed_password": "short"}
+    assert client.post("/users/", json=short).status_code == 422
+    bad_email = {**base, "email": "not-an-email", "username": fresh}
+    assert client.post("/users/", json=bad_email).status_code == 422
+
+
+def test_availability(client, user):
+    existing, _ = user
+    fresh = f"u{uuid.uuid4().hex[:8]}"
+    res = client.get("/users/availability", params={"email": existing["email"], "username": fresh})
+    assert res.json() == {"email": False, "username": True}
+    res = client.get("/users/availability", params={"username": existing["username"]})
+    assert res.json() == {"email": True, "username": False}

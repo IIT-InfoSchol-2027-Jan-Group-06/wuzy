@@ -1,6 +1,9 @@
 services:
   api:
     build: .
+    # Fresh postgres volumes drop connections once right after initdb, so retry
+    # if the api dies in that window instead of staying down.
+    restart: unless-stopped
     # Mount source code for hot reload
     volumes:
       - .:/app:z

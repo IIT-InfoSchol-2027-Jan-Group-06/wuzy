@@ -34,7 +34,7 @@ export default function PostPreviewScreen() {
         location: location || null,
         save_to_profile: saveToGrid,
       });
-      router.dismissAll();
+      router.dismissTo('/(tabs)/home');
     } catch (e) {
       console.error('Failed to share post:', e);
       setSharing(false);

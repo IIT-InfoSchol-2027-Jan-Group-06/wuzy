@@ -8,7 +8,7 @@ export function TabHeader({ title, right }: { title: string; right?: ReactNode }
   const height = wuzyLayout.glass;
 
   return (
-    <View className="flex-row items-center justify-between" style={{ height }}>
+    <View className="flex-row items-center justify-between bg-wuzy-bg" style={{ height }}>
       <TabHeaderTitleText title={title} />
       {right ? (
         <View className="flex-row items-center" style={{ gap: 12 }}>
@@ -31,14 +31,5 @@ function TabHeaderTitleText({ title }: { title: string }) {
       }}>
       {title}
     </Text>
-  );
-}
-
-/** Fixed tab-root title: the Bebas display title alone on the screen bg, no action buttons. A sibling before a scrolling list, so it never moves while its buttons scroll away. */
-export function TabHeaderTitle({ title }: { title: string }) {
-  return (
-    <View className="flex-row items-center bg-wuzy-bg" style={{ height: wuzyLayout.glass }}>
-      <TabHeaderTitleText title={title} />
-    </View>
   );
 }

@@ -1,7 +1,7 @@
 import { type ReactNode } from 'react';
 import { Image, Pressable, Text, View } from 'react-native';
 
-import { GlassNavButton } from '@/components/GlassNavButton';
+import { GlassPillButton } from '@/components/GlassPillButton';
 import { TagSection } from '@/components/TagSection';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 import type { Connection } from '@/constants/connection-data';
@@ -77,25 +77,21 @@ export function ConnectionCard({
       </View>
       {expanded && (expandedContent ?? (
         <View className="flex-row" style={{ gap: wuzyLayout.itemGap, marginTop: 35 }}>
-          <GlassNavButton
+          <GlassPillButton
+            label="Go to profile"
             onPress={onProfilePress ?? (() => {})}
-            style={{ flex: 1, height: wuzyLayout.control }}
-            tintColor="rgba(255, 255, 255, 0.1)"
-            accessibilityLabel={`Go to ${connection.name}'s profile`}>
-            <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.small, color: wuzyColors.yellow }}>
-              Go to profile
-            </Text>
-          </GlassNavButton>
-          <GlassNavButton
+            style={{ flex: 1, maxWidth: 160 }}
+            bold={false}
+            accessibilityLabel={`Go to ${connection.name}'s profile`}
+          />
+          <GlassPillButton
+            label={'Refer to a\nfriend'}
             onPress={onReferPress ?? (() => {})}
-            style={{ flex: 1, height: wuzyLayout.control }}
-            tintColor="rgba(255, 255, 255, 0.1)">
-            <Text
-              numberOfLines={2}
-              style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.small, color: wuzyColors.yellow, textAlign: 'center' }}>
-              Refer to a{'\n'}friend
-            </Text>
-          </GlassNavButton>
+            numberOfLines={2}
+            style={{ flex: 1, maxWidth: 160 }}
+            bold={false}
+            accessibilityLabel={`Refer ${connection.name} to a friend`}
+          />
         </View>
       ))}
     </>

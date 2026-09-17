@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 
 import { CameraHeader } from '@/components/camera/CameraHeader';
@@ -99,9 +99,9 @@ export function PhotoSendFrame({
     <Screen>
       <CameraHeader title={label} />
 
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <ScrollView
+      <ScrollView
           className="flex-1"
+          automaticallyAdjustKeyboardInsets
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ paddingTop: wuzyLayout.gap + 10, paddingBottom: wuzyLayout.gap }}>
@@ -133,7 +133,6 @@ export function PhotoSendFrame({
             {sendButton}
           </View>
         </ScrollView>
-      </KeyboardAvoidingView>
     </Screen>
   );
 }

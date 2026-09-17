@@ -212,6 +212,10 @@ export function sendGroup(
 function persistAndSend(ownerId: number, kind: ThreadKind, message: ChatMessage): void {
   const isOpen = socket?.readyState === WebSocket.OPEN;
   saveMessage(ownerId, kind, message, { pending: !isOpen });
+  // Broadcast the outgoing frame too, so an open thread shows a send from the
+  // pushed camera/gallery flow the moment it happens instead of waiting for a
+  // reload. Listeners dedup by message key against their optimistic copy.
+  for (const listener of listeners) listener(message);
   if (isOpen && socket) {
     socket.send(JSON.stringify(message));
   }

@@ -86,11 +86,7 @@ Full-bleed content inside a padded screen uses `marginHorizontal: -wuzyLayout.si
 
 ### TabHeader
 - `import { TabHeader } from '@/components/TabHeader';`
-- Header for the tab roots: Bebas `display` title on the left, optional glass buttons in `right`. The row is exactly one GlassNavButton tall (`glass`) with no padding of its own, so the title top is always `top + (row - lineHeight) / 2` from the safe-area inset, with or without a button. Under a header, a `SearchBar` or `CategoryFilter` sits at `itemGap` (12); the first content block sits at `gap` (24).
-
-### TabHeaderTitle
-- `import { TabHeaderTitle } from '@/components/TabHeader';`
-- The fixed half of a tab header: the Bebas `display` title alone on `bg-wuzy-bg`, one `glass` tall, no `right` slot. Rendered as a sibling before a scrolling list, so the title stays put while actions that should scroll (Home's bell) travel as the first item of the list's `ListHeaderComponent`, right-aligned in their own one-circle row.
+- Header for the tab roots: Bebas `display` title on the left, optional glass buttons in `right`. The row is exactly one GlassNavButton tall (`glass`), no padding of its own, on `bg-wuzy-bg`, so the title top is always `top + (row - lineHeight) / 2` from the safe-area inset, with or without a button. Under a header, a `SearchBar` or `CategoryFilter` sits at `itemGap` (12); the first content block sits at `gap` (24). The whole row is fixed: a sibling before the scrolling list, never moves. Home layers its notification bell in `right` on the same row as the title; the list clamps to its own bounds (`overflow: hidden`) so feed content can never draw over the header band.
 
 ### ScreenHeader
 - `import { ScreenHeader } from '@/components/ScreenHeader';`
@@ -108,6 +104,10 @@ Full-bleed content inside a padded screen uses `marginHorizontal: -wuzyLayout.si
 ### GlassNavButton
 - Circular frosted glass button, default size `glass`. Never pass a smaller `size` for a nav or action button; every back, settings, like, share, and camera control is this size.
 - `icon` takes an Ionicons name or a node. `children` plus a `style` width and height makes a glass pill (`PublishButton`).
+
+### GlassPillButton
+- `import { GlassPillButton } from '@/components/GlassPillButton';`
+- A `GlassNavButton` stretched into a `control`-tall rounded pill by its `children`, carrying a `small` white label (semibold by default; pass `bold={false}` for regular weight, `numberOfLines` for a two-line label). Same frosted chrome as every nav/action circle (blur, glass fill, diagonal shine, hairline border). Used on Profile's action row and as the expanded ConnectionCard's "Go to profile" and two-line "Refer to a friend" actions (both regular weight). Pass `style` for sizing (e.g. `flex: 1`).
 
 ### LiquidGlass
 - `import { LiquidGlass } from '@/components/LiquidGlass';`
@@ -143,7 +143,7 @@ Full-bleed content inside a padded screen uses `marginHorizontal: -wuzyLayout.si
 ### ConnectionCard
 - `surface` card, radius 24, padding 16. White name (`body` semibold) on the left, 56 avatar with 14 online dot on the right, `TagSection` below. Connections come from the backend (`/chat/people`) shaped into the card by `toConnection` in `constants/connection-data.ts`; the online dot stays off until presence data exists.
 - The card is a flat 132-tall row in its `Wheel` slot; tapping anywhere on the surface fires `onPress` and opens the card in the centered popup that `ConnectionCardPopup` renders, so the wheel never grows.
-- The open card (`expanded`) is the same surface at 240 with an action row 35 below the tags: by default two `control` tall buttons, "Go to profile" (pushes `/profile/{id}`) and a two-line "Refer to a friend". Both are `GlassNavButton` pills, the same frosted glass, shape and `wp` blur as the back button, with `wuzy-yellow` text on a white tint layer (`tintColor="rgba(255, 255, 255, 0.1)"` swaps the yellow tint kept by every other button at the same 10% translucency; padding, border, shape and blur are unchanged). The popup's avatar tap closes it, and pressing the dimmed overlay outside the card closes it too. Pass `expandedContent` to replace those buttons (the refer screen shows a "Send Request" note instead) and `onReferPress` to wire the refer button.
+- The open card (`expanded`) is the same surface at 240 with an action row 35 below the tags: by default two `control` tall buttons, "Go to profile" (pushes `/profile/{id}`) and a two-line "Refer to a friend". Both are `GlassPillButton`s, the same frosted glass-nav-bar chrome as Profile's Edit profile button. The popup's avatar tap closes it, and pressing the dimmed overlay outside the card closes it too. Pass `expandedContent` to replace those buttons (the refer screen shows a "Send Request" note instead) and `onReferPress` to wire the refer button.
 
 ### ConnectionCardPopup
 - `import { ConnectionCardPopup } from '@/components/ConnectionCardPopup';`

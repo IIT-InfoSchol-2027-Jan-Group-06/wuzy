@@ -19,7 +19,7 @@ export function ChatHeader({ name, avatar, status, onBack, onUserPress }: ChatHe
 
   return (
     <View className="flex-row items-center" style={{ gap: wuzyLayout.itemGap }}>
-      <GlassNavButton icon="arrow-back" onPress={onBack} />
+      <GlassNavButton icon="arrow-back" onPress={onBack} style={{ marginBottom: 10 }} />
       <Pressable onPress={onUserPress} disabled={!onUserPress} hitSlop={6} className="flex-1 flex-row items-center" style={{ gap: wuzyLayout.itemGap }}>
         <View
           style={{

@@ -59,6 +59,7 @@ type ChatItem = {
   atMs: number | null;
   avatar: { uri: string } | number;
   unread: boolean;
+  unreadCount: number;
   onStartChat?: () => void;
 };
 
@@ -170,6 +171,7 @@ export default function ChatScreen() {
       atMs: local ? new Date(local.created_at).getTime() : null,
       avatar: firstAvatar ? { uri: assetUrl(firstAvatar) } : defaultAvatar,
       unread: (unreadCounts.get(`group-${g.id}`) ?? 0) > 0,
+      unreadCount: unreadCounts.get(`group-${g.id}`) ?? 0,
     });
   }
 
@@ -192,6 +194,7 @@ export default function ChatScreen() {
       atMs: at ? new Date(at).getTime() : null,
       avatar: c.other?.avatar_url ? { uri: assetUrl(c.other.avatar_url) } : defaultAvatar,
       unread: (unreadCounts.get(`dm-${c.id}`) ?? 0) > 0,
+      unreadCount: unreadCounts.get(`dm-${c.id}`) ?? 0,
     });
   }
 
@@ -210,6 +213,7 @@ export default function ChatScreen() {
       atMs: null,
       avatar: p.user.avatar_url ? { uri: assetUrl(p.user.avatar_url) } : defaultAvatar,
       unread: false,
+      unreadCount: 0,
       onStartChat: () => startChat(p),
     }));
   items = [...items, ...startRows];
@@ -279,6 +283,7 @@ export default function ChatScreen() {
                   time: item.time,
                   avatar: item.avatar,
                   unread: item.unread,
+                  unreadCount: item.unreadCount,
                 }}
                 onPress={item.onStartChat ?? (() => openThread(item.threadId, item.kind))}
                 onUserPress={

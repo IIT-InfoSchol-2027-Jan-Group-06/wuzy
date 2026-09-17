@@ -13,9 +13,10 @@ export interface MessageRowItem {
   time: string;
   avatar: ImageSourcePropType;
   unread: boolean;
+  unreadCount: number;
 }
 
-/** One thread in the chat list: ringed avatar, name over preview, time and unread dot on the right. Avatar and name open that person's profile; the rest opens the thread. */
+/** One thread in the chat list: ringed avatar, name over preview, time and unread badge on the right. Only the avatar opens that person's profile; the rest of the row opens the thread. */
 export function MessageRow({ item, onPress, onUserPress }: { item: MessageRowItem; onPress?: () => void; onUserPress?: () => void }) {
 
   return (
@@ -38,18 +39,31 @@ export function MessageRow({ item, onPress, onUserPress }: { item: MessageRowIte
         </View>
       </Pressable>
       <View className="flex-1">
-        <Pressable onPress={onUserPress} disabled={!onUserPress} hitSlop={6}>
-          <Text numberOfLines={1} style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.body, color: wuzyColors.white }}>
-            {item.name}
-          </Text>
-        </Pressable>
+        <Text numberOfLines={1} style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.body, color: wuzyColors.white }}>
+          {item.name}
+        </Text>
         <Text numberOfLines={1} style={{ fontFamily: wuzyFonts.body, fontSize: wuzyType.small, color: wuzyColors.gray }}>
           {item.preview}
         </Text>
       </View>
       <View className="items-end" style={{ gap: 6 }}>
         <Text style={{ fontFamily: wuzyFonts.medium, fontSize: wuzyType.caption, color: wuzyColors.gray }}>{item.time}</Text>
-        {item.unread && <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: wuzyColors.yellow }} />}
+        {item.unreadCount > 0 && (
+          <View
+            style={{
+              minWidth: 20,
+              height: 20,
+              borderRadius: 10,
+              paddingHorizontal: 6,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: wuzyColors.yellow,
+            }}>
+            <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.caption, color: wuzyColors.bg }}>
+              {item.unreadCount > 99 ? '99+' : item.unreadCount}
+            </Text>
+          </View>
+        )}
       </View>
     </Pressable>
   );

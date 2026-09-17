@@ -378,7 +378,7 @@ export function MessageBar({
                 textAlignVertical: 'center',
                 fontSize: wuzyType.body,
                 color: wuzyColors.white,
-                fontFamily: wuzyFonts.bold,
+                fontFamily: wuzyFonts.body,
                 letterSpacing: 0.15,
                 paddingVertical: 0,
               }}

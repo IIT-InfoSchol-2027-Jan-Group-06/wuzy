@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { getToken, setToken, clearToken } from '@/lib/auth-token';
-import { apiDailyLogin, apiLogin, apiMe, type ApiUser, type AuthSession } from '@/lib/api';
+import { apiDailyLogin, apiLogin, apiMe, isAuthError, type ApiUser, type AuthSession } from '@/lib/api';
 import { registerForPushNotifications } from '@/lib/push';
 
 type AuthContextValue = {
@@ -28,9 +28,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (token) {
           setUser(await apiMe());
         }
-      } catch {
-        // Expired or forged token: drop it rather than trusting it.
-        await clearToken();
+      } catch (e) {
+        // Expired or forged token: drop it. A network blip keeps it for the next launch.
+        if (isAuthError(e)) await clearToken();
       } finally {
         setRestoring(false);
       }

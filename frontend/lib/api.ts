@@ -13,7 +13,8 @@ import { getToken, setToken } from '@/lib/auth-token';
  * they take EXPO_PUBLIC_API_URL, inlined at bundle time.
  */
 const devHost = Constants.expoConfig?.hostUri?.split(':')[0] ?? 'localhost';
-export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? `http://${devHost}:8000`;
+// Paths are appended as `/path`, so a trailing slash on the base would 404 every route.
+export const API_URL = (process.env.EXPO_PUBLIC_API_URL ?? `http://${devHost}:8000`).replace(/\/+$/, '');
 
 const API_HEADERS = {
   'Content-Type': 'application/json',
@@ -40,7 +41,13 @@ async function throwHttpError(res: Response): Promise<never> {
   } catch {
     // No JSON body.
   }
-  throw new Error(detail ?? (res.status === 401 ? 'Unauthorized' : `Request failed: ${res.status}`));
+  const error = new Error(detail ?? (res.status === 401 ? 'Unauthorized' : `Request failed: ${res.status}`));
+  throw Object.assign(error, { status: res.status });
+}
+
+/** True when a request was rejected by the server for a missing, expired or forged token. */
+export function isAuthError(e: unknown): boolean {
+  return (e as { status?: number } | null)?.status === 401;
 }
 
 async function handleResponse<T>(res: Response): Promise<T> {

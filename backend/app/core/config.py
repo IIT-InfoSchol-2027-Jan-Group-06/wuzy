@@ -17,9 +17,9 @@ class Settings(BaseSettings):
     # Used to sign JWTs. Must be changed before any production deploy.
     secret_key: str = "dev-secret-key"
     algorithm: str = "HS256"
-    # Short-lived tokens keep the auth flow simple; long sessions are a
-    # future concern once refresh tokens are needed.
-    access_token_expire_minutes: int = 30
+    # There is no refresh token, so the access token is the whole session.
+    # Thirty days keeps a phone logged in; shorten it when refresh lands.
+    access_token_expire_minutes: int = 60 * 24 * 30
 
     class Config:
         env_file = ".env"

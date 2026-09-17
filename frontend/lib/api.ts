@@ -194,10 +194,32 @@ export interface ApiUser {
   bio: string | null;
   hobbies: string[] | null;
   avatar_url: string | null;
+  gender: string | null;
+  /** YYYY-MM-DD */
+  birthday: string | null;
   is_active: boolean;
   created_at: string;
   total_xp: number;
   badge_deck: number[] | null;
+}
+
+/** Register an account. The backend names the plaintext field hashed_password; log in afterwards for a token. */
+export function apiSignup(payload: {
+  email: string;
+  username: string;
+  password: string;
+  display_name: string;
+  gender: string;
+  birthday: string | null;
+  hobbies: string[];
+}): Promise<ApiUser> {
+  const { password, ...rest } = payload;
+  return apiPost<ApiUser>('/users/', { ...rest, hashed_password: password });
+}
+
+/** True means free. Onboarding checks each handle on its own page. */
+export function apiAvailability(query: { email?: string; username?: string }): Promise<{ email: boolean; username: boolean }> {
+  return apiGet(`/users/availability?${new URLSearchParams(query).toString()}`);
 }
 
 export interface ApiPost {

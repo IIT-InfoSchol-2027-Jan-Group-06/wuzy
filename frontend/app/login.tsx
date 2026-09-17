@@ -1,14 +1,15 @@
 import { useState } from 'react';
-import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 
-import { Screen } from '@/components/Screen';
-import { accounts } from '@/constants/accounts';
-import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
+import { FormError, FormInput } from '@/components/onboarding/FormInput';
+import { OnboardingBackdrop } from '@/components/onboarding/OnboardingBackdrop';
+import { PillButton } from '@/components/onboarding/PillButton';
+import { wuzyColors, wuzyFonts, wuzyType } from '@/constants/wuzy-theme';
 import { useAuth } from '@/context/auth';
 
-const AVATAR = 56;
+// Figma login frame: 250 x 55 fields, wider than the signup pages' full-width 45.
+const field = { width: 250, height: 55 };
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -19,13 +20,13 @@ export default function LoginScreen() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const submit = async (e?: string, p?: string) => {
-    const nextEmail = (e ?? email).trim();
-    if (!nextEmail || !(p ?? password) || busy) return;
+  const submit = async () => {
+    const nextEmail = email.trim();
+    if (!nextEmail || !password || busy) return;
     setBusy(true);
     setError(null);
     try {
-      await login(nextEmail, p ?? password);
+      await login(nextEmail, password);
       router.replace('/(tabs)/home');
     } catch {
       setError('Invalid email or password');
@@ -34,107 +35,52 @@ export default function LoginScreen() {
     }
   };
 
-  const pickAccount = (a: (typeof accounts)[number]) => {
-    setEmail(a.email);
-    setPassword(a.password);
-    setError(null);
-  };
-
-  const inputStyle = {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    gap: wuzyLayout.itemGap,
-    backgroundColor: wuzyColors.surface,
-    borderWidth: 1,
-    borderColor: wuzyColors.surfaceBorder,
-    borderRadius: 16,
-    height: wuzyLayout.control,
-    paddingHorizontal: 16,
-  };
-
   return (
-    <Screen scroll>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1">
-        <ScrollView
-          className="flex-1"
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{ flexGrow: 1, gap: wuzyLayout.gap }}>
-          <View className="items-center" style={{ marginTop: wuzyLayout.gap * 2, gap: 4 }}>
-            <Text style={{ fontFamily: wuzyFonts.display, fontSize: wuzyType.display * 2, color: wuzyColors.yellow }}>WUZY</Text>
-            <Text style={{ fontFamily: wuzyFonts.body, fontSize: wuzyType.body, color: wuzyColors.gray }}>log in to your social circle</Text>
-          </View>
-
-          <View style={{ gap: wuzyLayout.itemGap }}>
-            <View style={inputStyle}>
-              <Ionicons name="mail-outline" size={20} color={wuzyColors.gray} />
-              <TextInput
-                className="flex-1"
-                style={{ fontFamily: wuzyFonts.body, fontSize: wuzyType.body, color: wuzyColors.white, paddingVertical: 0 }}
-                placeholder="Email"
-                placeholderTextColor={wuzyColors.gray}
-                autoCapitalize="none"
-                autoCorrect={false}
-                keyboardType="email-address"
-                value={email}
-                onChangeText={setEmail}
-              />
-            </View>
-
-            <View style={inputStyle}>
-              <Ionicons name="lock-closed-outline" size={20} color={wuzyColors.gray} />
-              <TextInput
-                className="flex-1"
-                style={{ fontFamily: wuzyFonts.body, fontSize: wuzyType.body, color: wuzyColors.white, paddingVertical: 0 }}
-                placeholder="Password"
-                placeholderTextColor={wuzyColors.gray}
-                secureTextEntry
-                value={password}
-                onChangeText={setPassword}
-                onSubmitEditing={() => submit()}
-                returnKeyType="go"
-              />
-            </View>
-
-            {error && (
-              <Text style={{ fontFamily: wuzyFonts.medium, fontSize: wuzyType.small, color: wuzyColors.yellow }}>{error}</Text>
-            )}
-
-            <Pressable
-              onPress={() => submit()}
-              disabled={busy}
-              accessibilityRole="button"
-              className="items-center justify-center rounded-full active:opacity-80"
-              style={{ height: wuzyLayout.control, backgroundColor: busy ? wuzyColors.yellowDim : wuzyColors.yellow }}>
-              {busy ? (
-                <ActivityIndicator size="small" color={wuzyColors.bg} />
-              ) : (
-                <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.body, color: wuzyColors.bg }}>Log in</Text>
-              )}
-            </Pressable>
-          </View>
-
-          <View style={{ gap: wuzyLayout.itemGap }}>
-            <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.section, color: wuzyColors.yellow }}>Test accounts</Text>
-            <Text style={{ fontFamily: wuzyFonts.body, fontSize: wuzyType.small, color: wuzyColors.gray }}>
-              Tap an account to fill its credentials, then log in.
-            </Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ gap: wuzyLayout.gap, alignItems: 'flex-start' }}>
-              {accounts.map((a) => (
-                <Pressable key={a.username} onPress={() => pickAccount(a)} accessibilityRole="button" className="items-center" style={{ gap: 6 }}>
-                  <View style={{ width: AVATAR, height: AVATAR, borderRadius: AVATAR / 2, borderWidth: 1, borderColor: wuzyColors.yellow, padding: 2 }}>
-                    <Image source={a.avatar} style={{ width: '100%', height: '100%', borderRadius: AVATAR / 2 }} />
-                  </View>
-                  <Text style={{ fontFamily: wuzyFonts.medium, fontSize: wuzyType.caption, color: wuzyColors.white }}>{a.username}</Text>
-                </Pressable>
-              ))}
-            </ScrollView>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </Screen>
+    <OnboardingBackdrop background={require('@/assets/images/login-bg.jpg')} paddingBottom={124}>
+      <Text
+        style={{
+          alignSelf: 'flex-start',
+          color: wuzyColors.yellow,
+          fontFamily: wuzyFonts.semibold,
+          fontSize: wuzyType.display,
+          lineHeight: wuzyType.display,
+          letterSpacing: 0.4,
+        }}>
+        {'Hey,\nWelcome\nBack'}
+      </Text>
+      <View style={{ gap: 16 }}>
+        <FormInput
+          style={field}
+          placeholder="Email"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          returnKeyType="next"
+        />
+        <FormInput
+          style={field}
+          placeholder="Password"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+          autoCapitalize="none"
+          returnKeyType="go"
+          onSubmitEditing={submit}
+        />
+      </View>
+      <Pressable onPress={() => {}} accessibilityRole="button">
+        <Text style={{ color: '#AFA991', fontFamily: wuzyFonts.body, fontSize: wuzyType.body, letterSpacing: 0.16 }}>
+          forgot password?
+        </Text>
+      </Pressable>
+      <FormError message={error} />
+      <PillButton label="Login" width={250} height={55} onPress={submit} busy={busy} disabled={!email.trim() || !password} />
+      <Pressable onPress={() => router.push('/onboarding')} accessibilityRole="link">
+        <Text style={{ fontFamily: wuzyFonts.body, fontSize: wuzyType.small, color: '#AFA991' }}>
+          New here? <Text style={{ fontFamily: wuzyFonts.semibold, color: wuzyColors.yellow }}>Create an account</Text>
+        </Text>
+      </Pressable>
+    </OnboardingBackdrop>
   );
 }

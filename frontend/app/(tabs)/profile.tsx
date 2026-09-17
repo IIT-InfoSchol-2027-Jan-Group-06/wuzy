@@ -8,7 +8,6 @@ import { ProfileGrid, ProfileHero } from '@/components/profile';
 import { PostViewerPopup } from '@/components/postcard/PostViewerPopup';
 import { Screen } from '@/components/Screen';
 import { TagSection } from '@/components/TagSection';
-import { accountFor } from '@/constants/accounts';
 import { earnedStickers } from '@/constants/awards-data';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 import { useAuth } from '@/context/auth';
@@ -20,7 +19,6 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { width } = useWindowDimensions();
-  const extra = accountFor(user?.username);
 
   const [photos, setPhotos] = useState<ApiPost[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
@@ -78,9 +76,9 @@ export default function ProfileScreen() {
         />
       }>
       <ProfileHero
-        background={user.avatar_url ? { uri: assetUrl(user.avatar_url) } : extra.backgroundImage}
+        background={user.avatar_url ? { uri: assetUrl(user.avatar_url) } : require('@/assets/images/profile.jpg')}
         name={user.display_name ?? user.username}
-        awardsCount={awardsLoaded ? earnedAwards.length : extra.awardsCount}
+        awardsCount={awardsLoaded ? earnedAwards.length : 0}
         awards={awardsLoaded ? earnedAwards : undefined}
         bio={user.bio}
         height={heroHeight}

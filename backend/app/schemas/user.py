@@ -1,6 +1,6 @@
-from datetime import datetime
+from datetime import date, datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, Field
 
 
 class UserCreate(BaseModel):
@@ -10,13 +10,15 @@ class UserCreate(BaseModel):
     but the client sends a plaintext password that gets hashed server-side.
     """
 
-    email: str
-    username: str
-    hashed_password: str
+    email: EmailStr
+    username: str = Field(min_length=3, max_length=20, pattern=r"^[a-z0-9_.]+$")
+    hashed_password: str = Field(min_length=8)
     display_name: str | None = None
     bio: str | None = None
     hobbies: list[str] | None = None
     avatar_url: str | None = None
+    gender: str | None = None
+    birthday: date | None = None
 
 
 class UserRead(BaseModel):
@@ -33,6 +35,8 @@ class UserRead(BaseModel):
     bio: str | None = None
     hobbies: list[str] | None = None
     avatar_url: str | None = None
+    gender: str | None = None
+    birthday: date | None = None
     is_active: bool
     created_at: datetime
     tickets_count: int = 0

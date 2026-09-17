@@ -82,7 +82,9 @@ function RootNavigator() {
   return (
     <View style={{ flex: 1, backgroundColor: '#0A0F17' }}>
       <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="welcome" />
         <Stack.Screen name="login" />
+        <Stack.Screen name="onboarding" />
         <Stack.Protected guard={!!user}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="chat/[id]" />

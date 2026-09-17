@@ -2,7 +2,7 @@ import { ActivityIndicator, FlatList, Image, Pressable, Text, View } from 'react
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { GlassNavButton } from '@/components/GlassNavButton';
+import { GlassPillButton } from '@/components/GlassPillButton';
 import { LabeledInput } from '@/components/create-event/LabeledInput';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
@@ -86,7 +86,7 @@ export default function NewGroupScreen() {
     <Screen>
       <ScreenHeader title="New Group" />
 
-      <View style={{ flex: 1, gap: wuzyLayout.gap }}>
+      <View style={{ flex: 1, gap: wuzyLayout.gap, marginTop: 20 }}>
         <View style={{ gap: wuzyLayout.itemGap }}>
           <LabeledInput
             label="Group name"
@@ -166,14 +166,12 @@ export default function NewGroupScreen() {
 
       {creatable ? (
         <View style={{ alignItems: 'center', paddingBottom: wuzyLayout.gap }}>
-          <GlassNavButton
+          <GlassPillButton
+            label={creating ? 'Creating...' : 'Create group'}
             onPress={create}
             accessibilityLabel="Create group"
-            style={{ width: 200, height: wuzyLayout.control }}>
-            <Text style={{ fontFamily: wuzyFonts.bold, fontSize: wuzyType.section, color: wuzyColors.white }}>
-              {creating ? 'Creating...' : 'Create group'}
-            </Text>
-          </GlassNavButton>
+            style={{ width: 200 }}
+          />
         </View>
       ) : null}
     </Screen>

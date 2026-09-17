@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Modal, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
-import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
@@ -116,9 +115,6 @@ export default function SettingsScreen() {
         onRequestClose={() => setShowLogoutModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <BlurView intensity={5} tint="dark" style={StyleSheet.absoluteFill} />
-          <View style={styles.modalBackdrop} />
-
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>Log out of your account?</Text>
 
@@ -151,20 +147,20 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  modalBackdrop: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    paddingHorizontal: wuzyLayout.side,
+    paddingVertical: 40,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalCard: {
-    width: '80%',
-    backgroundColor: 'rgba(23, 30, 40, 0.95)',
-    borderRadius: 20,
-    paddingVertical: 32,
-    paddingHorizontal: 24,
+    width: '100%',
+    backgroundColor: wuzyColors.surface,
+    borderRadius: 24,
+    padding: 16,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    shadowColor: '#000000',
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 10 },
   },
   modalTitle: {
     fontSize: wuzyType.section,

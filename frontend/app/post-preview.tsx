@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, Switch, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Switch, Text, TextInput, View } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -63,9 +63,9 @@ export default function PostPreviewScreen() {
     <Screen>
       <ScreenHeader title="New post" right={sharePill} />
 
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <ScrollView
+      <ScrollView
           className="flex-1"
+          automaticallyAdjustKeyboardInsets
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ paddingVertical: wuzyLayout.gap, gap: wuzyLayout.itemGap }}>
@@ -124,7 +124,6 @@ export default function PostPreviewScreen() {
             />
           </View>
         </ScrollView>
-      </KeyboardAvoidingView>
     </Screen>
   );
 }

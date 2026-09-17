@@ -35,7 +35,7 @@ export default function ConnectionsScreen() {
         />
       }>
       <View style={{ flex: 1, gap: wuzyLayout.itemGap }}>
-        <ScreenHeader title="Connections" />
+        <ScreenHeader title="Connections" backStyle={{ marginBottom: 10 }} />
         <ConnectionList
           connections={connections}
           loading={loading}

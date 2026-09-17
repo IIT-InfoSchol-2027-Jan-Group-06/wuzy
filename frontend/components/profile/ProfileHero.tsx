@@ -32,8 +32,8 @@ export function ProfileHero({
     <ImageBackground source={background} style={{ height }} imageStyle={{ resizeMode: 'cover' }}>
       <LinearGradient
         colors={['transparent', wuzyColors.bg, wuzyColors.bg]}
-        locations={[0, 0.6, 1]}
-        start={{ x: 1, y: 0 }}
+        locations={[0.5, 0.8, 1]}
+        start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
         style={StyleSheet.absoluteFill}
       />

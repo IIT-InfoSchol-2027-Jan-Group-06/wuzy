@@ -53,6 +53,13 @@ export default function ChatViewScreen() {
 
   const listRef = useRef<FlatList<ChatMessage>>(null);
 
+  // One deduped append for every message path (optimistic sends, voice notes,
+  // socket frames). Outgoing sends are broadcast to this subscriber too, so the
+  // first path to register a message wins and the later one finds its key.
+  const appendMessage = useCallback((m: ChatMessage) => {
+    setMessages((prev) => (prev.some((x) => messageKey(x) === messageKey(m)) ? prev : [...prev, m]));
+  }, []);
+
   // Mirror the active reply into the out-of-band slot so a photo sent from the
   // pushed camera/gallery flow (which cannot reach this route's state) carries
   // the quote too. Cleared the same way the local reply is.
@@ -157,9 +164,11 @@ export default function ChatViewScreen() {
     const unsubscribe = subscribeChat((m) => {
       const isThisThread =
         m.group_id != null ? m.group_id === threadId : m.conversation_id === threadId;
-      if (!isThisThread || m.from === user.id) return;
-      setMessages((prev) => [...prev, m]);
-      markThreadRead(threadKind, threadId);
+      if (!isThisThread) return;
+      // Outgoing sends land here too (pushed photo flows). Key collisions can
+      // only be the same message rendered twice, so the deduped append skips.
+      appendMessage(m);
+      if (m.from !== user.id) markThreadRead(threadKind, threadId);
     });
 
     let active = true;
@@ -200,7 +209,7 @@ export default function ChatViewScreen() {
       unsubscribe();
       releaseSocket();
     };
-  }, [user, threadId, threadKind, isGroup, router, markThreadRead]);
+  }, [user, threadId, threadKind, isGroup, router, markThreadRead, appendMessage]);
 
   // Pin a message as the current reply context. Swiping your own message
   // replies to yourself; swiping an incoming one replies to the sender.
@@ -252,20 +261,16 @@ export default function ChatViewScreen() {
     (text: string) => {
       if (!user) return;
       if (isGroup) {
-        setMessages((prev) => [
-          ...prev,
-          sendGroup(user.id, threadId, text, undefined, undefined, reply ?? undefined),
-        ]);
+        appendMessage(sendGroup(user.id, threadId, text, undefined, undefined, reply ?? undefined));
       } else if (otherUserId) {
-        setMessages((prev) => [
-          ...prev,
+        appendMessage(
           sendDm(user.id, otherUserId, threadId, text, undefined, undefined, reply ?? undefined),
-        ]);
+        );
       }
       setReply(null);
       markThreadActive({ kind: threadKind, id: threadId });
     },
-    [user, isGroup, threadId, threadKind, otherUserId, reply],
+    [user, isGroup, threadId, threadKind, otherUserId, reply, appendMessage],
   );
 
   const openGallery = () => {
@@ -303,13 +308,11 @@ export default function ChatViewScreen() {
     (audioUrl: string, durationMs: number) => {
       if (!user) return;
       if (isGroup) {
-        setMessages((prev) => [
-          ...prev,
+        appendMessage(
           sendGroup(user.id, threadId, '', undefined, { audioUrl, durationMs }, reply ?? undefined),
-        ]);
+        );
       } else if (otherUserId) {
-        setMessages((prev) => [
-          ...prev,
+        appendMessage(
           sendDm(
             user.id,
             otherUserId,
@@ -319,12 +322,12 @@ export default function ChatViewScreen() {
             { audioUrl, durationMs },
             reply ?? undefined,
           ),
-        ]);
+        );
       }
       setReply(null);
       markThreadActive({ kind: threadKind, id: threadId });
     },
-    [user, isGroup, threadId, threadKind, otherUserId, reply],
+    [user, isGroup, threadId, threadKind, otherUserId, reply, appendMessage],
   );
 
   if (loading) {

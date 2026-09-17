@@ -1,9 +1,9 @@
 import { useCallback, useState } from 'react';
-import { BlurView } from 'expo-blur';
-import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Text, View, useWindowDimensions } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 
 import { GlassNavButton } from '@/components/GlassNavButton';
+import { GlassPillButton } from '@/components/GlassPillButton';
 import { ProfileGrid, ProfileHero } from '@/components/profile';
 import { PostViewerPopup } from '@/components/postcard/PostViewerPopup';
 import { Screen } from '@/components/Screen';
@@ -66,23 +66,6 @@ export default function ProfileScreen() {
   const heroHeight = Math.min(Math.round(width * 1.3), 540);
   const gridItemSize = Math.floor((width - GRID_GAP * 2) / 3);
 
-  // The pre-token look: quiet dark glass with a faint yellow tint, not the highlighted GlassNavButton chrome.
-  const pillButton = (label: string, onPress?: () => void) => (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      className="rounded-full overflow-hidden"
-      style={{ flex: 1, maxWidth: 160, height: wuzyLayout.control }}>
-      <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
-      <View className="absolute inset-0 rounded-full" style={{ backgroundColor: 'rgba(244, 196, 0, 0.1)' }} />
-      <View className="absolute inset-0 rounded-full border border-white/20" />
-      <View className="flex-1 items-center justify-center">
-        <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.small, color: wuzyColors.white }}>{label}</Text>
-      </View>
-    </Pressable>
-  );
-
   return (
     <Screen
       scroll
@@ -113,8 +96,8 @@ export default function ProfileScreen() {
         <TagSection tags={user.hobbies ?? []} />
 
         <View style={{ flexDirection: 'row', gap: wuzyLayout.itemGap }}>
-          {pillButton('Edit profile', () => router.push('/edit-profile'))}
-          {pillButton('Connections', () => router.push('/connections'))}
+          <GlassPillButton label="Edit profile" onPress={() => router.push('/edit-profile')} style={{ flex: 1, maxWidth: 160 }} />
+          <GlassPillButton label="Connections" onPress={() => router.push('/connections')} style={{ flex: 1, maxWidth: 160 }} />
         </View>
 
         <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.section, color: wuzyColors.yellow, textAlign: 'center' }}>Timeline</Text>

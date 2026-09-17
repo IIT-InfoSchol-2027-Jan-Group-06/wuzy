@@ -6,7 +6,6 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  KeyboardAvoidingView,
   Image,
   Modal,
   ActivityIndicator,
@@ -16,12 +15,15 @@ import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { launchImageLibraryAsync } from 'expo-image-picker';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { GlassNavButton } from '@/components/GlassNavButton';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 import { useAuth } from '@/context/auth';
 import { apiPatch, uploadImage, assetUrl, type ApiUser } from '@/lib/api';
 
 export default function EditProfile() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { user, updateUser } = useAuth();
 
   const [fullName, setFullName] = useState(user?.display_name ?? user?.username ?? '');
@@ -107,7 +109,10 @@ export default function EditProfile() {
       return;
     }
     const lower = trimmed.toLowerCase();
-    if (interests.some(i => i.toLowerCase() === lower)) {
+    const isSubstringDuplicate = interests.some(
+      (i) => i.toLowerCase().includes(lower) || lower.includes(i.toLowerCase()),
+    );
+    if (isSubstringDuplicate) {
       setShowDuplicateInterest(true);
       return;
     }
@@ -147,14 +152,15 @@ export default function EditProfile() {
   }
 
   return (
-    <KeyboardAvoidingView
-      behavior="padding"
+    <View
       style={{ flex: 1, backgroundColor: wuzyColors.bg }}
     >
       <ScrollView
+        className="flex-1"
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets
       >
         <View style={styles.mainContainer}>
           {/* Profile image at top - full width, 10% taller than the design, no padding/margin */}
@@ -176,17 +182,12 @@ export default function EditProfile() {
               style={StyleSheet.absoluteFill}
               pointerEvents="none"
             />
-            <Pressable
-              onPress={() => router.back()}
-              accessibilityRole="button"
+            <GlassNavButton
+              icon="arrow-back"
               accessibilityLabel="Go back"
-              style={[styles.glassButton, styles.backButton]}
-            >
-              <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
-              <View style={styles.glassButtonFill} />
-              <View style={styles.glassButtonBorder} />
-              <Ionicons name="chevron-back" size={24} color={wuzyColors.white} />
-            </Pressable>
+              onPress={() => router.back()}
+              style={[styles.backButton, { top: insets.top + wuzyLayout.top }]}
+            />
             <View style={styles.editGroup}>
               <Text style={styles.editText}>Edit Profile</Text>
               <Pressable
@@ -195,10 +196,7 @@ export default function EditProfile() {
                 accessibilityLabel="Change photo"
                 style={[styles.glassButton, styles.pencilButton]}
               >
-                <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
-                <View style={styles.glassButtonFill} />
-                <View style={styles.glassButtonBorder} />
-                <Ionicons name="create" size={25} color={wuzyColors.yellow} />
+                <Ionicons name="create" size={30} color={wuzyColors.yellow} />
               </Pressable>
             </View>
           </View>
@@ -356,7 +354,7 @@ export default function EditProfile() {
           </View>
         </View>
       </Modal>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
@@ -411,12 +409,9 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   backButton: {
-    // Liquid glass back button over the image, same top/left as the connections page header
+    // Same GlassNavButton, size and position as the connections page header, over the image
     position: 'absolute',
     left: wuzyLayout.side,
-    top: wuzyLayout.top + 35,
-    width: wuzyLayout.glass,
-    height: wuzyLayout.glass,
   },
   editGroup: {
     // Edit Profile title + pencil grouped over the bottom of the image
@@ -591,16 +586,19 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 32,
+    paddingHorizontal: wuzyLayout.side,
   },
   modalCard: {
-    width: 301,
-    height: 187,
-    backgroundColor: 'rgba(8, 21, 30, 0.95)',
-    borderRadius: 20,
-    padding: 20,
-    justifyContent: 'space-between',
+    width: '100%',
+    backgroundColor: wuzyColors.surface,
+    borderRadius: 24,
+    padding: 16,
+    gap: wuzyLayout.gap,
     alignItems: 'center',
+    shadowColor: '#000000',
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 10 },
   },
   modalText: {
     fontFamily: wuzyFonts.medium,

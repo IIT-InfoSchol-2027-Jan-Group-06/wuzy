@@ -85,7 +85,7 @@ export function ConnectionCard({
             accessibilityLabel={`Go to ${connection.name}'s profile`}
           />
           <GlassPillButton
-            label={'Refer to a\nfriend'}
+            label="Refer"
             onPress={onReferPress ?? (() => {})}
             numberOfLines={2}
             style={{ flex: 1, maxWidth: 160 }}

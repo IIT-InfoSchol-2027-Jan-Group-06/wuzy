@@ -196,10 +196,7 @@ export default function EditProfile() {
                 accessibilityLabel="Change photo"
                 style={[styles.glassButton, styles.pencilButton]}
               >
-                <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
-                <View style={styles.glassButtonFill} />
-                <View style={styles.glassButtonBorder} />
-                <Ionicons name="create" size={25} color={wuzyColors.yellow} />
+                <Ionicons name="create" size={30} color={wuzyColors.yellow} />
               </Pressable>
             </View>
           </View>

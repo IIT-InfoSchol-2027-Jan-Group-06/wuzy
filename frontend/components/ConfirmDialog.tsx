@@ -28,12 +28,10 @@ export function ConfirmDialog({
         <View
           style={{
             width: 300,
-            borderRadius: 20,
+            borderRadius: 24,
             padding: 20,
             gap: 14,
-            backgroundColor: 'rgba(24, 24, 24, 0.92)',
-            borderWidth: 1,
-            borderColor: 'rgba(255, 231, 131, 0.12)',
+            backgroundColor: wuzyColors.surface,
           }}>
           <Text
             style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.body, color: wuzyColors.yellow, textAlign: 'center' }}>

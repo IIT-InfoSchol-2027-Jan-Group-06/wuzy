@@ -107,11 +107,11 @@ Full-bleed content inside a padded screen uses `marginHorizontal: -wuzyLayout.si
 
 ### GlassPillButton
 - `import { GlassPillButton } from '@/components/GlassPillButton';`
-- A `GlassNavButton` stretched into a `control`-tall rounded pill by its `children`, carrying a `small` white label (semibold by default; pass `bold={false}` for regular weight, `numberOfLines` for a two-line label). Same frosted chrome as every nav/action circle (blur, glass fill, diagonal shine, hairline border). Used on Profile's action row and as the expanded ConnectionCard's "Go to profile" and two-line "Refer to a friend" actions (both regular weight). Pass `style` for sizing (e.g. `flex: 1`).
+- A `GlassNavButton` stretched into a `control`-tall rounded pill by its `children`, carrying a `small` white label (semibold by default; pass `bold={false}` for regular weight, `numberOfLines` for a two-line label). Same frosted chrome as every nav/action circle (blur, glass fill, hairline border). Used on Profile's action row and as the expanded ConnectionCard's "Go to profile" and two-line "Refer to a friend" actions (both regular weight). Pass `style` for sizing (e.g. `flex: 1`).
 
 ### LiquidGlass
 - `import { LiquidGlass } from '@/components/LiquidGlass';`
-- Frosted "liquid glass" surface: `rounded-full` with a hairline border, BlurView base under a translucent tint (default 25%, pass `tint` to tune), and a white shine down the top 60%. The tint and hairline default to `wuzy-yellow`; pass `tintColor` for a different tint (hex or rgba, e.g. the receiver bubble color on received picture replies). Pass `style` for size and layout. Used by the Connect toggle (`ModeToggle`) and the picture reply block in `ReplyBubble`.
+- Frosted "liquid glass" surface: `rounded-full` with a hairline border, BlurView base under a translucent tint (default 25%, pass `tint` to tune). The tint and hairline default to `wuzy-yellow`; pass `tintColor` for a different tint (hex or rgba, e.g. the receiver bubble color on received picture replies). Pass `style` for size and layout. Used by the Connect toggle (`ModeToggle`) and the picture reply block in `ReplyBubble`.
 
 ### Chip
 - `import { Chip } from '@/components/Chip';`

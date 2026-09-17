@@ -1,5 +1,4 @@
-import { LinearGradient } from 'expo-linear-gradient';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
 
 import { wuzyColors, wuzyFonts, wuzyType } from '@/constants/wuzy-theme';
@@ -54,17 +53,11 @@ export function ToggleRow({ label, value, onValueChange }: ToggleRowProps) {
               borderRadius: knobSize / 2,
               overflow: 'hidden',
               borderWidth: 1,
-              borderColor: 'rgba(255, 255, 255, 0.4)',
-              backgroundColor: 'rgba(255, 255, 255, 0.18)',
+              borderColor: wuzyColors.surfaceBorder,
+              backgroundColor: wuzyColors.surface,
             },
             knobStyle,
           ]}>
-          <LinearGradient
-            colors={['rgba(255,255,255,0.35)', 'rgba(255,255,255,0.05)']}
-            start={{ x: 0.5, y: 0 }}
-            end={{ x: 0.5, y: 1 }}
-            style={StyleSheet.absoluteFill}
-          />
         </Animated.View>
       </Pressable>
     </View>

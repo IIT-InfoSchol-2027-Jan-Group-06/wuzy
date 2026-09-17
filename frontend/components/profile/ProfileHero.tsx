@@ -61,9 +61,9 @@ export function ProfileHero({
           {hasStickers ? (
             <View className="items-center" style={{ gap: 2 }}>
               <View className="flex-row items-center" style={{ gap: 4 }}>
-                {awards.map((award) => (
+                {awards.map((award, i) => (
                   <Image
-                    key={award.name ?? award.image}
+                    key={award.name ?? String(i)}
                     source={award.image}
                     style={{ width: 32, height: 32, resizeMode: 'contain' }}
                   />

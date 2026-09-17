@@ -116,7 +116,7 @@ export default function ChatViewScreen() {
   const reloadHistory = useCallback(async () => {
     if (!user) return;
     const history: ChatMessage[] = (await getMessages(user.id, threadKind, threadId)).map((m) => ({
-      type: m.audio_url ? 'voice_note' : 'message',
+      type: m.audio_url ? 'voice_note' : m.type === 'ticket' ? 'ticket' : 'message',
       from: m.from,
       from_name: m.from_name,
       to: undefined,
@@ -127,6 +127,7 @@ export default function ChatViewScreen() {
       audio_url: m.audio_url,
       duration_ms: m.duration_ms,
       reply: m.reply ?? null,
+      ticket: m.ticket ?? null,
       created_at: m.created_at,
     }));
     setMessages(history);
@@ -394,6 +395,7 @@ export default function ChatViewScreen() {
                 onReply={() => setReply(buildReply(item))}
                 squareTop={!!rep}
                 stretch={!!rep}
+                ticket={item.ticket}
               />
             );
             return (

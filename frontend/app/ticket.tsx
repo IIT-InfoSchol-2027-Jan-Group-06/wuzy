@@ -7,13 +7,18 @@ import { useLocalSearchParams } from 'expo-router';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
-import { apiGetEvent, apiGetRecommendedEvents, apiPurchaseTickets, assetUrl, type ApiRecommendedEvent } from '@/lib/api';
+import { useAuth } from '@/context/auth';
+import { apiGet, apiGetEvent, apiGetRecommendedEvents, apiGiftTicket, apiPurchaseTickets, assetUrl, type ApiRecommendedEvent } from '@/lib/api';
+import { markThreadActive } from '@/lib/chat-activity';
+import { sendTicketDm } from '@/lib/ws';
 
 const card = { backgroundColor: wuzyColors.surface, borderRadius: 24, borderWidth: 1, borderColor: wuzyColors.glassBorder };
 
 export default function TicketScreen() {
-  const { id } = useLocalSearchParams<{ id?: string }>();
+  const { id, mode, to } = useLocalSearchParams<{ id?: string; mode?: string; to?: string }>();
+  const { user } = useAuth();
   const { width } = useWindowDimensions();
+  const gifting = mode === 'gift';
   const [event, setEvent] = useState<ApiRecommendedEvent | null>(null);
   const [ticketCount, setTicketCount] = useState(1);
   const [purchasing, setPurchasing] = useState(false);
@@ -44,13 +49,40 @@ export default function TicketScreen() {
   const bannerHeight = Math.min(Math.round((width - 2 * wuzyLayout.side) * 0.42), 180);
 
   const handlePurchase = async () => {
+    if (gifting && (!to || !user)) {
+      Alert.alert('Error', 'Select someone to gift first');
+      return;
+    }
     setPurchasing(true);
     setPurchaseSuccess(false);
     try {
-      await apiPurchaseTickets(ticketCount, event?.id);
+      if (gifting && event && to) {
+        await apiGiftTicket(Number(to), event.id, ticketCount);
+        const { conversation_id } = await apiGet<{ conversation_id: number }>(
+          `/ws/conversations/${user!.id}/${to}`,
+        );
+        const text = `Gifted you ${ticketCount === 1 ? 'a' : ticketCount} ticket${ticketCount > 1 ? 's' : ''} to ${event.title}`;
+        sendTicketDm(
+          user!.id,
+          Number(to),
+          conversation_id,
+          {
+            image_url: event.image_url,
+            title: event.title,
+            venue: event.venue,
+            location: event.location,
+            start_time: event.start_time,
+            quantity: ticketCount,
+          },
+          text,
+        );
+        markThreadActive({ kind: 'dm', id: conversation_id });
+      } else {
+        await apiPurchaseTickets(ticketCount, event?.id);
+      }
       setPurchaseSuccess(true);
     } catch {
-      Alert.alert('Error', 'Failed to purchase ticket');
+      Alert.alert('Error', gifting ? 'Failed to gift ticket' : 'Failed to purchase ticket');
     } finally {
       setPurchasing(false);
     }
@@ -64,7 +96,7 @@ export default function TicketScreen() {
 
   return (
     <Screen>
-      <ScreenHeader title="Ticket" />
+      <ScreenHeader title={gifting ? 'Gift a ticket' : 'Ticket'} />
 
       {!event ? (
         <Text style={{ fontFamily: wuzyFonts.body, fontSize: wuzyType.body, color: wuzyColors.gray }}>
@@ -125,7 +157,9 @@ export default function TicketScreen() {
           {purchasing ? (
             <ActivityIndicator size="small" color={wuzyColors.bg} />
           ) : purchaseSuccess ? (
-            <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.body, color: wuzyColors.bg }}>Purchased!</Text>
+            <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.body, color: wuzyColors.bg }}>
+              {gifting ? 'Gifted!' : 'Purchased!'}
+            </Text>
           ) : (
             <Text style={{ fontFamily: wuzyFonts.semibold, fontSize: wuzyType.body, color: wuzyColors.bg }}>Pay {formatPrice(total)}</Text>
           )}

@@ -1,16 +1,18 @@
 import * as SQLite from 'expo-sqlite';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-import type { ChatMessage, ReplyContext } from '@/lib/ws';
+import type { ChatMessage, ReplyContext, TicketMessage } from '@/lib/ws';
 
 export type ThreadKind = 'dm' | 'group';
 
 /** A locally-cached message, normalized to a single thread key (kind + id).
- * `to_id` is the DM recipient, set on outgoing messages so a pending message
- * can be retried when the socket reconnects. `media_url` is a server-relative
- * photo URL, so a picture message needs no caption text. `pending` marks
- * messages saved while offline that have not reached the server yet. `is_read`
- * is 0 for incoming messages the user has not opened yet. */
+ *  `to_id` is the DM recipient, set on outgoing messages so a pending message
+ *  can be retried when the socket reconnects. `media_url` is a server-relative
+ *  photo URL, so a picture message needs no caption text. `pending` marks
+ *  messages saved while offline that have not reached the server yet. `is_read`
+ *  is 0 for incoming messages the user has not opened yet. `type` tells the
+ *  thread apart (`ticket` renders the gifted-event card); `ticket` holds that
+ *  card's event slice. */
 export type StoredMessage = {
   id?: number;
   kind: ThreadKind;
@@ -19,16 +21,18 @@ export type StoredMessage = {
   from_name?: string | null;
   to_id?: number | null;
   text: string;
+  type?: 'message' | 'voice_note' | 'ticket';
   media_url?: string | null;
   audio_url?: string | null;
   duration_ms?: number | null;
+  ticket?: TicketMessage | null;
   reply?: ReplyContext | null;
   created_at: string;
   pending?: number;
   is_read?: number;
 };
 
-const DB_VERSION = 6;
+const DB_VERSION = 7;
 
 let dbPromise: Promise<SQLiteDatabase> | null = null;
 
@@ -61,6 +65,8 @@ function getDb(): Promise<SQLiteDatabase> {
             media_url TEXT,
             audio_url TEXT,
             duration_ms INTEGER,
+            msg_type TEXT NOT NULL DEFAULT 'message',
+            ticket_json TEXT,
             reply_json TEXT,
             created_at TEXT NOT NULL,
             pending INTEGER NOT NULL DEFAULT 0,
@@ -87,6 +93,16 @@ function parseReply(json: string | null | undefined): ReplyContext | null {
   }
 }
 
+/** Parse the stored ticket_json column back into a TicketMessage, or null. */
+function parseTicket(json: string | null | undefined): TicketMessage | null {
+  if (!json) return null;
+  try {
+    return JSON.parse(json) as TicketMessage;
+  } catch {
+    return null;
+  }
+}
+
 /** Normalize a wire frame into a stored row for the given thread kind. */
 function toStored(kind: ThreadKind, message: ChatMessage) {
   return {
@@ -95,9 +111,11 @@ function toStored(kind: ThreadKind, message: ChatMessage) {
     from_name: message.from_name,
     to_id: kind === 'dm' ? (message.to ?? null) : null,
     text: message.text,
+    type: message.type,
     media_url: message.media_url ?? null,
     audio_url: message.audio_url ?? null,
     duration_ms: message.duration_ms ?? null,
+    ticket: message.ticket ?? null,
     reply: message.reply ?? null,
     created_at: message.created_at,
   };
@@ -112,8 +130,8 @@ export async function saveMessage(
   const db = await getDb();
   const row = toStored(kind, message);
   await db.runAsync(
-    `INSERT INTO messages (owner_id, kind, thread_id, from_id, from_name, to_id, text, media_url, audio_url, duration_ms, reply_json, created_at, pending, is_read)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO messages (owner_id, kind, thread_id, from_id, from_name, to_id, text, media_url, audio_url, duration_ms, msg_type, ticket_json, reply_json, created_at, pending, is_read)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ownerId,
     kind,
     row.thread_id,
@@ -124,6 +142,8 @@ export async function saveMessage(
     row.media_url,
     row.audio_url,
     row.duration_ms,
+    row.type ?? 'message',
+    row.ticket ? JSON.stringify(row.ticket) : null,
     row.reply ? JSON.stringify(row.reply) : null,
     row.created_at,
     opts.pending ? 1 : 0,
@@ -144,13 +164,15 @@ export async function getMessages(
     from_id: number;
     from_name: string | null;
     text: string;
+    msg_type: string;
     media_url: string | null;
     audio_url: string | null;
     duration_ms: number | null;
+    ticket_json: string | null;
     reply_json: string | null;
     created_at: string;
   }>(
-    `SELECT kind, thread_id, from_id, from_name, text, media_url, audio_url, duration_ms, reply_json, created_at
+    `SELECT kind, thread_id, from_id, from_name, text, msg_type, media_url, audio_url, duration_ms, ticket_json, reply_json, created_at
      FROM messages
      WHERE owner_id = ? AND kind = ? AND thread_id = ?
      ORDER BY id DESC
@@ -167,9 +189,11 @@ export async function getMessages(
       from: r.from_id,
       from_name: r.from_name,
       text: r.text,
+      type: r.msg_type === 'ticket' ? ('ticket' as const) : r.msg_type === 'voice_note' ? ('voice_note' as const) : ('message' as const),
       media_url: r.media_url,
       audio_url: r.audio_url,
       duration_ms: r.duration_ms,
+      ticket: parseTicket(r.ticket_json),
       reply: parseReply(r.reply_json),
       created_at: r.created_at,
     }));
@@ -318,15 +342,17 @@ export async function getPendingMessages(ownerId: number): Promise<StoredMessage
     from_name: string | null;
     to_id: number | null;
     text: string;
+    msg_type: string;
     media_url: string | null;
     audio_url: string | null;
     duration_ms: number | null;
+    ticket_json: string | null;
     reply_json: string | null;
     created_at: string;
     pending: number;
     is_read: number;
   }>(
-    `SELECT id, kind, thread_id, from_id, from_name, to_id, text, media_url, audio_url, duration_ms, reply_json, created_at, pending, is_read
+    `SELECT id, kind, thread_id, from_id, from_name, to_id, text, msg_type, media_url, audio_url, duration_ms, ticket_json, reply_json, created_at, pending, is_read
      FROM messages
      WHERE owner_id = ? AND pending = 1
      ORDER BY id ASC`,
@@ -340,9 +366,11 @@ export async function getPendingMessages(ownerId: number): Promise<StoredMessage
     from_name: r.from_name,
     to_id: r.to_id,
     text: r.text,
+    type: r.msg_type === 'ticket' ? ('ticket' as const) : r.msg_type === 'voice_note' ? ('voice_note' as const) : ('message' as const),
     media_url: r.media_url,
     audio_url: r.audio_url,
     duration_ms: r.duration_ms,
+    ticket: parseTicket(r.ticket_json),
     reply: parseReply(r.reply_json),
     created_at: r.created_at,
     pending: r.pending,

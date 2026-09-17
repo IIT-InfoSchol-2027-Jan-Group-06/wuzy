@@ -412,9 +412,9 @@ export function apiShareTicket(ticketId: number): Promise<void> {
   return apiPostNoContent(`/tickets/${ticketId}/share`);
 }
 
-/** Buy a ticket for a connection. They get the ticket and a notification. */
-export function apiGiftTicket(toUserId: number, eventId: number): Promise<ApiTicketRead> {
-  return apiPost<ApiTicketRead>('/tickets/gift', { to_user_id: toUserId, event_id: eventId });
+/** Gift one or more tickets to a connection. They get the tickets and a notification. */
+export function apiGiftTicket(toUserId: number, eventId: number, quantity = 1): Promise<ApiTicketRead[]> {
+  return apiPost<ApiTicketRead[]>('/tickets/gift', { to_user_id: toUserId, event_id: eventId, quantity });
 }
 
 export function apiGetTickets(): Promise<ApiTicketRead[]> {

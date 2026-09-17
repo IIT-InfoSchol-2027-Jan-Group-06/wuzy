@@ -36,6 +36,7 @@ class TicketPurchase(BaseModel):
 class TicketGift(BaseModel):
     to_user_id: int
     event_id: int
+    quantity: int = Field(default=1, ge=1, le=10)
 
 
 class AwardRead(BaseModel):

@@ -23,8 +23,19 @@ export type ReplyContext = {
   ref?: string;
 };
 
+/** The event slice a gifted-ticket frame carries, so the thread can render the
+ *  ticket card (picture, title, time, location) the recipient was gifted. */
+export type TicketMessage = {
+  image_url?: string | null;
+  title: string;
+  venue?: string | null;
+  location?: string | null;
+  start_time: string;
+  quantity: number;
+};
+
 export type ChatMessage = {
-  type: 'message' | 'voice_note';
+  type: 'message' | 'voice_note' | 'ticket';
   from: number;
   from_name?: string | null;
   to?: number;
@@ -36,6 +47,8 @@ export type ChatMessage = {
   duration_ms?: number | null;
   created_at: string;
   reply?: ReplyContext | null;
+  /** Present on `ticket` frames: the gifted event, rendered as a card. */
+  ticket?: TicketMessage | null;
 };
 
 export type ChatThread = { kind: 'dm' | 'group'; id: number };
@@ -119,7 +132,7 @@ async function connectSocket(userId: number): Promise<void> {
         for (const listener of notificationListeners) listener(data);
         return;
       }
-      if (data?.type !== 'message' && data.type !== 'voice_note') return;
+      if (data?.type !== 'message' && data.type !== 'voice_note' && data.type !== 'ticket') return;
       const kind: ThreadKind = data.group_id != null ? 'group' : 'dm';
       const threadId = kind === 'group' ? data.group_id : data.conversation_id;
       if (threadId == null) return;
@@ -209,6 +222,33 @@ export function sendGroup(
   return message;
 }
 
+/** Send a gifted ticket to a connection as a DM: a `ticket` frame carrying the
+ *  event card, with the gift line as its attached message. Persisted for the
+ *  sender the same way as any outgoing message. */
+export function sendTicketDm(
+  from: number,
+  to: number,
+  conversationId: number,
+  ticket: TicketMessage,
+  text: string,
+): ChatMessage {
+  const message: ChatMessage = {
+    type: 'ticket',
+    from,
+    to,
+    conversation_id: conversationId,
+    text,
+    ticket,
+    media_url: null,
+    audio_url: null,
+    duration_ms: null,
+    reply: null,
+    created_at: new Date().toISOString(),
+  };
+  persistAndSend(from, 'dm', message);
+  return message;
+}
+
 function persistAndSend(ownerId: number, kind: ThreadKind, message: ChatMessage): void {
   const isOpen = socket?.readyState === WebSocket.OPEN;
   saveMessage(ownerId, kind, message, { pending: !isOpen });
@@ -224,13 +264,14 @@ async function flushPending(ownerId: number): Promise<void> {
   for (const m of pending) {
     if (!socket || socket.readyState !== WebSocket.OPEN) break;
     const frame: ChatMessage = {
-      type: m.audio_url ? 'voice_note' : 'message',
+      type: m.type === 'ticket' ? 'ticket' : m.audio_url ? 'voice_note' : 'message',
       from: ownerId,
       text: m.text,
       media_url: m.media_url ?? null,
       audio_url: m.audio_url ?? null,
       duration_ms: m.duration_ms ?? null,
       reply: m.reply ?? null,
+      ticket: m.ticket ?? null,
       created_at: m.created_at,
       ...(m.kind === 'dm'
         ? { to: m.to_id ?? undefined, conversation_id: m.thread_id }

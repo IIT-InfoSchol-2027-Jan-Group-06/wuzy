@@ -2,7 +2,7 @@
 
 POST /tickets/purchase   - buy one or more tickets, optionally for an event
 POST /tickets/{id}/share - count a share of your own ticket (after the share sheet)
-POST /tickets/gift       - buy a ticket for a connection; they get it and a notification
+POST /tickets/gift       - buy one or more tickets for a connection; they get them and a notification
 GET  /tickets/           - your tickets, newest first, with the event slice for the card
 
 Each action counts toward its quest server-side (ticket_holder, ticket_sharing,
@@ -86,7 +86,7 @@ def share_ticket(
     return Response(status_code=204)
 
 
-@router.post("/gift", response_model=TicketRead)
+@router.post("/gift", response_model=list[TicketRead])
 def gift_ticket(
     payload: TicketGift,
     current_user_id: int = Depends(get_current_user_id),
@@ -103,23 +103,30 @@ def gift_ticket(
     if not _is_connection(session, current_user_id, payload.to_user_id):
         raise HTTPException(status_code=403, detail="You can only gift tickets to connections")
 
-    ticket = Ticket(user_id=payload.to_user_id, event_id=event.id, gifted_by=current_user_id)
-    session.add(ticket)
-    record(session, current_user_id, "gift_giver")
+    tickets = [
+        Ticket(user_id=payload.to_user_id, event_id=event.id, gifted_by=current_user_id)
+        for _ in range(payload.quantity)
+    ]
+    session.add_all(tickets)
+    record(session, current_user_id, "gift_giver", amount=payload.quantity)
     session.commit()
-    session.refresh(ticket)
+    for ticket in tickets:
+        session.refresh(ticket)
 
     me = session.get(User, current_user_id)
+    count = len(tickets)
+    note = count if count > 1 else "a"
+    noun = "tickets" if count > 1 else "ticket"
     notify(
         session,
         payload.to_user_id,
         "gift",
         actor=me,
-        entity_id=ticket.id,
+        entity_id=tickets[0].id,
         url="/ticket-vault",
-        body=f"{me.display_name or me.username} gifted you a ticket to {event.title}",
+        body=f"{me.display_name or me.username} gifted you {note} {noun} to {event.title}",
     )
-    return _with_events(session, [ticket])[0]
+    return _with_events(session, tickets)
 
 
 @router.get("/", response_model=list[TicketRead])

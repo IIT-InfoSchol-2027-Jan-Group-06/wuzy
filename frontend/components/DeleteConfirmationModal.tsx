@@ -1,4 +1,4 @@
-import { Alert, Text, Button, View, StyleSheet } from 'react-native';
+import { Button, StyleSheet, Text, View } from 'react-native';
 import { wuzyColors, wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 
 export function DeleteConfirmationModal({
@@ -28,7 +28,11 @@ export function DeleteConfirmationModal({
 
 const styles = StyleSheet.create({
   modalContainer: {
-    ...StyleSheet.absoluteFillObject,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',

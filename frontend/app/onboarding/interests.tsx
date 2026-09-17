@@ -10,13 +10,13 @@ import { SearchBar } from '@/components/SearchBar';
 import { interestOptions } from '@/constants/onboarding-data';
 import { wuzyFonts, wuzyLayout, wuzyType } from '@/constants/wuzy-theme';
 import { useAuth } from '@/context/auth';
-import { apiSignup } from '@/lib/api';
+import { apiSignup, apiUpdateMe, uploadImage } from '@/lib/api';
 import { toISODate } from './birthday';
 import { useOnboarding } from './_layout';
 
 export default function InterestsScreen() {
   const { data, setField } = useOnboarding();
-  const { login } = useAuth();
+  const { login, updateUser } = useAuth();
   const router = useRouter();
   const [search, setSearch] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -44,6 +44,13 @@ export default function InterestsScreen() {
         hobbies: data.interests,
       });
       await login(data.email.trim(), data.password);
+      if (data.avatarUri) {
+        // The account exists now, so a failed upload must not block entry; edit profile can retry.
+        try {
+          const { url } = await uploadImage('avatar', data.avatarUri);
+          updateUser(await apiUpdateMe({ avatar_url: url }));
+        } catch {}
+      }
       router.replace('/(tabs)/home');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Something went wrong');

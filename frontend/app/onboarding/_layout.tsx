@@ -8,10 +8,12 @@ export interface OnboardingData {
   birthday: Date | null;
   gender: string;
   password: string;
+  /** Local picker uri, uploaded after the account exists. */
+  avatarUri: string | null;
   interests: string[];
 }
 
-const emptyData: OnboardingData = { email: '', name: '', username: '', birthday: null, gender: '', password: '', interests: [] };
+const emptyData: OnboardingData = { email: '', name: '', username: '', birthday: null, gender: '', password: '', avatarUri: null, interests: [] };
 
 const OnboardingContext = createContext<{
   data: OnboardingData;

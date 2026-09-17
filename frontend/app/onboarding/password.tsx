@@ -9,7 +9,7 @@ export default function PasswordScreen() {
   const { data, setField } = useOnboarding();
   const router = useRouter();
   const valid = data.password.length >= 8;
-  const next = () => router.push('/onboarding/interests');
+  const next = () => router.push('/onboarding/photo');
 
   return (
     <OnboardingBackdrop title="Create a password" subtitle="At least 8 characters">
